@@ -1,0 +1,84 @@
+language: "pt-BR"
+early_access: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  review_status: true
+
+  path_instructions:
+    - path: "apps/api/src/modules/auth/**"
+      instructions: |
+        Revisar com atenção máxima.
+        - Autenticação: tokens JWT, cookies HttpOnly, expiração, revogação
+        - Hashing: bcrypt rounds ≥ 12, nunca comparação com == ou ===
+        - Rate limiting: endpoints de login/recovery devem ter throttle
+        - LGPD: dados pessoais (e-mail, CPF, telefone) não devem aparecer em logs ou respostas de erro
+        - Secrets: nenhum segredo hardcoded, sempre process.env
+
+    - path: "apps/api/src/modules/consent/**"
+      instructions: |
+        Verificar conformidade LGPD:
+        - Registro de consentimento com timestamp imutável
+        - Versão dos termos vinculada ao registro
+        - Opt-out deve revogar processamentos dependentes
+        - Nenhum dado pessoal processado sem consentimento registrado
+
+    - path: "apps/api/src/**/*.controller.ts"
+      instructions: |
+        Verificar padrões de API:
+        - ValidationPipe presente (global em main.ts ou @UsePipes na rota)
+        - DTOs de entrada distintos das entidades Prisma
+        - DTOs de saída: nenhum campo sensível exposto (senha, tokens, audit internos)
+        - Códigos HTTP corretos (201 para criação, 204 para delete sem corpo)
+        - Nenhum acesso direto ao PrismaService — sempre via service injetado
+
+    - path: "apps/api/src/**/*.service.ts"
+      instructions: |
+        Verificar lógica de negócio:
+        - Queries Prisma sem N+1 óbvio (usar include em vez de loops de await)
+        - Transações para operações que afetam múltiplas entidades
+        - Logger injetado (não console.log)
+        - Erros tipados (HttpException ou exceções do domínio), nunca throw string
+
+    - path: "apps/web/**/*.tsx"
+      instructions: |
+        Verificar Next.js App Router:
+        - Server Components não importam código marcado 'use client'
+        - Dados sensíveis não renderizados no cliente (token, CPF, etc.)
+        - Imagens com alt descritivo, forms com labels associados
+        - Loading states explícitos para operações assíncronas
+        - React Query: queries com staleTime configurado, sem refetch desnecessário
+
+    - path: "apps/web/app/api/**"
+      instructions: |
+        Route Handlers Next.js:
+        - CSRF protection (verificar origin/referer header)
+        - Autenticação verificada antes de qualquer operação
+        - Nenhuma lógica de negócio aqui — delegar para apps/api
+
+    - path: "**/*.test.{ts,tsx}"
+      instructions: |
+        Qualidade de testes:
+        - Cobrir caminho feliz E casos de borda (input inválido, erros de rede, permissão negada)
+        - Mocks mínimos — preferir integração real quando viável
+        - Descrições legíveis: "deve X quando Y" ou "returns X given Y"
+        - Sem testes que só verificam que o mock foi chamado sem validar o efeito
+
+    - path: "packages/**"
+      instructions: |
+        Pacotes compartilhados:
+        - Mudanças breaking em packages/types afetam API e Web — documentar
+        - Tipos devem ser self-contained (sem dependências de framework)
+        - Validações Zod devem ter mensagens de erro em português para end users
+
+chat:
+  auto_reply: true

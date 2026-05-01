@@ -27,10 +27,10 @@ export function getAllowedOrigins(configService: ConfigService) {
 }
 
 export function getAllowedOriginsFromValues(values: {
-  APP_URL?: string
-  NEXT_PUBLIC_APP_URL?: string
-  RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL?: string
-  NODE_ENV?: string
+  APP_URL?: string | undefined
+  NEXT_PUBLIC_APP_URL?: string | undefined
+  RAILWAY_SERVICE_IMPERIAL_DESK_WEB_URL?: string | undefined
+  NODE_ENV?: string | undefined
 }) {
   const allowed = new Set<string>()
   const appUrl = normalizeOrigin(values.APP_URL)

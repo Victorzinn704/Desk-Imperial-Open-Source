@@ -15,7 +15,7 @@ type SessionTabProps = Readonly<{
 
 function EmptyCard({ message }: Readonly<{ message: string }>) {
   return (
-    <div className="rounded-[18px] border border-dashed border-white/8 bg-white/[0.02] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
+    <div className="rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
       {message}
     </div>
   )
@@ -88,7 +88,7 @@ function RecentAccessList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div className="h-12 animate-pulse rounded-xl bg-white/[0.04]" key={index} />
+          <div className="h-12 animate-pulse rounded-xl bg-[var(--surface-muted)]" key={index} />
         ))}
       </div>
     )
@@ -107,10 +107,10 @@ function RecentAccessList({
       {activity.map((entry) => {
         return (
           <div
-            className="flex items-center gap-3 rounded-[16px] border border-white/8 bg-white/[0.02] px-4 py-3"
+            className="flex items-center gap-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
             key={entry.id}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-white/8 bg-white/[0.03] text-[var(--text-soft)]">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]">
               {entry.event === 'auth.login.succeeded' ? (
                 <Monitor className="size-4" />
               ) : (
@@ -119,7 +119,7 @@ function RecentAccessList({
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">{formatActivityTitle(entry)}</p>
+              <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(entry)}</p>
               <p className="mt-1 truncate text-xs text-[var(--text-soft)]">
                 {formatActivityDescription(entry)}
                 {entry.ipAddress ? ` · ${entry.ipAddress}` : ''}
@@ -143,38 +143,25 @@ function RecentAccessList({
 
 export function SessionTab({ activity, activityError, activityLoading, logoutBusy, onLogout, user }: SessionTabProps) {
   return (
-    <>
-      <article className="imperial-card p-7">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white">
-            <LogOut className="size-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-              Sessão e rastreabilidade
+    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
+          <div className="border-b border-[var(--border)] pb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Últimos acessos
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Acessos recentes e controle da sessão ativa</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              Toda leitura relevante da conta passa por aqui: dispositivo, histórico recente e encerramento manual da
-              sessão.
+            <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+              Histórico recente da conta para rastreio operacional e leitura de dispositivo.
             </p>
           </div>
-        </div>
-      </article>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-        <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Últimos acessos</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Leitura recente da conta</h3>
           <div className="mt-6">
             <RecentAccessList activity={activity} activityError={activityError} activityLoading={activityLoading} />
           </div>
         </article>
 
-        <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Sessão atual</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Encerramento seguro</h3>
-
+        <article className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Sessão atual</p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">Estado da identidade ativa e encerramento manual da sessão.</p>
           <div className="mt-6 space-y-4">
             <SettingsInfoCard hint="Conta autenticada neste dispositivo" label="Usuário" value={user.fullName} />
             <SettingsInfoCard
@@ -190,13 +177,13 @@ export function SessionTab({ activity, activityError, activityLoading, logoutBus
           </div>
 
           <div className="mt-8">
-            <Button fullWidth loading={logoutBusy} onClick={onLogout} type="button">
+            <Button fullWidth loading={logoutBusy} type="button" onClick={onLogout}>
               <LogOut className="size-4" />
               Encerrar sessão
             </Button>
           </div>
         </article>
       </div>
-    </>
+    </section>
   )
 }

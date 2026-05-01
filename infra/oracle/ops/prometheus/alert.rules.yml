@@ -1,0 +1,233 @@
+groups:
+  - name: desk-imperial-observability
+    rules:
+      - alert: AlloyDown
+        expr: up{job="alloy"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Alloy indisponivel
+          description: O serviço Alloy está sem scrape válido por mais de 2 minutos.
+
+      - alert: TempoDown
+        expr: up{job="tempo"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Tempo indisponivel
+          description: O serviço Tempo está sem scrape válido por mais de 2 minutos.
+
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Loki indisponivel
+          description: O serviço Loki está sem scrape válido por mais de 2 minutos.
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus indisponivel
+          description: O serviço Prometheus está sem scrape válido por mais de 2 minutos.
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Alertmanager indisponivel
+          description: O serviço Alertmanager está sem scrape válido por mais de 3 minutos.
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Grafana indisponivel
+          description: O serviço Grafana está sem scrape válido por mais de 3 minutos.
+
+      - alert: BlackboxDown
+        expr: up{job="blackbox"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Blackbox exporter indisponivel
+          description: O blackbox exporter está sem scrape válido por mais de 3 minutos.
+
+      - alert: ApiHealthProbeFailed
+        expr: probe_success{job="desk-api-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: API health probe falhou
+          description: O probe HTTP da API falhou continuamente por mais de 2 minutos.
+
+      - alert: AppHealthProbeFailed
+        expr: probe_success{job="desk-app-health"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: App health probe falhou
+          description: O probe HTTP do frontend falhou continuamente por mais de 2 minutos.
+
+      - alert: SonarQubeHealthProbeFailed
+        expr: probe_success{job="sonarqube-health"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: SonarQube health probe falhou
+          description: O endpoint de status do SonarQube nao respondeu com sucesso por mais de 5 minutos.
+
+      - alert: MetabaseHealthProbeFailed
+        expr: probe_success{job="metabase-health"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Metabase health probe falhou
+          description: O endpoint de health do Metabase nao respondeu com sucesso por mais de 5 minutos.
+
+      - alert: OracleNodeExporterDown
+        expr: up{job="oracle-node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node exporter indisponivel em VM Oracle
+          description: O node exporter de {{ $labels.oracle_vm }} esta sem scrape valido por mais de 5 minutos.
+
+      - alert: DeskDbNodeExporterDown
+        expr: up{job="desk-db-node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Node exporter do banco indisponivel
+          description: O node exporter da Ampere da Lohana esta sem scrape valido por mais de 5 minutos.
+
+      - alert: DeskDbPostgresExporterDown
+        expr: up{job="desk-db-postgres-exporter"} == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: Postgres exporter indisponivel
+          description: O postgres exporter do banco principal esta sem scrape valido por mais de 3 minutos.
+
+      - alert: DeskDbDiskHigh
+        expr: (1 - (node_filesystem_avail_bytes{job="desk-db-node-exporter",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{job="desk-db-node-exporter",fstype!~"tmpfs|overlay"})) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Disco do banco acima de 85%
+          description: A Ampere do banco esta com uso de disco acima de 85% por mais de 10 minutos.
+
+      - alert: DeskDbConnectionsHigh
+        expr: sum(pg_stat_database_numbackends{job="desk-db-postgres-exporter"}) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Numero de conexoes alto no PostgreSQL
+          description: O banco principal ultrapassou 90 conexoes por mais de 10 minutos.
+
+      - alert: DeskDbPgbackrestFullBackupStale
+        expr: time() - max(desk_pgbackrest_last_success_timestamp_seconds{type="full"}) > 691200
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup full do PostgreSQL está vencido
+          description: O último backup full registrado do PostgreSQL da Ampere tem mais de 8 dias.
+
+      - alert: DeskDbPgbackrestDiffBackupStale
+        expr: time() - max(desk_pgbackrest_last_success_timestamp_seconds{type="diff"}) > 129600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Backup differential do PostgreSQL está vencido
+          description: O último backup differential registrado do PostgreSQL da Ampere tem mais de 36 horas.
+
+      - alert: PrometheusScrapeStalled
+        expr: sum(increase(scrape_samples_scraped[10m])) <= 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Possível estagnação de scrape no Prometheus
+          description: Não houve coleta de samples nos últimos 10 minutos; revisar collectors/targets.
+
+      - alert: FinanceSummaryLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_finance_summary_duration.*_bucket"}[10m]))) > 1500
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta no resumo financeiro
+          description: O p95 do resumo financeiro ficou acima de 1500 ms por 15 minutos.
+
+      - alert: OperationsLiveLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_live_duration.*_bucket"}[10m]))) > 1200
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta na visao operacional ao vivo
+          description: O p95 do snapshot operacional ficou acima de 1200 ms por 15 minutos.
+
+      - alert: OperationsKitchenLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_kitchen_duration.*_bucket"}[10m]))) > 1000
+        for: 15m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta na visao de cozinha
+          description: O p95 da visao de cozinha ficou acima de 1000 ms por 15 minutos.
+
+      - alert: OperationsRealtimePublishLatencyP95High
+        expr: histogram_quantile(0.95, sum by (le) (rate({__name__=~"desk_operations_realtime_publish_duration.*_bucket"}[10m]))) > 250
+        for: 10m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Latencia alta na publicacao realtime operacional
+          description: O p95 de publish do realtime operacional ficou acima de 250 ms por 10 minutos.
+
+      - alert: OperationsRealtimeSocketRejectedHigh
+        expr: sum(rate({__name__=~"desk_operations_realtime_socket_connections.*_total", desk_operations_realtime_connection_result="rejected"}[10m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Rejeicoes de socket operacional acima do esperado
+          description: O realtime operacional esta rejeitando conexoes de forma recorrente; verificar auth, origem e cookies.
+
+      - alert: OperationsRealtimeRedisAdapterFallback
+        expr: increase({__name__=~"desk_operations_realtime_redis_adapter_transitions.*_total", desk_operations_realtime_redis_adapter_enabled="false"}[30m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          domain: business
+        annotations:
+          summary: Socket.IO operacional sem adapter Redis
+          description: O realtime operacional iniciou ou caiu para adapter em memoria; multi-instancia e consistencia entre VMs ficam comprometidas.

@@ -76,7 +76,7 @@ Os módulos principais estão completos e estáveis. Há débitos técnicos conh
 - [x] Índice de documentação (docs/INDEX.md)
 - [x] Documentação de produto (overview, requirements, user-flows, risks)
 - [x] Documentação de arquitetura (modules, database, realtime)
-- [ ] docs/DEMO.md — instruções de acesso à conta demo
+- [x] docs/DEMO.md — instruções de acesso à conta demo
 - [ ] Screenshots do produto
 
 ### Qualidade

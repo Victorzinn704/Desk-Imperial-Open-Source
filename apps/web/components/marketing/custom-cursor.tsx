@@ -1,5 +1,7 @@
 'use client'
 
+/* eslint-disable max-lines-per-function */
+
 import { useEffect, useRef } from 'react'
 
 interface TrailDot {
@@ -21,9 +23,13 @@ export function CustomCursor() {
     }
 
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) {
+      return
+    }
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {
+      return
+    }
 
     let w = (canvas.width = window.innerWidth)
     let h = (canvas.height = window.innerHeight)
@@ -54,7 +60,9 @@ export function CustomCursor() {
 
       // Shift trail
       trail.unshift({ x: cursor.x, y: cursor.y, alpha: 1, r: 4.5 })
-      if (trail.length > TRAIL_LEN) trail.pop()
+      if (trail.length > TRAIL_LEN) {
+        trail.pop()
+      }
 
       // Draw trail dots (fading, shrinking)
       for (let i = 0; i < trail.length; i++) {
@@ -118,5 +126,5 @@ export function CustomCursor() {
     }
   }, [])
 
-  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-[999]" />
+  return <canvas className="pointer-events-none fixed inset-0 z-[999]" ref={canvasRef} />
 }

@@ -3,16 +3,15 @@
 import { memo, useMemo } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Clock, Package, Percent, User } from 'lucide-react'
-import type { Comanda, KanbanColumn } from './pdv-types'
-import { calcTotal, formatElapsed } from './pdv-types'
+import { calcTotal, isEndedComandaStatus, type Comanda, formatElapsed, type KanbanColumn } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
-type PdvComandaCardProps = {
+type PdvComandaCardProps = Readonly<{
   comanda: Comanda
   index: number
   column: KanbanColumn
   onClick: (comanda: Comanda) => void
-}
+}>
 
 export const PdvComandaCard = memo(function PdvComandaCard({
   comanda,
@@ -27,7 +26,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
   const itemCount = comanda.itens.reduce((sum, i) => sum + i.quantidade, 0)
 
   return (
-    <Draggable draggableId={comanda.id} index={index} isDragDisabled={comanda.status === 'fechada'}>
+    <Draggable draggableId={comanda.id} index={index} isDragDisabled={isEndedComandaStatus(comanda.status)}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -40,11 +39,11 @@ export const PdvComandaCard = memo(function PdvComandaCard({
           }}
         >
           <button
-            className="w-full rounded-[18px] border bg-transparent p-4 text-left transition-all duration-200"
+            className="w-full rounded-[18px] border bg-[var(--surface)] p-4 text-left transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)]"
             style={{
-              background: snapshot.isDragging ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
-              borderColor: snapshot.isDragging ? column.borderColor : 'rgba(255,255,255,0.08)',
-              boxShadow: snapshot.isDragging ? `0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px ${column.dotColor}33` : 'none',
+              background: snapshot.isDragging ? 'var(--surface-soft)' : 'var(--surface)',
+              borderColor: snapshot.isDragging ? column.borderColor : 'var(--border)',
+              boxShadow: snapshot.isDragging ? 'var(--shadow-panel)' : 'none',
             }}
             type="button"
             onClick={() => onClick(comanda)}
@@ -56,7 +55,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
                   className="inline-block size-2 rounded-full flex-shrink-0 mt-0.5"
                   style={{ background: column.dotColor }}
                 />
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">
                   {comanda.mesa ? `Mesa ${comanda.mesa}` : `#${comanda.id.slice(-4).toUpperCase()}`}
                 </span>
               </div>
@@ -83,7 +82,7 @@ export const PdvComandaCard = memo(function PdvComandaCard({
               </div>
 
               <div
-                className={`flex items-center gap-1.5 ${isOld && comanda.status !== 'fechada' ? 'text-[#fb923c]' : 'text-[var(--text-soft)]'}`}
+                className={`flex items-center gap-1.5 ${isOld && !isEndedComandaStatus(comanda.status) ? 'text-[var(--warning)]' : 'text-[var(--text-soft)]'}`}
               >
                 <Clock className="size-3" />
                 <span className="text-xs font-medium">{elapsed}</span>
@@ -94,12 +93,18 @@ export const PdvComandaCard = memo(function PdvComandaCard({
             {(comanda.desconto > 0 || comanda.acrescimo > 0) && (
               <div className="mt-3 flex gap-1.5">
                 {comanda.desconto > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#36f57c]">
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-[var(--success)]"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--success) 12%, transparent)' }}
+                  >
                     <Percent className="size-2.5" />-{comanda.desconto}%
                   </span>
                 )}
                 {comanda.acrescimo > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(251,146,60,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#fb923c]">
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-[var(--warning)]"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--warning) 12%, transparent)' }}
+                  >
                     <Percent className="size-2.5" />+{comanda.acrescimo}%
                   </span>
                 )}

@@ -26,7 +26,7 @@ export function PillarsExecutiveCard() {
   return (
     <div className="space-y-4">
       {pillarsList.map((pillar) => (
-        <div key={pillar.label} className="imperial-card-soft p-5">
+        <div className="imperial-card-soft p-5" key={pillar.label}>
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--text-soft)]">{pillar.label}</p>
@@ -62,8 +62,8 @@ export function PillarsExecutiveCard() {
 
                 return (
                   <div
-                    key={i}
                     className="w-1 rounded-sm bg-[var(--accent)] opacity-60"
+                    key={i}
                     style={{ height: `${Math.max(20, height)}%` }}
                   />
                 )

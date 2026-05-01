@@ -1,11 +1,12 @@
-import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common'
-import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { SentryExceptionCaptured } from '@sentry/nestjs'
 import type { Request, Response } from 'express'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name)
 
+  @SentryExceptionCaptured()
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()

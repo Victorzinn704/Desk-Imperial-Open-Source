@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AuthUser } from '@/lib/api'
 import { currencyOptions } from '@/lib/currency'
-import { profileSchema, type ProfileFormValues } from '@/lib/validation'
+import { type ProfileFormValues, profileSchema } from '@/lib/validation'
 import { Button } from '@/components/shared/button'
 import { InputField } from '@/components/shared/input-field'
 import { SelectField } from '@/components/shared/select-field'
@@ -46,7 +46,7 @@ export function AccountProfileCard({
   return (
     <article className="imperial-card p-7">
       <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Perfil da empresa</p>
-      <h2 className="mt-3 text-2xl font-semibold text-white">Edite o nome exibido no portal.</h2>
+      <h2 className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">Edite o nome exibido no portal.</h2>
       <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
         Esse bloco alimenta a sidebar, o cabeçalho executivo e a identificação principal da conta.
       </p>
@@ -75,15 +75,15 @@ export function AccountProfileCard({
 
         <InputField
           disabled
+          readOnly
           hint="O email segue como identificador seguro de acesso."
           label="Email de acesso"
-          readOnly
           value={user.email}
         />
 
         {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
-        <Button fullWidth loading={loading} size="lg" type="submit" disabled={!isDirty && !loading}>
+        <Button fullWidth disabled={!isDirty && !loading} loading={loading} size="lg" type="submit">
           Salvar perfil
         </Button>
       </form>

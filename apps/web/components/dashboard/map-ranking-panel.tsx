@@ -1,8 +1,8 @@
 'use client'
 
 import type { CurrencyCode, FinanceSummaryResponse } from '@contracts/contracts'
+import { LabFilterChip, LabPanel, LabStatusPill } from '@/components/design-lab/lab-primitives'
 import { formatCurrency } from '@/lib/currency'
-import { cn } from '@/lib/utils'
 
 type MapTab = 'revenue' | 'orders' | 'profit'
 
@@ -24,38 +24,41 @@ export function MapRankingPanel({
   onTabChange: (tab: MapTab) => void
 }>) {
   const regions = finance.topRegions ?? []
+  const topChannel = finance.salesByChannel[0]
+  const topCustomer = finance.topCustomers[0]
+  const completedOrders = finance.totals.completedOrders
 
   const getValue = (r: (typeof regions)[0]) => (tab === 'revenue' ? r.revenue : tab === 'orders' ? r.orders : r.profit)
 
   const maxValue = Math.max(1, ...regions.map(getValue))
 
   return (
-    <article className="imperial-card flex flex-col p-6">
-      {/* Tabs */}
-      <div className="flex gap-1.5 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-1">
-        {TABS.map((t) => (
-          <button
-            className={cn(
-              'flex-1 cursor-pointer rounded-[14px] border px-1.5 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors duration-200',
-              tab === t.id
-                ? 'border-[rgba(52,242,127,0.3)] bg-[rgba(52,242,127,0.1)] text-[#36f57c]'
-                : 'border-transparent text-[var(--text-soft)] hover:text-white',
-            )}
-            key={t.id}
-            type="button"
-            onClick={() => onTabChange(t.id)}
-          >
-            {t.label}
-          </button>
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{regions.length} regiões</LabStatusPill>}
+      padding="md"
+      subtitle="Concentração regional por receita, pedidos e lucro."
+      title="Ranking territorial"
+    >
+      <div className="flex flex-wrap gap-2">
+        {TABS.map((item) => (
+          <LabFilterChip
+            active={tab === item.id}
+            key={item.id}
+            label={item.label}
+            onClick={() => onTabChange(item.id)}
+          />
         ))}
       </div>
 
-      {/* Ranking */}
       <div className="mt-5 flex-1 space-y-3 overflow-y-auto">
         {regions.length === 0 ? (
-          <div className="flex h-40 items-center justify-center px-4 text-center">
-            <p className="text-sm leading-7 text-[var(--text-soft)]">
-              Registre pedidos com estado e cidade para ver o ranking de regiões.
+          <div className="space-y-3 rounded-[18px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-4">
+            <EmptyRankingRow label="regiões lidas" value="0" />
+            <EmptyRankingRow label="pedidos na base" value={String(completedOrders)} />
+            <EmptyRankingRow label="canal líder" value={topChannel?.channel ?? 'sem leitura'} />
+            <EmptyRankingRow label="cliente líder" value={topCustomer?.customerName ?? 'sem leitura'} />
+            <p className="pt-1 text-xs leading-6 text-[var(--lab-fg-soft)]">
+              Registre pedidos com estado e cidade para transformar essa base em ranking territorial.
             </p>
           </div>
         ) : (
@@ -65,28 +68,28 @@ export function MapRankingPanel({
             const displayValue = tab === 'orders' ? String(region.orders) : formatCurrency(value, displayCurrency)
 
             return (
-              <div className="imperial-card-soft p-4" key={region.label}>
+              <div className="rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] p-4" key={region.label}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[rgba(52,242,127,0.12)] text-[10px] font-bold text-[#36f57c]">
+                      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--lab-blue-soft)] text-[10px] font-bold text-[var(--lab-blue)]">
                         {i + 1}
                       </span>
-                      <p className="truncate text-sm font-semibold text-white">{region.label}</p>
+                      <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{region.label}</p>
                     </div>
-                    <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
+                    <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
                       <div
-                        className="h-full rounded-full bg-[#36f57c] transition-all duration-500"
+                        className="h-full rounded-full bg-[var(--lab-blue)] transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="mt-1.5 text-xs text-[var(--text-soft)]">
+                    <p className="mt-1.5 text-xs text-[var(--lab-fg-soft)]">
                       {region.orders} venda(s) · lucro {formatCurrency(region.profit, displayCurrency)}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-sm font-semibold text-white">{displayValue}</p>
-                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-soft)]">{pct}%</p>
+                    <p className="text-sm font-semibold text-[var(--lab-fg)]">{displayValue}</p>
+                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">{pct}%</p>
                   </div>
                 </div>
               </div>
@@ -94,6 +97,21 @@ export function MapRankingPanel({
           })
         )}
       </div>
-    </article>
+    </LabPanel>
+  )
+}
+
+function EmptyRankingRow({
+  label,
+  value,
+}: Readonly<{
+  label: string
+  value: string
+}>) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3 last:border-b-0 last:pb-0">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
+      <span className="text-sm font-medium text-[var(--lab-fg)]">{value}</span>
+    </div>
   )
 }

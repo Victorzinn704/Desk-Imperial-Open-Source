@@ -6,6 +6,7 @@
  * e ciclo de vida do adapter redis no gateway realtime.
  */
 
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { OperationsRealtimeGateway } from '../src/modules/operations-realtime/operations-realtime.gateway'
 
 describe('OperationsRealtimeGateway', () => {
@@ -22,7 +23,23 @@ describe('OperationsRealtimeGateway', () => {
       validateSessionToken: jest.fn(),
     }
 
-    const gateway = new OperationsRealtimeGateway(operationsRealtimeService as any, authService as any)
+    const authRateLimitService = {
+      buildRealtimeSocketKey: jest.fn(() => 'realtime-socket:unknown:hash'),
+      assertRealtimeSocketAllowed: jest.fn(async () => {}),
+      recordRealtimeSocketAttempt: jest.fn(async () => ({ count: 1, firstAttemptAt: Date.now(), lockedUntil: null })),
+    }
+
+    const realtimeSessions = {
+      trackSessionSocket: jest.fn(),
+      untrackSessionSocket: jest.fn(),
+    }
+
+    const gateway = new OperationsRealtimeGateway(
+      operationsRealtimeService as any,
+      authService as any,
+      authRateLimitService as any,
+      realtimeSessions as any,
+    )
     const logger = {
       log: jest.fn(),
       warn: jest.fn(),
@@ -36,6 +53,8 @@ describe('OperationsRealtimeGateway', () => {
       logger,
       operationsRealtimeService,
       authService,
+      authRateLimitService,
+      realtimeSessions,
     }
   }
 
@@ -111,7 +130,7 @@ describe('OperationsRealtimeGateway', () => {
   })
 
   it('handleConnection recusa origem nao autorizada', async () => {
-    const { gateway, logger } = makeGateway()
+    const { gateway, logger, authRateLimitService } = makeGateway()
     const authenticateSpy = jest.spyOn(gateway, 'authenticateConnection')
 
     const socket = {
@@ -130,16 +149,20 @@ describe('OperationsRealtimeGateway', () => {
     await gateway.handleConnection(socket as any)
 
     expect(authenticateSpy).not.toHaveBeenCalled()
+    expect(authRateLimitService.assertRealtimeSocketAllowed).not.toHaveBeenCalled()
     expect(socket.disconnect).toHaveBeenCalledWith(true)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('origem'))
   })
 
   it('handleConnection conecta socket autenticado e entra no workspaceChannel', async () => {
-    const { gateway, logger } = makeGateway()
+    const { gateway, logger, realtimeSessions, authRateLimitService } = makeGateway()
 
     jest.spyOn(gateway, 'authenticateConnection').mockResolvedValue({
       auth: {
         userId: 'owner-1',
+        sessionId: 'session-1',
+        role: 'OWNER',
+        employeeId: null,
       } as any,
       workspaceOwnerUserId: 'owner-1',
       workspaceChannel: 'workspace:owner-1',
@@ -149,7 +172,8 @@ describe('OperationsRealtimeGateway', () => {
     const socket = {
       id: 'socket-ok',
       handshake: {
-        headers: {},
+        headers: { 'x-forwarded-for': '203.0.113.1' },
+        auth: { token: 'Bearer valid-token' },
       },
       join: jest.fn(async () => {}),
       emit: jest.fn(),
@@ -159,9 +183,52 @@ describe('OperationsRealtimeGateway', () => {
 
     await gateway.handleConnection(socket as any)
 
-    expect(socket.join).toHaveBeenCalledWith('workspace:owner-1')
-    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('conectado em workspace:owner-1'))
+    expect(socket.join).toHaveBeenNthCalledWith(1, 'workspace:owner-1')
+    expect(socket.join).toHaveBeenNthCalledWith(2, 'workspace:owner-1:kitchen')
+    expect(socket.join).toHaveBeenNthCalledWith(3, 'workspace:owner-1:mesa')
+    expect(socket.join).toHaveBeenNthCalledWith(4, 'workspace:owner-1:cash')
+    expect(authRateLimitService.buildRealtimeSocketKey).toHaveBeenCalledWith('valid-token', '203.0.113.1')
+    expect(authRateLimitService.assertRealtimeSocketAllowed).toHaveBeenCalledWith('realtime-socket:unknown:hash')
+    expect(authRateLimitService.recordRealtimeSocketAttempt).toHaveBeenCalledWith('realtime-socket:unknown:hash')
+    expect(realtimeSessions.trackSessionSocket).toHaveBeenCalledWith('session-1', 'socket-ok', expect.any(Function))
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('workspace:owner-1:cash'))
     expect(socket.disconnect).not.toHaveBeenCalled()
+  })
+
+  it('handleConnection nao coloca staff no canal financeiro e adiciona canal do employee', async () => {
+    const { gateway } = makeGateway()
+
+    jest.spyOn(gateway, 'authenticateConnection').mockResolvedValue({
+      auth: {
+        userId: 'staff-user-1',
+        sessionId: 'session-staff-1',
+        role: 'STAFF',
+        employeeId: 'emp-1',
+      } as any,
+      workspaceOwnerUserId: 'owner-1',
+      workspaceChannel: 'workspace:owner-1',
+      rawToken: 'valid-token',
+    })
+
+    const socket = {
+      id: 'socket-staff',
+      handshake: {
+        headers: {},
+        auth: { token: 'Bearer valid-token' },
+      },
+      join: jest.fn(async () => {}),
+      emit: jest.fn(),
+      disconnect: jest.fn(),
+      data: {},
+    }
+
+    await gateway.handleConnection(socket as any)
+
+    expect(socket.join).toHaveBeenNthCalledWith(1, 'workspace:owner-1')
+    expect(socket.join).toHaveBeenNthCalledWith(2, 'workspace:owner-1:kitchen')
+    expect(socket.join).toHaveBeenNthCalledWith(3, 'workspace:owner-1:mesa')
+    expect(socket.join).toHaveBeenNthCalledWith(4, 'workspace:owner-1:employee:emp-1')
+    expect(socket.join).not.toHaveBeenCalledWith('workspace:owner-1:cash')
   })
 
   it('handleConnection em erro de autenticacao emite evento e desconecta', async () => {
@@ -189,12 +256,43 @@ describe('OperationsRealtimeGateway', () => {
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Falha ao autenticar socket'))
   })
 
+  it('handleConnection aplica rate limit de churn antes da autenticacao', async () => {
+    const { gateway, authRateLimitService } = makeGateway()
+    const authenticateSpy = jest.spyOn(gateway, 'authenticateConnection')
+
+    authRateLimitService.assertRealtimeSocketAllowed.mockRejectedValue(
+      new HttpException('too many', HttpStatus.TOO_MANY_REQUESTS),
+    )
+
+    const socket = {
+      id: 'socket-rate-limited',
+      handshake: {
+        headers: {},
+        auth: { token: 'Bearer valid-token' },
+      },
+      join: jest.fn(),
+      emit: jest.fn(),
+      disconnect: jest.fn(),
+      data: {},
+    }
+
+    await gateway.handleConnection(socket as any)
+
+    expect(authenticateSpy).not.toHaveBeenCalled()
+    expect(authRateLimitService.recordRealtimeSocketAttempt).not.toHaveBeenCalled()
+    expect(socket.emit).toHaveBeenCalledWith('operations.error', {
+      message: 'Muitas tentativas de conexao realtime. Aguarde instantes.',
+    })
+    expect(socket.disconnect).toHaveBeenCalledWith(true)
+  })
+
   it('handleDisconnect registra com e sem workspace resolvido', () => {
-    const { gateway, logger } = makeGateway()
+    const { gateway, logger, realtimeSessions } = makeGateway()
 
     gateway.handleDisconnect({
       id: 'socket-with-room',
       data: {
+        auth: { sessionId: 'session-1' },
         workspaceChannel: 'workspace:owner-1',
       },
     } as any)
@@ -206,6 +304,7 @@ describe('OperationsRealtimeGateway', () => {
 
     expect(logger.debug).toHaveBeenCalledWith('Socket socket-with-room desconectado de workspace:owner-1')
     expect(logger.debug).toHaveBeenCalledWith('Socket socket-no-room desconectado sem workspace resolvido')
+    expect(realtimeSessions.untrackSessionSocket).toHaveBeenCalledWith('session-1', 'socket-with-room')
   })
 
   it('onModuleDestroy encerra conexoes redis e aplica fallback para disconnect', async () => {

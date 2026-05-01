@@ -1,7 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -65,12 +64,12 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
 
   return (
     <span
-      ref={ref}
       className="relative inline-flex"
+      ref={ref}
+      onBlur={() => setVisible(false)}
+      onFocus={handleShow}
       onMouseEnter={handleShow}
       onMouseLeave={() => setVisible(false)}
-      onFocus={handleShow}
-      onBlur={() => setVisible(false)}
     >
       {children}
 
@@ -78,13 +77,13 @@ export function Tooltip({ content, children, side = 'top', className }: Readonly
         createPortal(
           <span
             aria-hidden={!visible}
-            role="tooltip"
             className={cn(
               'pointer-events-none fixed z-[9999] whitespace-nowrap rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(23,28,34,0.98)] px-3.5 py-2 text-xs font-medium text-[rgba(255,255,255,0.95)] shadow-[0_12px_48px_rgba(0,0,0,0.48)] backdrop-blur-sm',
               'transition-[opacity,transform] duration-200 ease-out',
               visible ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none',
               className,
             )}
+            role="tooltip"
             style={{
               top: `${coords.top}px`,
               left: `${coords.left}px`,

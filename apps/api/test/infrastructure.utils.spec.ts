@@ -42,8 +42,12 @@ describe('request-context util', () => {
     const request = makeRequest({
       ip: '::1',
       get: (header: string) => {
-        if (header === 'user-agent') return 'Jest'
-        if (header === 'host') return 'localhost:3000'
+        if (header === 'user-agent') {
+          return 'Jest'
+        }
+        if (header === 'host') {
+          return 'localhost:3000'
+        }
         return undefined
       },
     })
@@ -59,8 +63,12 @@ describe('request-context util', () => {
     const request = makeRequest({
       headers: { 'x-forwarded-for': '203.0.113.10, 198.51.100.7' },
       get: (header: string) => {
-        if (header === 'origin') return 'http://localhost:3000'
-        if (header === 'referer') return 'http://localhost:3000/dashboard'
+        if (header === 'origin') {
+          return 'http://localhost:3000'
+        }
+        if (header === 'referer') {
+          return 'http://localhost:3000/dashboard'
+        }
         return undefined
       },
     })

@@ -1,0 +1,148 @@
+name: desk-imperial-db
+
+services:
+  postgres:
+    build:
+      context: ../..
+      dockerfile: oracle/db/docker/postgres.Dockerfile
+    container_name: desk-db-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_APP_DB:-deskimperial}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      MIGRATION_DB_USER: ${MIGRATION_DB_USER}
+      MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD}
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      BI_DB_USER: ${BI_DB_USER}
+      BI_DB_PASSWORD: ${BI_DB_PASSWORD}
+      BACKUP_DB_USER: ${BACKUP_DB_USER}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD}
+      MONITOR_DB_USER: ${MONITOR_DB_USER}
+      MONITOR_DB_PASSWORD: ${MONITOR_DB_PASSWORD}
+      PGBOUNCER_AUTH_USER: ${PGBOUNCER_AUTH_USER}
+      PGBOUNCER_AUTH_PASSWORD: ${PGBOUNCER_AUTH_PASSWORD}
+    command: ['postgres', '-c', 'config_file=/etc/postgresql/postgresql.conf']
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - pgbackrest-repo:/var/lib/pgbackrest
+      - postgres-logs:/var/log/postgresql
+      - ./.runtime/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./.runtime/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+      - ./sql:/etc/desk-sql:ro
+    ports:
+      - '${DB_PRIVATE_IP}:5432:5432'
+      - '127.0.0.1:5432:5432'
+    networks:
+      - db
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  pgbouncer:
+    build:
+      context: ../..
+      dockerfile: oracle/db/docker/pgbouncer.Dockerfile
+    container_name: desk-db-pgbouncer
+    environment:
+      POSTGRES_APP_DB: ${POSTGRES_APP_DB:-deskimperial}
+      PGBOUNCER_AUTH_USER: ${PGBOUNCER_AUTH_USER}
+      PGBOUNCER_AUTH_PASSWORD: ${PGBOUNCER_AUTH_PASSWORD}
+      PGBOUNCER_STATS_USER: ${PGBOUNCER_STATS_USER:-desk_monitor}
+      PGBOUNCER_POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
+      PGBOUNCER_MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-300}
+      PGBOUNCER_DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
+      PGBOUNCER_MIN_POOL_SIZE: ${PGBOUNCER_MIN_POOL_SIZE:-5}
+      PGBOUNCER_RESERVE_POOL_SIZE: ${PGBOUNCER_RESERVE_POOL_SIZE:-5}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config/pgbouncer.ini.template:/etc/pgbouncer/pgbouncer.ini.template:ro
+    ports:
+      - '${DB_PRIVATE_IP}:6432:6432'
+      - '127.0.0.1:6432:6432'
+    networks:
+      - db
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 6432 -U "$$PGBOUNCER_AUTH_USER" -d "$$POSTGRES_APP_DB" || nc -z 127.0.0.1 6432']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    container_name: desk-db-postgres-exporter
+    environment:
+      DATA_SOURCE_URI: postgres:5432/${POSTGRES_APP_DB:-deskimperial}?sslmode=disable
+      DATA_SOURCE_USER: ${MONITOR_DB_USER}
+      DATA_SOURCE_PASS: ${MONITOR_DB_PASSWORD}
+      PG_EXPORTER_AUTO_DISCOVER_DATABASES: 'false'
+      PG_EXPORTER_DISABLE_DEFAULT_METRICS: 'false'
+      PG_EXPORTER_DISABLE_SETTINGS_METRICS: 'false'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${DB_PRIVATE_IP}:9187:9187'
+      - '127.0.0.1:9187:9187'
+    networks:
+      - db
+    restart: unless-stopped
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    container_name: desk-db-node-exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.textfile.directory=/host/var/lib/node_exporter/textfile_collector'
+      - '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($$|/)'
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - '${DB_PRIVATE_IP}:9100:9100'
+      - '127.0.0.1:9100:9100'
+    restart: unless-stopped
+
+  pgbackrest:
+    build:
+      context: ../..
+      dockerfile: oracle/db/docker/postgres.Dockerfile
+    container_name: desk-db-pgbackrest
+    environment:
+      PGBACKREST_STANZA: ${PGBACKREST_STANZA:-deskimperial}
+    entrypoint: ['/bin/sh', '-lc', 'sleep infinity']
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - pgbackrest-repo:/var/lib/pgbackrest
+      - postgres-logs:/var/log/postgresql
+      - ./.runtime/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./sql:/etc/desk-sql:ro
+    networks:
+      - db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  pgbackrest-repo:
+  postgres-logs:
+
+networks:
+  db:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DB_DOCKER_SUBNET:-172.30.10.0/24}

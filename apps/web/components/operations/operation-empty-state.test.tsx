@@ -5,7 +5,13 @@ import { OperationEmptyState } from './operation-empty-state'
 
 describe('OperationEmptyState', () => {
   it('renderiza titulo e descricao sem acao', () => {
-    render(<OperationEmptyState title="Sem comandas" description="Abra uma nova comanda para iniciar." Icon={CircleDashed} />)
+    render(
+      <OperationEmptyState
+        Icon={CircleDashed}
+        description="Abra uma nova comanda para iniciar."
+        title="Sem comandas"
+      />,
+    )
 
     expect(screen.getByText('Sem comandas')).toBeInTheDocument()
     expect(screen.getByText('Abra uma nova comanda para iniciar.')).toBeInTheDocument()
@@ -15,10 +21,10 @@ describe('OperationEmptyState', () => {
   it('renderiza area de acao quando fornecida', () => {
     render(
       <OperationEmptyState
-        title="Sem pedidos"
-        description="Nenhum item pendente na cozinha."
         Icon={CircleDashed}
         action={<button type="button">Abrir nova comanda</button>}
+        description="Nenhum item pendente na cozinha."
+        title="Sem pedidos"
       />,
     )
 

@@ -41,7 +41,7 @@ scrape_configs:
     metrics_path: /probe
     params:
       module: [http_2xx]
-      target: [http://host.docker.internal:4000/api/health]
+      target: [http://host.docker.internal:4000/api/v1/health]
     static_configs:
       - targets: ['blackbox:9115']
     relabel_configs:

@@ -14,9 +14,9 @@ export function FounderPortraitCard() {
         <div className="relative mx-auto h-full w-full overflow-visible lg:absolute lg:inset-x-0 lg:top-0 lg:h-[600px] lg:max-w-[580px] lg:overflow-hidden">
           {hasImage ? (
             <Image
+              fill
               alt="Retrato profissional do fundador"
               className="block h-full w-full object-contain object-bottom drop-shadow-[0_24px_40px_rgba(0,0,0,0.5)] lg:drop-shadow-[0_40px_90px_rgba(0,0,0,0.52)]"
-              fill
               sizes="(max-width: 1024px) 320px, 620px"
               src="/founder-portrait.png"
               onError={() => setHasImage(false)}

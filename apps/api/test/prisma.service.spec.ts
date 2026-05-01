@@ -4,9 +4,26 @@ describe('PrismaService', () => {
   const originalDatabaseUrl = process.env.DATABASE_URL
   const originalDirectUrl = process.env.DIRECT_URL
 
+  type PrismaLogHandler = (event: unknown) => void
+  type MockLogger = {
+    log: jest.Mock
+    warn: jest.Mock
+    error: jest.Mock
+  }
+  type PrismaServiceHarness = {
+    onModuleInit: PrismaService['onModuleInit']
+    onModuleDestroy: PrismaService['onModuleDestroy']
+    isHealthy: PrismaService['isHealthy']
+    $connect: jest.Mock
+    $disconnect: jest.Mock
+    $queryRaw: jest.Mock
+    $on: jest.Mock
+    logger: MockLogger
+  }
+
   function makeService() {
-    const service = Object.create(PrismaService.prototype) as any
-    const handlers: Record<string, (event: any) => void> = {}
+    const service = Object.create(PrismaService.prototype) as PrismaServiceHarness
+    const handlers: Record<string, PrismaLogHandler> = {}
     const logger = {
       log: jest.fn(),
       warn: jest.fn(),
@@ -16,7 +33,7 @@ describe('PrismaService', () => {
     service.$connect = jest.fn()
     service.$disconnect = jest.fn()
     service.$queryRaw = jest.fn()
-    service.$on = jest.fn((event: string, handler: (payload: any) => void) => {
+    service.$on = jest.fn((event: string, handler: PrismaLogHandler) => {
       handlers[event] = handler
       return service
     })
@@ -57,13 +74,21 @@ describe('PrismaService', () => {
     expect(logger.log).toHaveBeenCalledWith('Database connection established')
     expect(service.$on).toHaveBeenCalledTimes(3)
 
-    handlers.query({ duration: 600, query: 'SELECT * FROM users' })
+    const queryHandler = handlers.query
+    const errorHandler = handlers.error
+    const warnHandler = handlers.warn
+
+    expect(queryHandler).toBeDefined()
+    expect(errorHandler).toBeDefined()
+    expect(warnHandler).toBeDefined()
+
+    queryHandler?.({ duration: 600, query: 'SELECT * FROM users' })
     expect(logger.warn).toHaveBeenCalledWith('Slow query (600ms): SELECT * FROM users', 'SlowQuery')
 
-    handlers.error({ message: 'db offline' })
+    errorHandler?.({ message: 'db offline' })
     expect(logger.error).toHaveBeenCalledWith('Database error: db offline', 'DatabaseError')
 
-    handlers.warn({ message: 'db warning' })
+    warnHandler?.({ message: 'db warning' })
     expect(logger.warn).toHaveBeenCalledWith('Database warning: db warning', 'DatabaseWarning')
   })
 

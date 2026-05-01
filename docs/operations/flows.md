@@ -1,681 +1,536 @@
-# Fluxos de Operação - Desk Imperial
+# Fluxos de Operacao — Desk Imperial
 
-**Versão:** 1.0.0  
-**Última atualização:** 26 de março de 2026  
-**Status:** ✅ Documentado e Testado
-
----
-
-## Visão Geral
-
-Este documento descreve os principais fluxos operacionais do Desk Imperial, incluindo comandas, pedidos, funcionários e hierarquia de permissões.
+**Versao:** 1.2.0  
+**Ultima atualizacao:** 2026-05-01  
+**Status:** Fonte operacional atual
 
 ---
 
-## 1. Hierarquia de Empresa e Funcionários
+## Visao geral
 
-### 1.1 Modelo de Dados
+Este documento descreve os fluxos operacionais principais do Desk Imperial com base no runtime atual de `apps/api` e `apps/web`.
 
-```
+Todos os exemplos HTTP abaixo usam o prefixo publico atual `/api/v1`.
+
+Princípios que governam estes fluxos:
+
+- sessao e identidade sao baseadas em cookie HttpOnly + guards de sessao
+- mutacoes autenticadas exigem CSRF
+- STAFF opera no escopo do workspace do owner, com restricoes de permissao
+- realtime acelera a tela, mas o baseline continua vindo do snapshot HTTP quando necessario
+
+---
+
+## 1. Empresa, owner e funcionarios
+
+### 1.1 Modelo de relacao
+
+```text
 User (OWNER)
-├── companyOwnerId: null (é o dono)
+├── companyOwnerId: null
 ├── role: OWNER
-├── workspaceMembers: User[] (funcionários vinculados)
-└── employees: Employee[] (cadastros de funcionários)
+├── workspaceMembers: User[] (contas STAFF)
+└── employees: Employee[] (cadastros operacionais)
 
 User (STAFF)
 ├── companyOwnerId: userId do OWNER
 ├── role: STAFF
-└── employeeAccount: Employee (vínculo opcional)
+└── employeeAccount: Employee | null
 
 Employee
-├── userId: userId do OWNER (empresa dona)
-├── loginUserId: userId do STAFF (vínculo com login)
-├── employeeCode: código único (ex: "001")
-└── displayName: nome exibido
+├── userId: userId do OWNER (workspace owner)
+├── loginUserId: userId STAFF sintetico
+├── employeeCode: codigo unico por workspace
+└── displayName: nome operacional
 ```
 
-### 1.2 Fluxo: Cadastro de Funcionário
+### 1.2 Fluxo: cadastro de funcionario
 
-```
-┌─────────────┐
-│   OWNER     │
-│  cadastra   │
-│ funcionário │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/employees                    │
-│  {                                      │
-│    employeeCode: "002",                 │
-│    displayName: "Maria Silva",          │
-│    temporaryPassword: "Temp@123"        │
-│  }                                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  1. Valida role = OWNER                 │
-│  2. Gera email técnico de login         │
-│     staff.<owner>.<code>@login...       │
-│  3. Hash da senha temporária (argon2id) │
-│  4. Cria User (role=STAFF)              │
-│  5. Cria Employee com vínculo           │
-│  6. Marca email como verificado         │
-│  7. Registra audit log                  │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Response:                              │
-│  {                                      │
-│    employee: {                          │
-│      id: "emp-123",                     │
-│      employeeCode: "002",               │
-│      displayName: "Maria Silva",        │
-│      hasLogin: true,                    │
-│      email: "staff.owner-id.002@login.deskimperial.internal" │
-│    }                                    │
-│  }                                      │
-└─────────────────────────────────────────┘
+```text
+OWNER
+  -> POST /api/v1/employees
+     { displayName: "Maria Silva" }
+  -> SessionGuard + CsrfGuard + AdminPinGuard
+  -> backend:
+       1. valida role OWNER
+       2. gera employeeCode e senha temporaria
+       3. cria Employee
+       4. garante User STAFF vinculado
+       5. grava audit log
+  -> response:
+       {
+         employee: { id, employeeCode, displayName, ... },
+         credentials: { employeeCode, temporaryPassword }
+       }
 ```
 
-### 1.3 Regras de Negócio
+### 1.3 Fluxo: emissao ou rotacao de acesso
 
-| Regra | Descrição |
-|-------|-----------|
-| **Apenas OWNER cadastra** | STAFF não pode cadastrar funcionários |
-| **Email único** | `staff.<owner>.<employeeCode>@login.deskimperial.internal` |
-| **Senha temporária** | Exige troca no primeiro login (futuro) |
-| **Vínculo opcional** | Funcionário pode não ter login (ex: temporário) |
-| **Código único** | `employeeCode` único por empresa |
+```text
+OWNER
+  -> POST /api/v1/employees/:employeeId/access
+     ou PATCH /api/v1/employees/:employeeId/access/password
+  -> AdminPinGuard
+  -> backend emite novas credenciais e sincroniza o login STAFF
+```
+
+### 1.4 Regras de negocio
+
+| Regra | Estado atual |
+| --- | --- |
+| Apenas OWNER gerencia equipe | Confirmado |
+| Criacao exige validacao administrativa quando houver PIN | Confirmado |
+| STAFF real usa `User` vinculado ao `Employee` | Confirmado |
+| Desativar/revogar acesso invalida ou refresca sessao | Confirmado |
 
 ---
 
-## 2. Comandas e Mesas
+## 2. Comandas, caixa e mesas
 
-### 2.1 Modelo de Dados
+### 2.1 Modelo operacional resumido
 
-```
+```text
 Comanda
-├── id: cuid()
-├── companyOwnerId: userId do OWNER
-├── openedByUserId: userId que abriu
-├── mesaId: mesa vinculada (opcional)
-├── currentEmployeeId: garçom responsável
-├── cashSessionId: caixa do garçom
+├── companyOwnerId / workspaceOwnerUserId
+├── openedByUserId
+├── mesaId (opcional)
+├── currentEmployeeId (opcional)
+├── cashSessionId (opcional)
 ├── status: OPEN | IN_PREPARATION | READY | CLOSED | CANCELLED
 ├── items: ComandaItem[]
-├── customerName: nome do cliente
-├── participantCount: número de pessoas
-├── discountAmount: desconto aplicado
-├── serviceFeeAmount: taxa de serviço
-└── notes: observações
+├── customerName / customerDocument
+├── participantCount
+├── discountAmount
+├── serviceFeeAmount
+└── notes
 
 Mesa
-├── id: cuid()
-├── companyOwnerId: userId do OWNER
-├── tableLabel: identificação (ex: "Mesa 1")
-├── capacity: capacidade máxima
-├── section: seção (ex: "Salão", "Varanda")
-├── active: true/false
-└── positionX, positionY: planta baixa
+├── tableLabel
+├── capacity
+├── section
+├── status
+└── planta / coordenadas
 ```
 
-### 2.2 Fluxo: Abertura de Comanda
+### 2.2 Fluxo: abertura de comanda
 
-```
-┌─────────────┐
-│  Garçom ou  │
-│    OWNER    │
-│   abre      │
-│  comanda    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas          │
-│  {                                      │
-│    tableLabel: "Mesa 5",                │
-│    customerName: "João Cliente",        │
-│    participantCount: 4,                 │
-│    items: [                             │
-│      { productId: "prod-1", qty: 2 }    │
-│    ],                                   │
-│    employeeId: "emp-001" (opcional)     │
-│  }                                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Usuário tem permissão (OWNER/STAFF) │
-│  2. Mesa disponível (se informada)      │
-│  3. Caixa aberto (para STAFF)           │
-│  4. Dia comercial aberto                │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Transação:                             │
-│  1. Cria Comanda (status=OPEN)          │
-│  2. Cria ComandaItem[]                  │
-│  3. Vincula mesa (opcional)             │
-│  4. Vincula garçom (opcional)           │
-│  5. Registra audit log                  │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Response:                              │
-│  {                                      │
-│    comanda: {                           │
-│      id: "comanda-123",                 │
-│      status: "OPEN",                    │
-│      tableLabel: "Mesa 5",              │
-│      items: [...],                      │
-│      totalAmount: 150.00                │
-│    }                                    │
-│  }                                      │
-└─────────────────────────────────────────┘
+```text
+OWNER ou STAFF
+  -> POST /api/v1/operations/comandas
+     {
+       tableLabel,
+       customerName?,
+       participantCount?,
+       items?,
+       employeeId?,
+       cashSessionId?,
+       mesaId?
+     }
+  -> SessionGuard + CsrfGuard
+  -> backend valida:
+       1. permissao do ator
+       2. mesa / caixa / dia operacional
+       3. itens iniciais e ajustes monetarios
+  -> transacao:
+       1. cria Comanda
+       2. cria itens iniciais, se houver
+       3. vincula mesa/funcionario/caixa
+       4. grava audit log
+       5. publica realtime (`comanda.opened`, cozinha/mesa quando couber)
 ```
 
-### 2.3 Fluxo: Adição de Itens
+### 2.3 Fluxo: adicionar itens
 
-```
-┌─────────────┐
-│  Garçom     │
-│  adiciona   │
-│   item      │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas/:id/items│
-│  {                                      │
-│    productId: "prod-1",                 │
-│    quantity: 2,                         │
-│    notes: "Sem gelo"                    │
-│  }                                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Comanda existe e pertence à empresa │
-│  2. Comanda está aberta                 │
-│  3. Produto existe e está ativo         │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Transação:                             │
-│  1. Cria ComandaItem                    │
-│  2. Atualiza comanda (updatedAt)        │
-│  3. Emite evento WebSocket              │
-│  4. Registra audit log                  │
-└─────────────────────────────────────────┘
+```text
+POST /api/v1/operations/comandas/:comandaId/items
+POST /api/v1/operations/comandas/:comandaId/items/batch
+
+validacoes:
+- comanda pertence ao workspace
+- comanda ainda esta aberta
+- produto existe e esta ativo
+
+efeitos:
+- cria item(ns)
+- recalcula totais
+- pode enfileirar item para cozinha
+- publica `comanda.updated` e `kitchen.item.queued` quando necessario
 ```
 
-### 2.4 Fluxo: Fechamento de Comanda
+### 2.4 Fluxo: substituir ou reatribuir comanda
 
-```
-┌─────────────┐
-│  OWNER ou   │
-│  Garçom     │
-│   fecha     │
-│  comanda    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/operations/comandas/:id/close│
-│  {                                      │
-│    paymentMethod: "CREDIT_CARD",        │
-│    discountAmount: 10.00,               │
-│    serviceFeeAmount: 15.00              │
-│  }                                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Comanda está aberta                 │
-│  2. OWNER autoriza desconto (PIN)       │
-│  3. Caixa aberto para lançamento        │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Transação:                             │
-│  1. Calcula totais                      │
-│  2. Aplica desconto/taxa                │
-│  3. Muda status para CLOSED             │
-│  4. Cria registro financeiro            │
-│  5. Libera mesa                         │
-│  6. Emite evento WebSocket              │
-│  7. Registra audit log                  │
-└─────────────────────────────────────────┘
+```text
+PATCH /api/v1/operations/comandas/:comandaId
+POST  /api/v1/operations/comandas/:comandaId/assign
+
+uso:
+- corrigir dados da comanda
+- trocar itens por substituicao total
+- reatribuir para outro funcionario
 ```
 
-### 2.5 Estados da Comanda
+### 2.5 Fluxo: pagamento e fechamento
 
+```text
+POST /api/v1/operations/comandas/:comandaId/payments
+POST /api/v1/operations/comandas/:comandaId/close
+
+validacoes:
+- comanda aberta
+- caixa aberto para registrar lancamento
+- desconto/taxa validos
+- se o owner tiver PIN configurado, a prova administrativa precisa estar valida
+
+efeitos:
+- registra pagamento(s)
+- recalcula totais finais
+- muda status para CLOSED
+- atualiza caixa/closure
+- libera mesa
+- publica `comanda.closed`, `cash.updated`, `cash.closure.updated`, `mesa.upserted`
 ```
-┌─────────┐     ┌──────────────┐     ┌───────┐
-│  OPEN   │────▶│IN_PREPARATION│────▶│ READY │
-└─────────┘     └──────────────┘     └───┬───┘
-    │                                    │
-    │                                    │
-    ▼                                    ▼
-┌──────────┐                        ┌─────────┐
-│CANCELLED │                        │ CLOSED  │
-└──────────┘                        └─────────┘
+
+### 2.6 Fluxo: caixa
+
+```text
+POST /api/v1/operations/cash-sessions
+POST /api/v1/operations/cash-sessions/:cashSessionId/movements
+POST /api/v1/operations/cash-sessions/:cashSessionId/close
+POST /api/v1/operations/closures/close
+
+efeitos:
+- abertura de caixa -> `cash.opened`
+- movimento ou fechamento -> `cash.updated`
+- fechamento de closure -> `cash.closure.updated`
+```
+
+### 2.7 Estados da comanda
+
+```text
+OPEN -> IN_PREPARATION -> READY -> CLOSED
+  \-------------------------------> CANCELLED
+```
+
+`CANCELLED` continua existindo no dominio, mas os fluxos mais quentes hoje passam por `OPEN`, `IN_PREPARATION`, `READY` e `CLOSED`.
+
+---
+
+## 3. Pedidos e vendas
+
+### 3.1 Fluxo: criacao de pedido
+
+```text
+OWNER ou STAFF
+  -> POST /api/v1/orders
+     {
+       items: [{ productId, quantity, unitPrice? }],
+       customerName,
+       buyerType,
+       buyerDocument,
+       buyerCity,
+       sellerEmployeeId?,
+       channel?,
+       currency?
+     }
+  -> SessionGuard + CsrfGuard
+  -> backend valida:
+       1. produtos ativos
+       2. estoque disponivel
+       3. documento e dados do comprador
+       4. vendedor ativo, se informado
+       5. desconto implicito por `unitPrice`, quando houver
+  -> transacao:
+       1. decrementa estoque
+       2. calcula receita/custo/lucro
+       3. aplica geocodificacao
+       4. cria `Order` + `OrderItems`
+       5. grava audit log
+```
+
+### 3.2 Desconto em pedido
+
+O fluxo atual nao trabalha com um campo unico `discountAmount` no request. O desconto aparece quando o item entra com `unitPrice` abaixo do preco base.
+
+Regra vigente:
+
+- STAFF pode aplicar desconto ate o teto permitido
+- acima do teto, o owner precisa ter PIN configurado e a prova administrativa precisa estar valida
+- a prova administrativa vem do cookie HttpOnly emitido por `/api/v1/admin/verify-pin`
+
+### 3.3 Cancelamento de pedido
+
+```text
+POST /api/v1/orders/:orderId/cancel
+
+validacoes:
+- pedido pertence ao workspace
+- pedido ainda nao esta cancelado
+- cancelamento respeita a politica de permissao
+
+efeitos:
+- devolve estoque
+- marca pedido como cancelado
+- grava audit log
 ```
 
 ---
 
-## 3. Pedidos e Vendas
+## 4. Tempo real operacional
 
-### 3.1 Modelo de Dados
+### 4.1 Namespace e transporte
 
-```
-Order
-├── id: cuid()
-├── userId: companyOwnerId
-├── customerName: nome do cliente
-├── buyerType: PERSON | COMPANY
-├── buyerDocument: CPF ou CNPJ
-├── buyerCity, buyerState, buyerCountry: local da venda
-├── buyerLatitude, buyerLongitude: geocodificação
-├── employeeId: vendedor (STAFF)
-├── sellerCode, sellerName: dados do vendedor
-├── status: COMPLETED | CANCELLED
-├── currency: BRL | USD | EUR
-├── totalRevenue: faturamento total
-├── totalCost: custo total
-├── totalProfit: lucro total
-├── totalItems: quantidade de itens
-├── channel: canal de venda (ex: "PDV", "IFOOD")
-├── notes: observações
-└── items: OrderItem[]
+- namespace: `/operations`
+- servidor: `websocket + polling`
+- cliente web atual: `websocket` only, `upgrade: false`
+- autenticacao: cookie de sessao, `Authorization`, `X-Access-Token` ou `handshake.auth.token`
 
-OrderItem
-├── productId: produto vendido
-├── productName: nome no momento da venda
-├── category: categoria
-├── quantity: quantidade
-├── unitCost: custo unitário (convertido)
-├── unitPrice: preço de venda (convertido)
-├── lineRevenue: quantity × unitPrice
-├── lineCost: quantity × unitCost
-└── lineProfit: lineRevenue - lineCost
+### 4.2 Rooms atuais
+
+```text
+workspace:{workspaceOwnerUserId}
+workspace:{workspaceOwnerUserId}:kitchen
+workspace:{workspaceOwnerUserId}:cash
+workspace:{workspaceOwnerUserId}:mesa
+workspace:{workspaceOwnerUserId}:employee:{employeeId}
 ```
 
-### 3.2 Fluxo: Criação de Pedido
+Regras atuais:
 
-```
-┌─────────────┐
-│  OWNER ou   │
-│  Garçom     │
-│  registra   │
-│   venda     │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/orders                       │
-│  {                                      │
-│    items: [                             │
-│      { productId: "prod-1", qty: 2 }    │
-│    ],                                   │
-│    customerName: "João Cliente",        │
-│    buyerType: "PERSON",                 │
-│    buyerDocument: "12345678900",        │
-│    buyerCity: "São Paulo",              │
-│    sellerEmployeeId: "emp-001",         │
-│    channel: "PDV",                      │
-│    currency: "BRL"                      │
-│  }                                      │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Itens existem e estão ativos        │
-│  2. Estoque disponível                  │
-│  3. CPF/CNPJ válidos                    │
-│  4. Vendedor ativo (se STAFF)           │
-│  5. Desconto ≤ 15% (STAFF) ou PIN OWNER │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Transação (Serializable):              │
-│  1. Decrementa estoque (produto a produto)│
-│  2. Calcula totais por item             │
-│  3. Converte moeda (se necessário)      │
-│  4. Cria Order + OrderItems             │
-│  5. Geocodifica endereço                │
-│  6. Registra audit log                  │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Response:                              │
-│  {                                      │
-│    order: {                             │
-│      id: "order-123",                   │
-│      status: "COMPLETED",               │
-│      totalRevenue: 100.00,              │
-│      totalProfit: 50.00,                │
-│      totalItems: 3                      │
-│    }                                    │
-│  }                                      │
-└─────────────────────────────────────────┘
-```
+- OWNER entra em `workspace`, `kitchen`, `mesa` e `cash`
+- STAFF entra em `workspace`, `kitchen`, `mesa` e na room pessoal quando houver `employeeId`
+- STAFF nao recebe `cash.*` via socket
 
-### 3.3 Fluxo: Cancelamento de Pedido
-
-```
-┌─────────────┐
-│    OWNER    │
-│  cancela    │
-│   pedido    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  POST /api/orders/:id/cancel            │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Pedido existe e pertence à empresa  │
-│  2. Pedido não está cancelado           │
-│  3. Apenas OWNER pode cancelar          │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Transação:                             │
-│  1. Retorna estoque (item a item)       │
-│  2. Muda status para CANCELLED          │
-│  3. Registra cancelledAt                │
-│  4. Registra audit log (WARN)           │
-└─────────────────────────────────────────┘
-```
-
-### 3.4 Regras de Desconto
-
-| Cenário | Regra |
-|---------|-------|
-| **OWNER com desconto** | Livre, sem limite |
-| **STAFF até 15%** | Permitido sem autorização |
-| **STAFF acima de 15%** | Exige Admin PIN do OWNER |
-| **OWNER com PIN configurado** | Exige validação por token |
-
----
-
-## 4. Tempo Real (WebSocket)
-
-### 4.1 Eventos Emitidos
+### 4.3 Eventos atuais
 
 ```typescript
-// Conexão
-socket.emit('operations.connected', { workspaceChannel })
+// Caixa
+'cash.opened'
+'cash.updated'
+'cash.closure.updated'
 
 // Comandas
-socket.emit('comanda.created', { comanda })
-socket.emit('comanda.updated', { comanda })
-socket.emit('comanda.closed', { comanda })
+'comanda.opened'
+'comanda.updated'
+'comanda.closed'
 
-// Pedidos
-socket.emit('order.created', { order })
-socket.emit('order.cancelled', { order })
+// Cozinha
+'kitchen.item.queued'
+'kitchen.item.updated'
 
-// Erros
-socket.emit('operations.error', { message })
+// Mesas
+'mesa.upserted'
+
+// Erro semantico de socket
+'operations.error'
 ```
 
-### 4.2 Fluxo de Conexão
+### 4.4 Fluxo de conexao
 
+```text
+frontend
+  -> io(`${NEXT_PUBLIC_API_URL}/operations`, {
+       transports: ['websocket'],
+       upgrade: false,
+       withCredentials: true
+     })
+  -> gateway valida:
+       1. origem
+       2. rate limit de churn
+       3. sessao
+  -> socket entra nas rooms do ator
+  -> reconnect/foreground:
+       - visibilitychange
+       - pageshow
+       - online
+       - operations.error
+  -> ao reconectar, o cliente agenda refresh do baseline HTTP
 ```
-┌─────────────┐
-│  Frontend   │
-│   conecta   │
-│  WebSocket  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────┐
-│  ws://api.deskimperial.online/operations│
-│  Headers:                               │
-│    Authorization: Bearer <token>        │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Validações:                            │
-│  1. Token de sessão válido              │
-│  2. Usuário ativo                       │
-│  3. Origem permitida (CORS)             │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Join em workspace channel:             │
-│    workspace:{companyOwnerId}           │
-└──────────────┬──────────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────────┐
-│  Socket recebe eventos da empresa:      │
-│    - Comandas criadas/atualizadas       │
-│    - Pedidos registrados                │
-│    - Atualizações de estoque            │
-└─────────────────────────────────────────┘
-```
+
+### 4.5 Garantias e limites
+
+- nao existe replay/cursor no protocolo atual
+- nao existe garantia de exactly-once
+- consistencia final depende de patch + refresh controlado
+- eventos financeiros e operacionais ja estao melhor segmentados, mas `comanda.updated` ainda concentra semantica demais
 
 ---
 
-## 5. Cache e Performance
+## 5. Cache e desempenho
 
-### 5.1 Chaves de Cache
+### 5.1 Chaves importantes
 
-| Chave | TTL | Invalidação |
-|-------|-----|-------------|
-| `finance:{userId}` | 120s | Criação/edição de produto, pedido |
-| `products:{userId}` | 300s | Criação/edição de produto |
-| `orders:{userId}` | 90s | Criação/cancelamento de pedido |
-| `employees:{userId}` | 600s | Criação/edição de funcionário |
+| Chave | TTL / padrao |
+| --- | --- |
+| `finance:summary:{userId}` | 120s |
+| `products:list:{userId}:{scope}` | 300s |
+| `employees:list:{userId}` | 600s |
+| `orders:summary:{userId}` | 90s |
+| `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` | 30s |
+| `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}` | curto, por view |
+| `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}` | curto, por view |
 
-### 5.2 Estratégia de Invalidação
+### 5.2 Estrategia de invalidacao
 
-```typescript
-// Exemplo: após criar produto
-await cache.del(cache.financeKey(userId))
-await cache.del(cache.productsKey(userId))
-
-// Exemplo: após criar pedido
-await cache.del(cache.financeKey(userId))
-await cache.del(cache.ordersKey(userId))
-```
+- produtos invalidam catalogo e, quando necessario, financeiro
+- pedidos invalidam financeiro e resumo de pedidos
+- employees invalidam a lista de equipe
+- operations invalida por prefixo `live`, `kitchen` e `summary`
+- realtime nao substitui invalidacao; ele reduz latencia percebida e evita refresh total em todo evento
 
 ---
 
-## 6. Segurança e Permissões
+## 6. Seguranca e permissoes
 
-### 6.1 Matriz de Permissões
+### 6.1 Matriz resumida
 
-| Operação | OWNER | STAFF |
-|----------|-------|-------|
-| Cadastrar funcionário | ✅ | ❌ |
-| Editar funcionário | ✅ | ❌ |
-| Listar funcionários | ✅ | ❌ |
-| Cadastrar produto | ✅ | ❌ |
-| Editar produto | ✅ | ❌ |
-| Importar produtos (CSV) | ✅ | ❌ |
-| Abrir comanda | ✅ | ✅* |
-| Registrar pedido | ✅ | ✅* |
-| Cancelar pedido | ✅ | ❌ |
+| Operacao | OWNER | STAFF |
+| --- | --- | --- |
+| Gerir funcionarios | ✅ | ❌ |
+| Gerir produtos | ✅ | ❌ |
+| Importar produtos | ✅ | ❌ |
+| Abrir/editar comanda | ✅ | ✅ |
+| Operar cozinha | ✅ | ✅ |
+| Registrar pedido | ✅ | ✅ |
+| Cancelar pedido | ✅ | restrito por politica |
 | Acessar financeiro | ✅ | ❌ |
-| Admin PIN | ✅ | ❌ |
+| Configurar/Admin PIN | ✅ | ❌ |
 
-*STAFF exige caixa aberto e vínculo com funcionário ativo.
+### 6.2 Fluxo do Admin PIN
 
-### 6.2 Admin PIN
+```text
+1. Frontend chama POST /api/v1/admin/verify-pin
+2. Backend valida PIN do owner
+3. Backend grava prova curta em cookie HttpOnly
+4. Endpoint protegido por AdminPinGuard ou verificacao de prova aceita a operacao
+5. Expirou a prova -> fluxo precisa ser repetido
+```
 
-**Uso:** Operações sensíveis que exigem autorização do OWNER.
-
-| Operação | Exige PIN |
-|----------|-----------|
-| Desconto > 15% em venda | ✅ |
-| Fechamento de caixa | ✅ (futuro) |
-| Cancelamento de venda grande | ✅ (futuro) |
-| Alteração de configuração | ✅ (futuro) |
-
-**Fluxo:**
-1. Frontend solicita challenge (`POST /admin-pin/verify`)
-2. Backend valida PIN e retorna token JWT (10 min)
-3. Frontend anexa token em operações sensíveis
-4. Backend valida token antes de processar
+O fluxo atual **nao** devolve JWT para o browser.
 
 ---
 
-## 7. Auditoria (Audit Log)
+## 7. Auditoria
 
-### 7.1 Eventos Rastreados
+### 7.1 Eventos rastreados com mais frequencia
 
-| Recurso | Eventos |
-|---------|---------|
-| **Produto** | `product.created`, `product.updated`, `product.archived`, `product.restored`, `product.imported` |
-| **Pedido** | `order.created`, `order.cancelled` |
-| **Funcionário** | `employee.created`, `employee.updated` |
-| **Comanda** | `comanda.opened`, `comanda.closed`, `comanda.cancelled` |
-| **Auth** | `auth.login.succeeded`, `auth.password-reset.requested` |
-| **Admin PIN** | `admin-pin.verified`, `admin-pin.failed` |
+| Recurso | Exemplos |
+| --- | --- |
+| Produto | `product.created`, `product.updated`, `product.archived`, `product.restored`, `product.imported` |
+| Pedido | `order.created`, `order.cancelled` |
+| Funcionario | `employee.created`, `employee.updated`, `employee.access_issued`, `employee.access_revoked` |
+| Comanda | `comanda.opened`, `comanda.closed`, `comanda.cancelled` |
+| Auth | `auth.login.succeeded`, `auth.password-reset.requested` |
+| Admin PIN | `admin-pin.verified`, `admin-pin.failed`, `admin-pin.removed` |
+| Notificacoes | `telegram.linked`, `telegram.unlinked`, `notifications.preferences.updated` |
 
-### 7.2 Estrutura do Audit Log
+### 7.2 Estrutura resumida
 
 ```typescript
 AuditLog {
-  id: cuid()
-  actorUserId: userId que realizou a ação
-  event: string (ex: "product.created")
-  resource: string (ex: "product")
-  resourceId: string (id do recurso)
-  severity: INFO | WARN | ERROR
-  metadata: object (dados da operação)
+  actorUserId: string
+  event: string
+  resource: string
+  resourceId: string
+  severity: 'INFO' | 'WARN' | 'ERROR'
+  metadata: object
   ipAddress: string
   userAgent: string
-  createdAt: DateTime
+  createdAt: string
 }
 ```
 
 ---
 
-## 8. Tratamento de Erros
+## 8. Erros comuns
 
-### 8.1 Erros Comuns
+| Erro | HTTP | Exemplo de mensagem |
+| --- | --- | --- |
+| Produto nao encontrado | 404 | `Produto nao encontrado para esta conta.` |
+| Estoque insuficiente | 400 | `Estoque insuficiente para X.` |
+| Documento invalido | 400 | `Informe um CPF/CNPJ valido.` |
+| Sem permissao | 403 | `Apenas o dono pode ...` |
+| Mesa ocupada | 409 | `Essa mesa ja possui uma comanda aberta.` |
+| Caixa fechado | 409 | `Abra o caixa do funcionario antes.` |
+| PIN ausente/invalido | 403 | `Validacao administrativa ausente, invalida ou expirada.` |
 
-| Erro | HTTP | Mensagem |
-|------|------|----------|
-| Produto não encontrado | 404 | "Produto nao encontrado para esta conta." |
-| Estoque insuficiente | 400 | "Estoque insuficiente para X. Disponivel: Y und." |
-| CPF/CNPJ inválido | 400 | "Informe um CPF/CNPJ valido." |
-| Sem permissão | 403 | "Apenas o dono pode [operacao]." |
-| Mesa ocupada | 409 | "Essa mesa já possui uma comanda aberta." |
-| Caixa fechado | 409 | "Abra o caixa do funcionario antes." |
-
-### 8.2 Padrão de Resposta de Erro
+Padrao de erro HTTP:
 
 ```json
 {
   "statusCode": 400,
-  "message": "Estoque insuficiente para Produto X. Disponivel: 5 und. Solicitado: 10 und.",
+  "message": "Mensagem do dominio",
   "error": "Bad Request"
 }
 ```
 
 ---
 
-## 9. Exemplos de Código
+## 9. Exemplos de cliente
 
-### 9.1 Abrir Comanda (Frontend)
+### 9.1 Abrir comanda
 
 ```typescript
-async function openComanda(data: OpenComandaPayload) {
-  const response = await api.post('/operations/comandas', {
-    tableLabel: data.tableLabel,
-    customerName: data.customerName,
-    participantCount: data.participantCount,
-    items: data.items,
-  })
-  return response.data.comanda
+async function openComanda(payload: OpenComandaPayload) {
+  const response = await api.post('/operations/comandas', payload)
+  return response.data
 }
 ```
 
-### 9.2 Registrar Venda (Frontend)
+### 9.2 Registrar pedido
 
 ```typescript
-async function createOrder(data: CreateOrderPayload) {
-  const response = await api.post('/orders', {
-    items: data.items,
-    customerName: data.customerName,
-    buyerType: data.buyerType,
-    buyerDocument: data.buyerDocument,
-    buyerCity: data.buyerCity,
-    sellerEmployeeId: data.sellerEmployeeId,
-    channel: data.channel,
-  })
-  return response.data.order
+async function createOrder(payload: CreateOrderPayload) {
+  const response = await api.post('/orders', payload)
+  return response.data
 }
 ```
 
-### 9.3 Escutar Eventos em Tempo Real
+### 9.3 Escutar realtime operacional
 
 ```typescript
-const socket = io('https://api.deskimperial.online/operations', {
-  auth: { token: getAuthToken() },
+const socket = io(`${apiBaseUrl}/operations`, {
+  transports: ['websocket'],
+  upgrade: false,
+  withCredentials: true,
 })
 
-socket.on('order.created', (order) => {
-  queryClient.invalidateQueries(['orders'])
-  toast.success(`Novo pedido: ${order.customerName}`)
+socket.on('kitchen.item.queued', (envelope) => {
+  queryClient.invalidateQueries({ queryKey: ['operations', 'kitchen'] })
 })
 
-socket.on('comanda.closed', (comanda) => {
-  queryClient.invalidateQueries(['comandas'])
-  toast.info(`Comanda fechada: ${comanda.tableLabel}`)
+socket.on('comanda.closed', (envelope) => {
+  queryClient.invalidateQueries({ queryKey: ['operations', 'live'] })
+})
+
+socket.on('operations.error', ({ message }) => {
+  toast.error(message)
 })
 ```
 
 ---
 
-## 10. Checklist de Validação
+## 10. Checklist rapido
 
-### 10.1 Antes de Abrir Comanda
+### Antes de abrir comanda
 
-- [ ] Caixa do funcionário está aberto
-- [ ] Mesa está disponível (se informada)
-- [ ] Dia comercial está aberto
-- [ ] Produtos existem e estão ativos
+- [ ] Sessao valida
+- [ ] CSRF valido
+- [ ] Caixa do funcionario aberto, se o fluxo exigir
+- [ ] Mesa disponivel, se informada
+- [ ] Produtos existem e estao ativos
 
-### 10.2 Antes de Registrar Venda
+### Antes de registrar pedido
 
-- [ ] Produtos existem e estão ativos
-- [ ] Estoque é suficiente
-- [ ] CPF/CNPJ são válidos
-- [ ] Vendedor está ativo (se STAFF)
-- [ ] Desconto está dentro do limite (ou PIN validado)
+- [ ] Produtos existem e estao ativos
+- [ ] Estoque suficiente
+- [ ] Documento do comprador valido
+- [ ] Desconto dentro da politica ou PIN validado
 
-### 10.3 Antes de Cancelar Venda
+### Antes de confiar no realtime apos reconnect
 
-- [ ] Venda não está cancelada
-- [ ] Usuário é OWNER
-- [ ] Estorno de estoque é desejado
+- [ ] Socket voltou a `connected`
+- [ ] baseline HTTP foi refrescado
+- [ ] `operations.error` nao foi emitido
 
 ---
 

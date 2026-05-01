@@ -1,115 +1,86 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Boxes, Package, Search, Tags, TrendingUp } from 'lucide-react'
+import { type ReactNode, useMemo, useState } from 'react'
+import {
+  Archive,
+  MapPin,
+  PencilLine,
+  Plus,
+  RotateCcw,
+  Search,
+  ShoppingCart,
+  Store,
+  Trash2,
+  Truck,
+  X,
+} from 'lucide-react'
 import type { FinanceSummaryResponse, ProductRecord, ProductsResponse } from '@contracts/contracts'
+import {
+  LabFactPill,
+  LabFilterChip,
+  LabMetricStrip,
+  LabMetricStripItem,
+  LabMiniStat,
+  LabPageHeader,
+  LabPanel,
+  LabSignalRow,
+  LabStatusPill,
+  type LabStatusTone,
+  LabTable,
+} from '@/components/design-lab/lab-primitives'
+import { LabWorkbench } from '@/components/design-lab/lab-workbench'
+import { ProductThumb } from '@/components/shared/product-thumb'
+import { useCatalogVisualSuggestions } from '@/components/shared/use-catalog-visual-suggestions'
+import { OrderForm } from '@/components/dashboard/order-form'
+import { ProductForm } from '@/components/dashboard/product-form'
+import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
+import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
 import { ApiError } from '@/lib/api'
 import { formatCurrency } from '@/lib/currency'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
-import type { ProductFormValues } from '@/lib/validation'
-import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
-import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
-import { ProductCard } from '@/components/dashboard/product-card'
-import { ProductForm } from '@/components/dashboard/product-form'
-import { ProductSearchField } from '@/components/dashboard/product-search-field'
-
-// ── category card ─────────────────────────────────────────────────────────────
-
-function CategoryCard({
-  category,
-  products,
-  inventoryCostValue,
-  potentialProfit,
-  inventorySalesValue,
-  displayCurrency,
-  maxProfit,
-}: Readonly<{
-  category: string
-  products: number
-  inventoryCostValue: number
-  potentialProfit: number
-  inventorySalesValue: number
-  displayCurrency: string
-  maxProfit: number
-}>) {
-  const barPct = maxProfit > 0 ? Math.max(4, (potentialProfit / maxProfit) * 100) : 4
-  const categoryMargin =
-    inventorySalesValue > 0 ? `${Math.round((potentialProfit / inventorySalesValue) * 100)}% margem estimada` : 'sem venda projetada'
-
-  return (
-    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4 hover:border-white/10 transition-colors">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-white leading-snug">{category}</p>
-          <p className="mt-1 text-[11px] text-[var(--text-soft)]">
-            {products} SKU{products !== 1 ? 's' : ''} · {formatCurrency(inventoryCostValue, displayCurrency as never)} de capital
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-sm font-semibold text-[#c9a96e]">
-            {formatCurrency(potentialProfit, displayCurrency as never)}
-          </p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-[var(--text-soft)]">lucro pot.</p>
-        </div>
-      </div>
-
-      {/* progress bar */}
-      <div className="mt-3.5 h-1 rounded-full bg-white/6 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
-          style={{ width: `${barPct}%` }}
-        />
-      </div>
-
-      <p className="mt-2 text-[10px] text-[var(--text-soft)]">
-        {formatCurrency(inventorySalesValue, displayCurrency as never)} em venda potencial · {categoryMargin}
-      </p>
-    </div>
-  )
-}
-
-// ── summary pill ──────────────────────────────────────────────────────────────
-
-function SummaryPill({
-  icon: Icon,
-  label,
-  value,
-  helper,
-}: Readonly<{
-  icon: React.ElementType
-  label: string
-  value: string
-  helper?: string
-}>) {
-  return (
-    <div className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3.5 flex items-center gap-3">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
-        <Icon className="size-3.5 text-[var(--accent)]" />
-      </span>
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
-        <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
-        {helper ? <p className="mt-0.5 text-[10px] text-[var(--text-soft)]">{helper}</p> : null}
-      </div>
-    </div>
-  )
-}
-
-// ── avg margin calc ───────────────────────────────────────────────────────────
-
-function calcAvgMargin(products: ProductRecord[]): string {
-  const active = products.filter((p) => p.active && p.unitPrice > 0)
-  if (!active.length) return '—'
-  const avg = active.reduce((sum, p) => sum + ((p.unitPrice - p.unitCost) / p.unitPrice) * 100, 0) / active.length
-  return `${avg.toFixed(0)}%`
-}
+import { formatStockBreakdown } from '@/lib/product-packaging'
+import type { OrderFormInputValues, ProductFormValues } from '@/lib/validation'
 
 type ProductMutationError = ApiError | null
+type SaleMode = 'delivery' | 'balcao' | 'mesa'
+type PortfolioSurfaceState =
+  | { kind: 'product'; product: ProductRecord | null }
+  | { kind: 'sale'; product: ProductRecord | null; mode: SaleMode }
+  | null
 
-function buildProductPayload(values: ProductFormValues) {
+const saleModeMeta: Record<
+  SaleMode,
+  {
+    label: string
+    channel: string
+    icon: typeof Truck
+    tone: LabStatusTone
+  }
+> = {
+  delivery: {
+    label: 'Delivery',
+    channel: 'Delivery',
+    icon: Truck,
+    tone: 'info',
+  },
+  balcao: {
+    label: 'Balcão',
+    channel: 'Balcão',
+    icon: Store,
+    tone: 'success',
+  },
+  mesa: {
+    label: 'Mesa',
+    channel: 'Mesa',
+    icon: MapPin,
+    tone: 'warning',
+  },
+}
+
+function buildProductPayload(values: ProductFormValues, existingProduct?: ProductRecord | null) {
   return {
     name: values.name,
+    barcode: values.barcode ?? (existingProduct?.barcode ? null : undefined),
     brand: values.brand,
     category: values.category,
     packagingClass: values.packagingClass,
@@ -140,10 +111,12 @@ function filterProducts(products: ProductRecord[], searchQuery: string) {
   }
 
   return products.filter((product) =>
-    [product.name, product.brand ?? '', product.category, product.packagingClass].some((value) => {
-      const normalizedValue = normalizeTextForSearch(value)
-      return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
-    }),
+    [product.name, product.barcode ?? '', product.brand ?? '', product.category, product.packagingClass].some(
+      (value) => {
+        const normalizedValue = normalizeTextForSearch(value)
+        return normalizedValue.includes(normalizedSearch) || normalizedValue.startsWith(normalizedSearch)
+      },
+    ),
   )
 }
 
@@ -153,212 +126,116 @@ function confirmProductDeletion(productName: string | undefined) {
   }
 
   return globalThis.window.confirm(
-    `Excluir "${productName ?? 'este produto'}" em definitivo?\n\nEssa ação remove o item do portfólio ativo e preserva apenas o histórico de vendas já consolidado.`,
+    `Excluir "${productName ?? 'este produto'}" em definitivo?\n\nEssa acao remove o item do portfolio ativo e preserva apenas o historico de vendas consolidado.`,
   )
 }
 
-function PortfolioSummaryStrip({
-  avgMargin,
-  displayCurrency,
-  lowStockItems,
-  productsTotals,
-}: Readonly<{
-  avgMargin: string
-  displayCurrency: string
-  lowStockItems: number | null
-  productsTotals: ProductsResponse['totals'] | undefined
-}>) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <SummaryPill
-        icon={Package}
-        helper={productsTotals ? `${productsTotals.inactiveProducts} arquivado(s)` : undefined}
-        label="SKUs ativos"
-        value={productsTotals ? String(productsTotals.activeProducts) : '—'}
-      />
-      <SummaryPill
-        icon={Boxes}
-        helper={productsTotals ? `${productsTotals.stockBaseUnits} unidades base` : undefined}
-        label="Capital em estoque"
-        value={productsTotals ? formatCurrency(productsTotals.inventoryCostValue, displayCurrency as never) : '—'}
-      />
-      <SummaryPill
-        helper={productsTotals ? `${formatCurrency(productsTotals.potentialProfit, displayCurrency as never)} em lucro potencial` : undefined}
-        icon={TrendingUp}
-        label="Venda potencial"
-        value={productsTotals ? formatCurrency(productsTotals.inventorySalesValue, displayCurrency as never) : '—'}
-      />
-      <SummaryPill helper={`Margem média ${avgMargin}`} icon={Tags} label="Itens em alerta" value={String(lowStockItems ?? '—')} />
-    </div>
-  )
+function calcAvgMargin(products: ProductRecord[]): string {
+  const active = products.filter((product) => product.active && product.unitPrice > 0)
+  if (active.length === 0) {
+    return '0%'
+  }
+
+  const avg =
+    active.reduce((sum, product) => sum + ((product.unitPrice - product.unitCost) / product.unitPrice) * 100, 0) /
+    active.length
+
+  return `${avg.toFixed(0)}%`
 }
 
-function PortfolioCategoryPanel({
-  categoryBreakdown,
-  displayCurrency,
-  maxCategoryProfit,
-}: Readonly<{
-  categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
-  displayCurrency: string
-  maxCategoryProfit: number
-}>) {
-  return (
-    <div className="imperial-card p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-[12px] border border-[rgba(155,132,96,0.25)] bg-[rgba(155,132,96,0.08)]">
-          <Tags className="size-4 text-[var(--accent)]" />
-        </span>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Categorias</p>
-          <h2 className="text-base font-semibold leading-snug text-white">Fluxo por categoria</h2>
-        </div>
-      </div>
+function buildSaleInitialValues(
+  product: ProductRecord | null,
+  currency: string,
+  mode: SaleMode,
+): Partial<OrderFormInputValues> {
+  const resolvedCurrency: OrderFormInputValues['currency'] =
+    product?.currency === 'USD' || product?.currency === 'EUR' || product?.currency === 'BRL'
+      ? product.currency
+      : currency === 'USD' || currency === 'EUR'
+        ? currency
+        : 'BRL'
 
-      <div className="space-y-2.5">
-        {categoryBreakdown.length ? (
-          categoryBreakdown.map((item) => (
-            <CategoryCard
-              key={item.category}
-              category={item.category}
-              products={item.products}
-              inventoryCostValue={item.inventoryCostValue}
-              potentialProfit={item.potentialProfit}
-              inventorySalesValue={item.inventorySalesValue}
-              displayCurrency={displayCurrency}
-              maxProfit={maxCategoryProfit}
-            />
-          ))
-        ) : (
-          <div className="rounded-[16px] border border-dashed border-white/8 px-5 py-8 text-center">
-            <Tags className="mx-auto mb-3 size-7 text-[var(--text-soft)]/50" />
-            <p className="text-sm text-[var(--text-soft)]">Cadastre produtos para destravar a leitura por categoria.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  return {
+    items: product
+      ? [
+          {
+            productId: product.id,
+            quantity: 1,
+            unitPrice: undefined,
+          },
+        ]
+      : [],
+    buyerType: 'PERSON',
+    buyerCountry: 'Brasil',
+    buyerDistrict: '',
+    buyerCity: '',
+    buyerState: '',
+    currency: resolvedCurrency,
+    channel: saleModeMeta[mode].channel,
+    notes: mode === 'delivery' ? 'Entrega com rastreio por localização.' : '',
+  }
 }
-
-function PortfolioProductList({
-  busy,
-  filteredProducts,
-  mutationError,
-  onArchive,
-  onDelete,
-  onEdit,
-  onRestore,
-  products,
-  productsError,
-  searchQuery,
-  setSearchQuery,
-}: Readonly<{
-  busy: boolean
-  filteredProducts: ProductRecord[]
-  mutationError: ProductMutationError
-  onArchive: (id: string) => void
-  onDelete: (id: string) => void
-  onEdit: (product: ProductRecord | null) => void
-  onRestore: (id: string) => void
-  products: ProductRecord[]
-  productsError: string | null
-  searchQuery: string
-  setSearchQuery: (value: string) => void
-}>) {
-  return (
-    <section className="imperial-card p-6 md:p-8">
-      <div className="flex flex-col gap-4 border-b border-white/6 pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Portfólio</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Produtos cadastrados</h2>
-          <p className="mt-1.5 text-sm text-[var(--text-soft)]">
-            {filteredProducts.length === products.length
-              ? `${products.length} item${products.length !== 1 ? 'ns' : ''} · busque por nome, marca ou categoria`
-              : `${filteredProducts.length} de ${products.length} encontrado${filteredProducts.length !== 1 ? 's' : ''} para "${searchQuery}"`}
-          </p>
-        </div>
-        <div className="sm:w-72">
-          <ProductSearchField onChange={setSearchQuery} onClear={() => setSearchQuery('')} value={searchQuery} />
-        </div>
-      </div>
-
-      {productsError ? (
-        <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
-          {productsError}
-        </p>
-      ) : null}
-      {mutationError ? (
-        <p className="mt-5 rounded-[12px] border border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.06)] px-4 py-3 text-sm text-[#f87171]">
-          {mutationError.message}
-        </p>
-      ) : null}
-
-      <div className="mt-6 grid gap-3 xl:grid-cols-2">
-        {filteredProducts.length ? (
-          filteredProducts.map((product) => (
-            <ProductCard
-              busy={busy}
-              key={product.id}
-              onArchive={onArchive}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onRestore={onRestore}
-              product={product}
-            />
-          ))
-        ) : (
-          <div className="col-span-2 rounded-[20px] border border-dashed border-white/8 px-6 py-14 text-center">
-            <Search className="mx-auto mb-3 size-9 text-[var(--text-soft)]/50" />
-            <p className="text-base font-semibold text-white">
-              {products.length ? 'Nenhum produto bate com a sua busca.' : 'Nenhum produto cadastrado ainda.'}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-              {products.length
-                ? 'Tente outro nome, marca ou inicial para encontrar o item desejado.'
-                : 'Use o formulário ao lado para criar os primeiros itens do portfólio.'}
-            </p>
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-
-// ── main ──────────────────────────────────────────────────────────────────────
 
 export function PortfolioEnvironment() {
-  const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null)
+  const [surface, setSurface] = useState<PortfolioSurfaceState>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [bulkRestockFeedback, setBulkRestockFeedback] = useState<string | null>(null)
 
-  const { financeQuery, productsQuery } = useDashboardQueries({ section: 'portfolio' })
+  const { financeQuery, productsQuery, employeesQuery, sessionQuery } = useDashboardQueries({ section: 'portfolio' })
   const {
     createProductMutation: _createProductMutation,
     updateProductMutation: _updateProductMutation,
     archiveProductMutation: _archiveProductMutation,
+    bulkRestockProductsMutation: _bulkRestockProductsMutation,
     restoreProductMutation,
     deleteProductMutation: _deleteProductMutation,
+    createOrderMutation,
   } = useDashboardMutations()
 
+  const currentUser = sessionQuery.data?.user
   const finance = financeQuery.data
   const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items])
+  const employees = useMemo(() => employeesQuery.data?.items ?? [], [employeesQuery.data?.items])
   const productsTotals = productsQuery.data?.totals
   const productsError = productsQuery.error instanceof ApiError ? productsQuery.error.message : null
   const productMutationError = resolveProductMutationError([
     _createProductMutation.error,
     _updateProductMutation.error,
     _archiveProductMutation.error,
+    _bulkRestockProductsMutation.error,
     restoreProductMutation.error,
     _deleteProductMutation.error,
   ])
+  const saleMutationError = createOrderMutation.error instanceof ApiError ? createOrderMutation.error.message : null
+  const activeProductModal = surface?.kind === 'product' ? surface.product : null
+  const activeSaleSurface = surface?.kind === 'sale' ? surface : null
 
   const archiveProductMutation = {
     isPending: _archiveProductMutation.isPending,
-    mutate: (id: string) => _archiveProductMutation.mutate(id, { onSuccess: () => setEditingProduct(null) }),
+    mutate: (id: string) => _archiveProductMutation.mutate(id, { onSuccess: () => setSurface(null) }),
+  }
+
+  const bulkRestockProductsMutation = {
+    isPending: _bulkRestockProductsMutation.isPending,
+    mutate: () =>
+      _bulkRestockProductsMutation.mutate(
+        { mode: 'low_stock', targetStock: 24 },
+        {
+          onSuccess: (payload) => {
+            setBulkRestockFeedback(
+              payload.summary.updatedCount > 0
+                ? `${payload.summary.updatedCount} produto(s) reabastecido(s) para no mínimo ${payload.summary.targetStock} und base.`
+                : 'Nenhum produto precisava de reabastecimento nesta passada.',
+            )
+          },
+        },
+      ),
   }
 
   const updateProductMutation = {
     isPending: _updateProductMutation.isPending,
     mutate: (payload: Parameters<typeof _updateProductMutation.mutate>[0]) =>
-      _updateProductMutation.mutate(payload, { onSuccess: () => setEditingProduct(null) }),
+      _updateProductMutation.mutate(payload, { onSuccess: () => setSurface(null) }),
   }
 
   const deleteProductMutation = {
@@ -366,21 +243,21 @@ export function PortfolioEnvironment() {
     mutate: (id: string) =>
       _deleteProductMutation.mutate(id, {
         onSuccess: () => {
-          if (editingProduct?.id === id) {
-            setEditingProduct(null)
+          if (activeProductModal?.id === id) {
+            setSurface(null)
           }
         },
       }),
   }
 
   const handleProductSubmit = (values: ProductFormValues) => {
-    const payload = buildProductPayload(values)
-    if (editingProduct) {
-      updateProductMutation.mutate({ productId: editingProduct.id, values: payload })
+    const payload = buildProductPayload(values, activeProductModal)
+    if (activeProductModal) {
+      updateProductMutation.mutate({ productId: activeProductModal.id, values: payload })
       return
     }
 
-    _createProductMutation.mutate(payload)
+    _createProductMutation.mutate(payload, { onSuccess: () => setSurface(null) })
   }
 
   const productBusy =
@@ -392,65 +269,1015 @@ export function PortfolioEnvironment() {
 
   const filteredProducts = filterProducts(products, searchQuery)
   const avgMargin = calcAvgMargin(products)
-  const maxCategoryProfit = Math.max(...(finance?.categoryBreakdown.map((category) => category.potentialProfit) ?? [0]), 0)
+  const maxCategoryProfit = Math.max(
+    ...(finance?.categoryBreakdown.map((category) => category.potentialProfit) ?? [0]),
+    0,
+  )
+  const displayCurrency = String(finance?.displayCurrency ?? products[0]?.displayCurrency ?? 'BRL')
+  const saleInitialValues = useMemo(
+    () =>
+      activeSaleSurface
+        ? buildSaleInitialValues(activeSaleSurface.product, displayCurrency, activeSaleSurface.mode)
+        : undefined,
+    [activeSaleSurface, displayCurrency],
+  )
+
+  function closeSurface() {
+    setSurface(null)
+  }
+
+  function openNewProductSurface() {
+    setSurface({ kind: 'product', product: null })
+  }
+
+  function openSaleSurface(product: ProductRecord | null = null, mode: SaleMode = 'delivery') {
+    setSurface({ kind: 'sale', product, mode })
+  }
+
   const handleDeleteProduct = (productId: string) => {
     const target = products.find((product) => product.id === productId)
     if (confirmProductDeletion(target?.name)) {
       deleteProductMutation.mutate(productId)
     }
   }
-  const displayCurrency = String(finance?.displayCurrency ?? 'BRL')
+
+  const handleEditProduct = (product: ProductRecord | null) => {
+    setSurface({ kind: 'product', product })
+  }
 
   return (
-    <section className="space-y-6">
-      <DashboardSectionHeading
-        description="O portfólio alimenta estoque, potencial de lucro e o comportamento financeiro do painel."
+    <section className="space-y-5">
+      <LabPageHeader
+        description="Estoque, margem e giro do catálogo."
         eyebrow="Estoque e margem"
-        icon={Boxes}
-        title="Portfólio de produtos"
-      />
+        title="Portfolio de produtos"
+      >
+        <PortfolioHeaderBoard
+          activeProducts={productsTotals?.activeProducts ?? 0}
+          displayCurrency={displayCurrency}
+          inventoryCostValue={productsTotals?.inventoryCostValue ?? 0}
+          inventorySalesValue={productsTotals?.inventorySalesValue ?? 0}
+          lowStockItems={finance?.totals.lowStockItems ?? 0}
+        />
+      </LabPageHeader>
 
-      {/* summary strip */}
-      <PortfolioSummaryStrip
-        avgMargin={avgMargin}
-        displayCurrency={displayCurrency}
-        lowStockItems={finance?.totals.lowStockItems ?? null}
-        productsTotals={productsTotals}
-      />
-
-      {/* form + import + category */}
-      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
-        <div className="space-y-4">
-          <ProductForm
-            availableProducts={products}
-            loading={_createProductMutation.isPending || updateProductMutation.isPending}
-            onCancelEdit={() => setEditingProduct(null)}
-            onSubmit={handleProductSubmit}
-            product={editingProduct}
+      <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
+        <div className="space-y-5">
+          <PortfolioActionPanel
+            activeProducts={productsTotals?.activeProducts ?? 0}
+            onOpenProduct={openNewProductSurface}
+            onOpenSale={() => openSaleSurface(null, 'delivery')}
           />
+          <PortfolioOperationalPanel avgMargin={avgMargin} products={products} productsTotals={productsTotals} />
         </div>
-
-        {/* categories */}
-        <PortfolioCategoryPanel
+        <PortfolioRadarPanel
+          avgMargin={avgMargin}
           categoryBreakdown={finance?.categoryBreakdown ?? []}
           displayCurrency={displayCurrency}
+          lowStockItems={finance?.totals.lowStockItems ?? 0}
           maxCategoryProfit={maxCategoryProfit}
+          products={products}
+          productsTotals={productsTotals}
         />
       </div>
 
-      <PortfolioProductList
+      <PortfolioProductsPanel
         busy={productBusy}
+        bulkRestockFeedback={bulkRestockFeedback}
+        bulkRestockPending={bulkRestockProductsMutation.isPending}
+        currency={displayCurrency}
         filteredProducts={filteredProducts}
         mutationError={productMutationError}
-        onArchive={archiveProductMutation.mutate}
-        onDelete={handleDeleteProduct}
-        onEdit={setEditingProduct}
-        onRestore={restoreProductMutation.mutate}
         products={products}
         productsError={productsError}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onArchive={archiveProductMutation.mutate}
+        onBulkRestock={bulkRestockProductsMutation.mutate}
+        onCreate={openNewProductSurface}
+        onDelete={handleDeleteProduct}
+        onEdit={handleEditProduct}
+        onRestore={restoreProductMutation.mutate}
+        onSell={(product) => openSaleSurface(product, 'delivery')}
       />
+
+      {surface?.kind === 'product' ? (
+        <LabWorkbench
+          bodyClassName="portfolio-workbench-open"
+          description="Campos do produto, estoque e margem."
+          title={activeProductModal ? 'Editar produto' : 'Cadastrar produto'}
+          toolbar={<PortfolioProductToolbar product={activeProductModal} products={products} />}
+          onClose={closeSurface}
+        >
+          {productMutationError ? <AlertMessage message={productMutationError.message} tone="danger" /> : null}
+          <PortfolioFormShell>
+            <ProductForm
+              appearance="embedded"
+              availableProducts={products}
+              loading={_createProductMutation.isPending || updateProductMutation.isPending}
+              product={activeProductModal}
+              onCancelEdit={closeSurface}
+              onSubmit={handleProductSubmit}
+            />
+          </PortfolioFormShell>
+        </LabWorkbench>
+      ) : null}
+
+      {activeSaleSurface ? (
+        <LabWorkbench
+          bodyClassName="portfolio-workbench-open"
+          description="Produto, canal, localização e pagamento."
+          title={activeSaleSurface.product ? `Vender ${activeSaleSurface.product.name}` : 'Vender produto'}
+          toolbar={
+            <PortfolioSaleToolbar
+              currentMode={activeSaleSurface.mode}
+              product={activeSaleSurface.product}
+              onModeChange={(mode) =>
+                setSurface((current) => (current?.kind === 'sale' ? { ...current, mode } : current))
+              }
+            />
+          }
+          onClose={closeSurface}
+        >
+          <PortfolioSaleSurface
+            currentMode={activeSaleSurface.mode}
+            employees={employees}
+            errorMessage={saleMutationError}
+            loading={createOrderMutation.isPending}
+            products={products.filter((product) => product.active)}
+            saleInitialValues={saleInitialValues}
+            userRole={currentUser?.role ?? 'OWNER'}
+            onSubmit={({ values }) =>
+              createOrderMutation.mutate(
+                { values },
+                {
+                  onSuccess: () => setSurface(null),
+                },
+              )
+            }
+          />
+        </LabWorkbench>
+      ) : null}
     </section>
   )
+}
+
+function PortfolioHeaderBoard({
+  activeProducts,
+  displayCurrency,
+  inventoryCostValue,
+  inventorySalesValue,
+  lowStockItems,
+}: Readonly<{
+  activeProducts: number
+  displayCurrency: string
+  inventoryCostValue: number
+  inventorySalesValue: number
+  lowStockItems: number
+}>) {
+  return (
+    <LabMetricStrip>
+      <LabMetricStripItem description="itens ativos no catálogo" label="SKUs ativos" value={String(activeProducts)} />
+      <LabMetricStripItem
+        description="capital parado no estoque"
+        label="capital em estoque"
+        value={formatCurrency(inventoryCostValue, displayCurrency as never)}
+      />
+      <LabMetricStripItem
+        description="valor máximo de venda do mix"
+        label="venda potencial"
+        value={formatCurrency(inventorySalesValue, displayCurrency as never)}
+      />
+      <LabMetricStripItem
+        description={lowStockItems > 0 ? 'itens pedindo reposição' : 'sem pressão crítica no estoque'}
+        label="itens em alerta"
+        value={String(lowStockItems)}
+      />
+    </LabMetricStrip>
+  )
+}
+
+function PortfolioOperationalPanel({
+  avgMargin,
+  products,
+  productsTotals,
+}: Readonly<{
+  avgMargin: string
+  products: ProductRecord[]
+  productsTotals: ProductsResponse['totals'] | undefined
+}>) {
+  const categoriesCount = productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
+  const comboCount = products.filter((product) => product.isCombo).length
+  const kitchenCount = products.filter((product) => product.requiresKitchen).length
+  const inactiveCount = productsTotals?.inactiveProducts ?? 0
+
+  return (
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{categoriesCount} famílias</LabStatusPill>}
+      padding="md"
+      title="Leitura operacional"
+    >
+      <div className="space-y-0">
+        <LabSignalRow label="arquivados" note="itens fora do mix ativo" tone="neutral" value={String(inactiveCount)} />
+        <LabSignalRow label="combos" note="ofertas compostas no catálogo" tone="warning" value={String(comboCount)} />
+        <LabSignalRow label="cozinha" note="produtos que geram fila no KDS" tone="info" value={String(kitchenCount)} />
+        <LabSignalRow label="margem média" note="qualidade média de precificação" tone="success" value={avgMargin} />
+      </div>
+    </LabPanel>
+  )
+}
+
+function PortfolioRadarPanel({
+  avgMargin,
+  categoryBreakdown,
+  displayCurrency,
+  lowStockItems,
+  maxCategoryProfit,
+  products,
+  productsTotals,
+}: Readonly<{
+  avgMargin: string
+  categoryBreakdown: FinanceSummaryResponse['categoryBreakdown']
+  displayCurrency: string
+  lowStockItems: number
+  maxCategoryProfit: number
+  products: ProductRecord[]
+  productsTotals: ProductsResponse['totals'] | undefined
+}>) {
+  const categoriesCount = productsTotals?.categories.length ?? new Set(products.map((product) => product.category)).size
+  const comboCount = products.filter((product) => product.isCombo).length
+  const kitchenCount = products.filter((product) => product.requiresKitchen).length
+  const topCategories = categoryBreakdown.slice(0, 4)
+  const categoryLeader = topCategories[0]
+
+  if (topCategories.length === 0) {
+    return (
+      <LabPanel
+        action={<LabStatusPill tone="neutral">{categoriesCount} categorias</LabStatusPill>}
+        padding="md"
+        title="Radar do catálogo"
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <LabMiniStat label="categorias ativas" value={String(categoriesCount)} />
+          <LabMiniStat label="combos" value={String(comboCount)} />
+          <LabMiniStat label="cozinha" value={String(kitchenCount)} />
+          <LabMiniStat label="margem média" value={avgMargin} />
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <PortfolioRadarFact label="família líder" tone="info" value="sem leitura" />
+          <PortfolioRadarFact label="lucro líder" tone="success" value={formatCurrency(0, displayCurrency as never)} />
+          <PortfolioRadarFact
+            label="capital líder"
+            tone="neutral"
+            value={formatCurrency(0, displayCurrency as never)}
+          />
+          <PortfolioRadarFact
+            label="estoque baixo"
+            tone={lowStockItems > 0 ? 'warning' : 'success'}
+            value={String(lowStockItems)}
+          />
+        </div>
+      </LabPanel>
+    )
+  }
+
+  return (
+    <LabPanel
+      action={<LabStatusPill tone="neutral">{categoriesCount} categorias</LabStatusPill>}
+      padding="md"
+      title="Radar do catálogo"
+    >
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_280px]">
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            <LabMiniStat label="categorias ativas" value={String(categoriesCount)} />
+            <LabMiniStat label="combos" value={String(comboCount)} />
+            <LabMiniStat label="cozinha" value={String(kitchenCount)} />
+            <LabMiniStat label="margem média" value={avgMargin} />
+          </div>
+
+          {topCategories.length > 0 ? (
+            <div className="space-y-1">
+              {topCategories.map((category) => {
+                const pct = maxCategoryProfit > 0 ? (category.potentialProfit / maxCategoryProfit) * 100 : 0
+                return (
+                  <article
+                    className="border-b border-dashed border-[var(--lab-border)] px-1 py-4 last:border-b-0"
+                    key={category.category}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[var(--lab-fg)]">{category.category}</p>
+                        <p className="mt-1 text-xs text-[var(--lab-fg-soft)]">
+                          {category.products} SKU(s) ·{' '}
+                          {formatCurrency(category.inventoryCostValue, displayCurrency as never)} de capital
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-[var(--lab-fg)]">
+                          {formatCurrency(category.potentialProfit, displayCurrency as never)}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--lab-fg-muted)]">lucro potencial</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
+                      <div
+                        className="h-full rounded-full bg-[var(--lab-blue)]"
+                        style={{ width: `${Math.max(pct, 8)}%` }}
+                      />
+                    </div>
+
+                    <p className="mt-2 text-xs text-[var(--lab-fg-soft)]">
+                      {formatCurrency(category.inventorySalesValue, displayCurrency as never)} em venda potencial
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <LabMiniStat label="ranking" value="0" />
+              <LabMiniStat label="maior família" value="0 SKU" />
+              <LabMiniStat label="lucro por categoria" value={formatCurrency(0, displayCurrency as never)} />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 border-t border-dashed border-[var(--lab-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
+          <LabSignalRow
+            label="família líder"
+            note="categoria com maior lucro potencial"
+            tone="info"
+            value={categoryLeader?.category ?? 'sem leitura'}
+          />
+          <LabSignalRow
+            label="lucro líder"
+            note="potencial máximo da família dominante"
+            tone="success"
+            value={formatCurrency(categoryLeader?.potentialProfit ?? 0, displayCurrency as never)}
+          />
+          <LabSignalRow
+            label="capital líder"
+            note="estoque comprometido na família dominante"
+            tone="neutral"
+            value={formatCurrency(categoryLeader?.inventoryCostValue ?? 0, displayCurrency as never)}
+          />
+          <LabSignalRow
+            label="estoque baixo"
+            note="famílias pressionadas por reposição"
+            tone={lowStockItems > 0 ? 'warning' : 'success'}
+            value={String(lowStockItems)}
+          />
+        </div>
+      </div>
+    </LabPanel>
+  )
+}
+
+function PortfolioRadarFact({
+  label,
+  tone,
+  value,
+}: Readonly<{
+  label: string
+  tone: LabStatusTone
+  value: string
+}>) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-[16px] border border-dashed border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
+      <span className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lab-fg-soft)]">
+        {label}
+      </span>
+      <LabStatusPill tone={tone}>{value}</LabStatusPill>
+    </div>
+  )
+}
+
+function PortfolioActionPanel({
+  activeProducts,
+  onOpenProduct,
+  onOpenSale,
+}: Readonly<{
+  activeProducts: number
+  onOpenProduct: () => void
+  onOpenSale: () => void
+}>) {
+  return (
+    <LabPanel
+      action={<LabStatusPill tone="info">{activeProducts} ativos</LabStatusPill>}
+      padding="md"
+      title="Fluxos imediatos"
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ActionLaunchCard
+          icon={Plus}
+          label="Cadastrar produto"
+          statLabel="fluxo"
+          statValue="novo item"
+          onClick={onOpenProduct}
+        />
+        <ActionLaunchCard
+          icon={ShoppingCart}
+          label="Vender produto"
+          statLabel="canal"
+          statValue="delivery"
+          onClick={onOpenSale}
+        />
+      </div>
+    </LabPanel>
+  )
+}
+
+function ActionLaunchCard({
+  icon: Icon,
+  label,
+  statLabel,
+  statValue,
+  onClick,
+}: Readonly<{
+  icon: typeof Plus
+  label: string
+  statLabel: string
+  statValue: string
+  onClick: () => void
+}>) {
+  return (
+    <button
+      className="group flex min-h-[120px] w-full flex-col justify-between rounded-[18px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-4 text-left transition hover:border-[var(--lab-blue-border)] hover:bg-[var(--lab-surface-hover)]"
+      type="button"
+      onClick={onClick}
+    >
+      <span className="flex items-start gap-3">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)] transition group-hover:border-[var(--lab-blue)]">
+          <Icon className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-semibold text-[var(--lab-fg)]">{label}</span>
+          <span className="mt-1 block text-sm leading-5 text-[var(--lab-fg-soft)]">
+            {label === 'Cadastrar produto'
+              ? 'Abrir cadastro completo de item, estoque, margem e cozinha.'
+              : 'Abrir venda rápida com localização e contexto de delivery.'}
+          </span>
+        </span>
+      </span>
+
+      <span className="flex items-end justify-between gap-3 border-t border-dashed border-[var(--lab-border)] pt-3">
+        <span>
+          <span className="block text-[11px] uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">{statLabel}</span>
+          <span className="mt-1 block text-sm font-semibold text-[var(--lab-fg)]">{statValue}</span>
+        </span>
+        <span className="inline-flex h-9 items-center rounded-xl border border-[var(--lab-blue)] bg-[var(--lab-blue)] px-3 text-sm font-medium text-white transition group-hover:bg-[color:color-mix(in_srgb,var(--lab-blue)_82%,white_18%)]">
+          Abrir
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function PortfolioFormShell({
+  children,
+}: Readonly<{
+  children: ReactNode
+}>) {
+  return <div className="scroll-mt-24">{children}</div>
+}
+
+function PortfolioSaleSurface({
+  currentMode,
+  employees,
+  errorMessage,
+  loading,
+  onSubmit,
+  products,
+  saleInitialValues,
+  userRole,
+}: Readonly<{
+  currentMode: SaleMode
+  employees: Parameters<typeof OrderForm>[0]['employees']
+  errorMessage: string | null
+  loading: boolean
+  onSubmit: Parameters<typeof OrderForm>[0]['onSubmit']
+  products: ProductRecord[]
+  saleInitialValues?: Partial<OrderFormInputValues>
+  userRole: 'OWNER' | 'STAFF'
+}>) {
+  return (
+    <div className="space-y-4">
+      {errorMessage ? <AlertMessage message={errorMessage} tone="danger" /> : null}
+
+      <PortfolioFormShell>
+        <OrderForm
+          appearance="embedded"
+          channelPreset={saleModeMeta[currentMode].channel}
+          employees={employees}
+          initialValues={saleInitialValues}
+          loading={loading}
+          products={products}
+          submitLabel="Registrar venda"
+          userRole={userRole}
+          onSubmit={onSubmit}
+        />
+      </PortfolioFormShell>
+    </div>
+  )
+}
+
+function PortfolioSaleToolbar({
+  currentMode,
+  onModeChange,
+  product,
+}: Readonly<{
+  currentMode: SaleMode
+  onModeChange: (mode: SaleMode) => void
+  product: ProductRecord | null
+}>) {
+  const mode = saleModeMeta[currentMode]
+
+  return (
+    <>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lab-fg-muted)]">
+        Modalidade
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(saleModeMeta) as SaleMode[]).map((entry) => {
+          const entryMeta = saleModeMeta[entry]
+          const Icon = entryMeta.icon
+          const active = currentMode === entry
+
+          return (
+            <button
+              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition ${
+                active
+                  ? 'border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)]'
+                  : 'border-[var(--lab-border)] bg-[var(--lab-surface)] text-[var(--lab-fg-soft)] hover:border-[var(--lab-border-strong)] hover:text-[var(--lab-fg)]'
+              }`}
+              key={entry}
+              type="button"
+              onClick={() => onModeChange(entry)}
+            >
+              <Icon className="size-4" />
+              {entryMeta.label}
+            </button>
+          )
+        })}
+      </div>
+      <LabFactPill label="canal" value={mode.channel} />
+      <LabFactPill label="produto" value={product ? `${product.name} · ${product.category}` : 'seleção livre'} />
+      <LabFactPill
+        label="preço base"
+        value={product ? formatCurrency(product.unitPrice, product.displayCurrency) : 'valor do cadastro'}
+      />
+    </>
+  )
+}
+
+function PortfolioProductToolbar({
+  product,
+  products,
+}: Readonly<{
+  product: ProductRecord | null
+  products: ProductRecord[]
+}>) {
+  return (
+    <>
+      <LabFactPill label="modo" value={product ? 'edição' : 'novo item'} />
+      <LabFactPill label="skus ativos" value={String(products.filter((item) => item.active).length)} />
+      <LabFactPill label="cozinha" value={product?.requiresKitchen ? 'envia para KDS' : 'definido no fluxo'} />
+      <LabFactPill label="combos" value={product?.isCombo ? 'combo habilitado' : 'produto simples'} />
+    </>
+  )
+}
+
+function PortfolioProductsPanel({
+  busy,
+  bulkRestockFeedback,
+  bulkRestockPending,
+  currency,
+  filteredProducts,
+  mutationError,
+  onBulkRestock,
+  onCreate,
+  onArchive,
+  onDelete,
+  onEdit,
+  onRestore,
+  onSell,
+  products,
+  productsError,
+  searchQuery,
+  setSearchQuery,
+}: Readonly<{
+  busy: boolean
+  bulkRestockFeedback: string | null
+  bulkRestockPending: boolean
+  currency: string
+  filteredProducts: ProductRecord[]
+  mutationError: ProductMutationError
+  onBulkRestock: () => void
+  onCreate: () => void
+  onArchive: (id: string) => void
+  onDelete: (id: string) => void
+  onEdit: (product: ProductRecord | null) => void
+  onRestore: (id: string) => void
+  onSell: (product: ProductRecord) => void
+  products: ProductRecord[]
+  productsError: string | null
+  searchQuery: string
+  setSearchQuery: (value: string) => void
+}>) {
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'active' | 'low-stock' | 'combo' | 'kitchen'>('all')
+
+  const tableRows = useMemo(() => {
+    switch (catalogFilter) {
+      case 'active':
+        return filteredProducts.filter((product) => product.active)
+      case 'low-stock':
+        return filteredProducts.filter((product) => product.isLowStock)
+      case 'combo':
+        return filteredProducts.filter((product) => product.isCombo)
+      case 'kitchen':
+        return filteredProducts.filter((product) => product.requiresKitchen)
+      case 'all':
+      default:
+        return filteredProducts
+    }
+  }, [catalogFilter, filteredProducts])
+
+  const filterOptions = [
+    { key: 'all' as const, label: 'Todos', count: filteredProducts.length },
+    { key: 'active' as const, label: 'Ativos', count: filteredProducts.filter((product) => product.active).length },
+    {
+      key: 'low-stock' as const,
+      label: 'Estoque baixo',
+      count: filteredProducts.filter((product) => product.isLowStock).length,
+    },
+    { key: 'combo' as const, label: 'Combos', count: filteredProducts.filter((product) => product.isCombo).length },
+    {
+      key: 'kitchen' as const,
+      label: 'Cozinha',
+      count: filteredProducts.filter((product) => product.requiresKitchen).length,
+    },
+  ]
+
+  const emptyTitle = products.length ? 'Nenhum produto bate com a busca' : 'Nenhum produto cadastrado'
+  const emptyDescription = products.length
+    ? 'Tente outro termo para localizar nome, marca, categoria ou classe.'
+    : 'Abra o cadastro do portfólio para criar os primeiros itens reais.'
+  const { decorateProduct } = useCatalogVisualSuggestions(tableRows.slice(0, 12))
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-3 border-b border-[var(--lab-border)] pb-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-[var(--lab-fg)]">Produtos cadastrados</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--lab-fg-soft)]">
+            Catálogo real com estoque, margem, EAN e ações operacionais sem encapsular a tabela em outro card.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 xl:items-end">
+          <PortfolioSearchBox value={searchQuery} onChange={setSearchQuery} />
+          <button
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 text-sm font-medium text-[var(--lab-fg)] transition hover:bg-[var(--lab-surface-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={bulkRestockPending}
+            type="button"
+            onClick={onBulkRestock}
+          >
+            {bulkRestockPending ? 'Reabastecendo estoque...' : 'Reabastecer em massa'}
+          </button>
+        </div>
+      </div>
+
+      {productsError ? <AlertMessage message={productsError} tone="danger" /> : null}
+      {mutationError ? <AlertMessage message={mutationError.message} tone="danger" /> : null}
+      {bulkRestockFeedback ? <AlertMessage message={bulkRestockFeedback} tone="success" /> : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {filterOptions.map((option) => (
+          <LabFilterChip
+            active={catalogFilter === option.key}
+            count={option.count}
+            key={option.key}
+            label={option.label}
+            onClick={() => setCatalogFilter(option.key)}
+          />
+        ))}
+      </div>
+
+      <LabTable
+        dense
+        columns={[
+          {
+            id: 'produto',
+            header: 'Produto',
+            cell: (product) => (
+              <div className="flex min-w-0 items-start gap-3">
+                <ProductThumb product={decorateProduct(product)} size="md" />
+                <div className="min-w-0 space-y-2">
+                  <p className="truncate font-medium text-[var(--lab-fg)]">{product.name}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--lab-fg-soft)]">
+                    {product.category} · {product.brand ?? 'sem marca'} · {product.packagingClass}
+                    {product.quantityLabel ? ` · ${product.quantityLabel}` : ''}
+                    {product.barcode ? ` · EAN ${product.barcode}` : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <ProductRowTag tone={product.active ? 'success' : 'neutral'}>
+                      {product.active ? 'ativo' : 'arquivado'}
+                    </ProductRowTag>
+                    {product.requiresKitchen ? <ProductRowTag tone="info">cozinha</ProductRowTag> : null}
+                    {product.isCombo ? <ProductRowTag tone="warning">combo</ProductRowTag> : null}
+                  </div>
+                </div>
+              </div>
+            ),
+          },
+          {
+            id: 'operacao',
+            header: 'Leitura operacional',
+            cell: (product) => (
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--lab-fg-soft)]">
+                  <span>{formatStockBreakdown(product.stock, product.unitsPerPackage, { compact: true })}</span>
+                  <span>·</span>
+                  <span>{product.stockBaseUnits} und base</span>
+                  {product.lowStockThreshold != null ? (
+                    <>
+                      <span>·</span>
+                      <span>alerta em {product.lowStockThreshold}</span>
+                    </>
+                  ) : null}
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--lab-surface-hover)]">
+                  <div
+                    className={
+                      product.isLowStock
+                        ? 'h-full rounded-full bg-[var(--lab-warning)]'
+                        : 'h-full rounded-full bg-[var(--lab-blue)]'
+                    }
+                    style={{
+                      width: `${Math.max(
+                        product.lowStockThreshold && product.lowStockThreshold > 0
+                          ? Math.min((product.stockBaseUnits / (product.lowStockThreshold * 3)) * 100, 100)
+                          : Math.min((product.stockBaseUnits / Math.max(product.stockBaseUnits, 1)) * 100, 100),
+                        10,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <LabStatusPill tone={product.isLowStock ? 'warning' : 'success'}>
+                    {product.isLowStock ? 'estoque baixo' : 'estoque estável'}
+                  </LabStatusPill>
+                </div>
+              </div>
+            ),
+            width: '270px',
+          },
+          {
+            id: 'preco',
+            header: 'Preço e margem',
+            cell: (product) => (
+              <div className="space-y-1.5">
+                <ValueReading label="custo" value={formatCurrency(product.unitCost, product.displayCurrency)} />
+                <ValueReading strong label="venda" value={formatCurrency(product.unitPrice, product.displayCurrency)} />
+                <div className="pt-0.5">
+                  <MarginPill marginPercent={product.marginPercent} />
+                </div>
+              </div>
+            ),
+            align: 'right',
+            width: '180px',
+          },
+          {
+            id: 'potencial',
+            header: 'Potencial',
+            cell: (product) => (
+              <div className="space-y-1.5">
+                <ValueReading
+                  strong
+                  label="venda"
+                  value={formatCurrency(product.inventorySalesValue, product.displayCurrency)}
+                />
+                <ValueReading label="lucro" value={formatCurrency(product.potentialProfit, product.displayCurrency)} />
+              </div>
+            ),
+            align: 'right',
+            width: '170px',
+          },
+          {
+            id: 'acoes',
+            header: 'Ações',
+            cell: (product) => (
+              <div className="flex justify-end gap-2">
+                <ActionButton disabled={busy} icon={PencilLine} label="Editar" onClick={() => onEdit(product)} />
+                {product.active ? (
+                  <>
+                    <ActionButton
+                      disabled={busy}
+                      icon={ShoppingCart}
+                      label="Vender"
+                      tone="info"
+                      onClick={() => onSell(product)}
+                    />
+                    <ActionButton
+                      disabled={busy}
+                      icon={Archive}
+                      label="Arquivar"
+                      onClick={() => onArchive(product.id)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <ActionButton
+                      disabled={busy}
+                      icon={RotateCcw}
+                      label="Reativar"
+                      onClick={() => onRestore(product.id)}
+                    />
+                    <ActionButton
+                      disabled={busy}
+                      icon={Trash2}
+                      label="Excluir"
+                      tone="danger"
+                      onClick={() => onDelete(product.id)}
+                    />
+                  </>
+                )}
+              </div>
+            ),
+            align: 'right',
+            width: '280px',
+          },
+        ]}
+        emptyAction={
+          <button
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-2 text-sm font-medium text-[var(--lab-fg)] transition hover:bg-[var(--lab-surface-hover)]"
+            type="button"
+            onClick={onCreate}
+          >
+            <Plus className="size-4" />
+            Cadastrar produto
+          </button>
+        }
+        emptyDescription={emptyDescription}
+        emptyTitle={emptyTitle}
+        rowKey="id"
+        rows={tableRows}
+      />
+
+      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[var(--lab-fg-muted)]">
+        <span>
+          {tableRows.length} de {products.length} {tableRows.length === 1 ? 'encontrado' : 'encontrados'}
+        </span>
+        <span>{formatCurrency(productsTotalsValue(tableRows, currency), currency as never)} em venda filtrada</span>
+      </div>
+    </section>
+  )
+}
+
+function ProductRowTag({
+  children,
+  tone,
+}: Readonly<{
+  children: ReactNode
+  tone: LabStatusTone
+}>) {
+  return (
+    <LabStatusPill size="sm" tone={tone}>
+      {children}
+    </LabStatusPill>
+  )
+}
+
+function ValueReading({
+  label,
+  strong = false,
+  value,
+}: Readonly<{
+  label: string
+  strong?: boolean
+  value: string
+}>) {
+  return (
+    <div className="flex items-center justify-end gap-2 text-xs">
+      <span className="uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">{label}</span>
+      <span className={strong ? 'font-semibold text-[var(--lab-fg)]' : 'text-[var(--lab-fg-soft)]'}>{value}</span>
+    </div>
+  )
+}
+
+function PortfolioSearchBox({
+  value,
+  onChange,
+}: Readonly<{
+  value: string
+  onChange: (value: string) => void
+}>) {
+  return (
+    <label className="flex w-full items-center gap-3 rounded-2xl border border-[var(--lab-border)] bg-[var(--lab-surface)] px-3 py-2 xl:w-[280px]">
+      <span className="sr-only">Buscar produto</span>
+      <Search className="size-4 text-[var(--lab-fg-muted)]" />
+      <input
+        className="h-8 min-w-0 flex-1 bg-transparent text-sm text-[var(--lab-fg)] outline-none placeholder:text-[var(--lab-fg-muted)]"
+        placeholder="Buscar nome, EAN, marca ou classe"
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      />
+      {value ? (
+        <button
+          className="inline-flex size-8 items-center justify-center rounded-xl border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-fg-soft)] transition hover:bg-[var(--lab-surface-hover)] hover:text-[var(--lab-fg)]"
+          type="button"
+          onClick={() => onChange('')}
+        >
+          <X className="size-4" />
+          <span className="sr-only">Limpar busca</span>
+        </button>
+      ) : null}
+    </label>
+  )
+}
+
+function MarginPill({ marginPercent }: Readonly<{ marginPercent: number }>) {
+  let tone: LabStatusTone = 'danger'
+  if (marginPercent >= 50) {
+    tone = 'success'
+  } else if (marginPercent >= 30) {
+    tone = 'info'
+  } else if (marginPercent >= 15) {
+    tone = 'warning'
+  }
+
+  return <LabStatusPill tone={tone}>{`${marginPercent.toFixed(0)}%`}</LabStatusPill>
+}
+
+function ActionButton({
+  disabled,
+  icon: Icon,
+  label,
+  onClick,
+  tone = 'neutral',
+}: Readonly<{
+  disabled?: boolean
+  icon: typeof PencilLine
+  label: string
+  onClick: () => void
+  tone?: 'neutral' | 'danger' | 'info'
+}>) {
+  const className =
+    tone === 'danger'
+      ? 'border-[var(--lab-danger-soft)] bg-[var(--lab-danger-soft)] text-[var(--lab-danger)]'
+      : tone === 'info'
+        ? 'border-[var(--lab-blue-border)] bg-[var(--lab-blue-soft)] text-[var(--lab-blue)]'
+        : 'border-[var(--lab-border)] bg-[var(--lab-surface-raised)] text-[var(--lab-fg-soft)] hover:bg-[var(--lab-surface-hover)] hover:text-[var(--lab-fg)]'
+
+  return (
+    <button
+      className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      disabled={disabled}
+      type="button"
+      onClick={onClick}
+    >
+      <Icon className="size-3.5" />
+      {label}
+    </button>
+  )
+}
+
+function AlertMessage({
+  message,
+  tone,
+}: Readonly<{
+  message: string
+  tone: LabStatusTone
+}>) {
+  const textClass =
+    tone === 'danger'
+      ? 'text-[var(--lab-danger)]'
+      : tone === 'warning'
+        ? 'text-[var(--lab-warning)]'
+        : tone === 'success'
+          ? 'text-[var(--lab-success)]'
+          : 'text-[var(--lab-fg)]'
+
+  return (
+    <div className="mb-4 rounded-[14px] border border-[var(--lab-border)] bg-[var(--lab-surface-raised)] px-4 py-3">
+      <p className={`text-sm ${textClass}`}>{message}</p>
+    </div>
+  )
+}
+
+function productsTotalsValue(products: ProductRecord[], currency: string) {
+  if (products.length === 0) {
+    return 0
+  }
+
+  return products.reduce((sum, product) => {
+    if (product.displayCurrency !== currency) {
+      return sum + product.inventorySalesValue
+    }
+
+    return sum + product.inventorySalesValue
+  }, 0)
 }

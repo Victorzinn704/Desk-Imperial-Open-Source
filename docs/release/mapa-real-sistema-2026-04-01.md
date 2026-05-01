@@ -151,9 +151,9 @@ Capacidades reais:
 - inferencia de necessidade de cozinha por categoria
 - arquivamento/reativacao
 
-Gap concreto:
+Situacao atual:
 
-- endpoint de importacao CSV esta desativado no controller (HTTP 410), mas parte da logica permanece no service.
+- endpoint de importacao CSV esta ativo no controller, protegido por sessao + CSRF, e reutiliza a logica de importacao no service.
 
 ## 4.7 Employees
 

@@ -34,7 +34,7 @@ No frontend web, mutacoes via `apiFetch` ja incluem CSRF automaticamente quando 
 
 Contrato atual:
 
-- rota: POST /api/market-intelligence/insights
+- rota: POST /api/v1/market-intelligence/insights
 - protecao: SessionGuard + CsrfGuard
 
 Erros frequentes:
@@ -267,13 +267,13 @@ Checklist:
 1. validar `REDIS_URL` no `.env` (default local: `redis://localhost:6379`)
 2. subir stack local de infraestrutura: `npm run db:up`
 3. validar containers `postgres` e `redis` ativos no compose local
-4. reiniciar API e revalidar `GET /api/health`
+4. reiniciar API e revalidar `GET /api/v1/health`
 
 Observacao:
 
 - em testes unitarios, parte desses logs pode aparecer como cenario esperado de resiliencia (fail-open)
 
-## 19. Deploy Web no Railway falha com @tailwindcss/oxide
+## 20. Build do Web falha com `@tailwindcss/oxide`
 
 Sintomas comuns:
 
@@ -282,14 +282,17 @@ Sintomas comuns:
 
 Causa mais comum:
 
-- bug conhecido do npm com dependencias opcionais em alguns cenarios de `npm ci` no build remoto
+- resolucao incompleta de native bindings opcionais em alguns cenarios de `npm ci` ou build remoto
 
-Mitigacao aplicada no projeto:
+Mitigacoes aplicadas no projeto:
 
-- o script `infra/scripts/railway-build.sh` garante a instalacao de `@tailwindcss/oxide-linux-x64-gnu` no Linux antes do `next build`
+- o script `infra/scripts/railway-build.sh` cobre a trilha historica de build Linux remoto
+- o `infra/oracle/docker/web.Dockerfile` detecta a arquitetura e garante o pacote `@tailwindcss/oxide` correto antes do `npm run build`
+- o CI tambem instala bindings nativos via `scripts/install-ci-native-bindings.mjs`
 
 Checklist:
 
-1. confirmar que o deploy esta usando o script `infra/scripts/railway-build.sh`
-2. validar nos logs a linha `Ensuring @tailwindcss/oxide-linux-x64-gnu@... is installed`
-3. se ainda falhar, forcar novo deploy sem cache
+1. confirmar qual trilha de build falhou: CI, builder Oracle ou script remoto historico
+2. validar nos logs a linha de instalacao do pacote `@tailwindcss/oxide` correto para a arquitetura
+3. confirmar que o `node_modules/@tailwindcss/oxide` esta resolvendo sem erro
+4. se ainda falhar, refazer o build sem cache e validar a arquitetura do host (`x64` vs `arm64`)

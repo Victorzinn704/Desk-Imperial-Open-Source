@@ -41,6 +41,10 @@ export class DemoAccessService {
       return null
     }
 
+    if (this.isUnlimitedDemoAccess()) {
+      return null
+    }
+
     const ipAddress = normalizeIpAddress(params.ipAddress)
     if (!ipAddress) {
       throw new BadRequestException('Nao foi possivel validar o IP deste dispositivo para liberar o modo avaliacao.')
@@ -138,7 +142,7 @@ export class DemoAccessService {
   }
 
   buildEvaluationAccess(email: string, sessionExpiresAt: Date): EvaluationAccess | null {
-    if (!this.isDemoAccount(email)) {
+    if (!this.isDemoAccount(email) || this.isUnlimitedDemoAccess()) {
       return null
     }
 
@@ -150,8 +154,21 @@ export class DemoAccessService {
   }
 
   private getDailyLimitMinutes() {
+    return Math.max(this.getConfiguredDailyLimitMinutes(), 1)
+  }
+
+  private isUnlimitedDemoAccess() {
+    return this.getConfiguredDailyLimitMinutes() === 0
+  }
+
+  private getConfiguredDailyLimitMinutes() {
     const configuredLimit = Number(this.configService.get<string>('DEMO_DAILY_LIMIT_MINUTES') ?? 999999)
-    return Math.max(configuredLimit, 1)
+
+    if (!Number.isFinite(configuredLimit)) {
+      return 999999
+    }
+
+    return Math.max(Math.floor(configuredLimit), 0)
   }
 
   private getDemoAccountEmail() {

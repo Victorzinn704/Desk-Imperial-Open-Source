@@ -1,9 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import { Users, ShoppingBag, Clock } from 'lucide-react'
-import type { Mesa, Comanda } from './pdv-types'
-import { calcTotal, formatElapsed } from './pdv-types'
+import { Clock, ShoppingBag, Users } from 'lucide-react'
+import { calcTotal, type Comanda, formatElapsed, type Mesa } from './pdv-types'
 import { formatCurrency } from '@/lib/currency'
 
 const STATUS_CONFIG = {
@@ -30,13 +29,13 @@ const STATUS_CONFIG = {
   },
 }
 
-type PdvMesaCardProps = {
+type PdvMesaCardProps = Readonly<{
   mesa: Mesa
   comanda?: Comanda
   onClickLivre: (mesa: Mesa) => void
   onClickOcupada: (comanda: Comanda) => void
   onDelete: (mesaId: string) => void
-}
+}>
 
 export const PdvMesaCard = memo(function PdvMesaCard({
   mesa,
@@ -69,13 +68,13 @@ export const PdvMesaCard = memo(function PdvMesaCard({
 
       {/* Delete button */}
       <button
-        className="absolute right-3 top-3 z-20 flex size-6 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition hover:text-white group-hover:opacity-100 hover:opacity-100 hover:bg-[rgba(255,255,255,0.06)]"
+        className="absolute right-3 top-3 z-20 flex size-6 items-center justify-center rounded-full text-[var(--text-muted)] opacity-0 transition hover:text-[var(--text-primary)] group-hover:opacity-100 hover:opacity-100 hover:bg-[rgba(255,255,255,0.06)]"
+        title="Remover mesa"
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           onDelete(mesa.id)
         }}
-        title="Remover mesa"
       >
         ×
       </button>
@@ -85,7 +84,7 @@ export const PdvMesaCard = memo(function PdvMesaCard({
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mesa</p>
-            <p className="mt-0.5 text-3xl font-bold text-white leading-none">{mesa.numero}</p>
+            <p className="mt-0.5 text-3xl font-bold text-[var(--text-primary)] leading-none">{mesa.numero}</p>
           </div>
           <span
             className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${cfg.text}`}
@@ -118,7 +117,9 @@ export const PdvMesaCard = memo(function PdvMesaCard({
               </div>
             </div>
             {comanda.clienteNome && (
-              <p className="mt-1.5 truncate text-[11px] font-medium text-white">{comanda.clienteNome}</p>
+              <p className="mt-1.5 truncate text-[11px] font-medium text-[var(--text-primary)]">
+                {comanda.clienteNome}
+              </p>
             )}
             <p className="mt-1 text-sm font-bold text-[#fb923c]">{formatCurrency(calcTotal(comanda), 'BRL')}</p>
           </div>

@@ -10,32 +10,32 @@ import { Button } from '@/components/shared/button'
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function calcMarginPct(unitPrice: number, unitCost: number): number | null {
-  if (unitPrice <= 0) return null
+  if (unitPrice <= 0) {return null}
   return ((unitPrice - unitCost) / unitPrice) * 100
 }
 
 function marginTone(pct: number) {
   if (pct >= 50)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#34f27f]',
       borderClass: 'border-[rgba(52,242,127,0.22)] bg-[rgba(52,242,127,0.07)]',
       accentColor: '#34f27f',
-    }
+    }}
   if (pct >= 30)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
-      textClass: 'text-[#c9a96e]',
-      borderClass: 'border-[rgba(201,169,110,0.28)] bg-[rgba(201,169,110,0.07)]',
-      accentColor: '#c9a96e',
-    }
+      textClass: 'text-[var(--accent)]',
+      borderClass: 'border-accent/25 bg-accent/[0.07]',
+      accentColor: 'var(--accent)',
+    }}
   if (pct >= 15)
-    return {
+    {return {
       label: `${pct.toFixed(0)}%`,
       textClass: 'text-[#fbbf24]',
       borderClass: 'border-[rgba(251,191,36,0.22)] bg-[rgba(251,191,36,0.07)]',
       accentColor: '#fbbf24',
-    }
+    }}
   return {
     label: `${pct.toFixed(0)}%`,
     textClass: 'text-[#f87171]',
@@ -45,9 +45,47 @@ function marginTone(pct: number) {
 }
 
 function stockTone(stock: number) {
-  if (stock === 0) return { dot: '#f87171', label: 'Sem estoque' }
-  if (stock < 10) return { dot: '#fbbf24', label: 'Estoque baixo' }
+  if (stock === 0) {return { dot: '#f87171', label: 'Sem estoque' }}
+  if (stock < 10) {return { dot: '#fbbf24', label: 'Estoque baixo' }}
   return { dot: '#34f27f', label: 'Em estoque' }
+}
+
+function ProductChips({ product, measurementLabel }: { product: ProductRecord; measurementLabel: string }) {
+  const chipClass =
+    'rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-soft)]'
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className={chipClass}>{product.category}</span>
+      {product.brand ? <span className={`${chipClass} uppercase tracking-[0.12em]`}>{product.brand}</span> : null}
+      {product.barcode ? <span className={`${chipClass} font-mono`}>EAN {product.barcode}</span> : null}
+      <span className={chipClass}>{measurementLabel}</span>
+      {product.packagingClass && product.packagingClass !== 'UN' ? (
+        <span className={chipClass}>{product.packagingClass}</span>
+      ) : null}
+    </div>
+  )
+}
+
+function ProductDescriptions({ product }: { product: ProductRecord }) {
+  return (
+    <>
+      {product.description ? (
+        <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-1">{product.description}</p>
+      ) : null}
+      {product.isCombo && product.comboDescription ? (
+        <p className="mt-2 line-clamp-1 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
+      ) : null}
+      {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
+        <p className="mt-1 line-clamp-1 text-[11px] leading-5 text-[var(--text-soft)]">
+          {product.comboItems
+            ?.slice(0, 3)
+            .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
+            .join(' • ')}
+          {(product.comboItems?.length ?? 0) > 3 ? ' • ...' : ''}
+        </p>
+      ) : null}
+    </>
+  )
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -95,11 +133,11 @@ export const ProductCard = memo(function ProductCard({
   const stock = stockTone(product.stock)
 
   // left accent: cor da margem se ativo, cinza se arquivado
-  const accentColor = !product.active ? 'rgba(255,255,255,0.08)' : (margin?.accentColor ?? 'rgba(155,132,96,0.5)')
+  const accentColor = !product.active ? 'var(--border)' : (margin?.accentColor ?? 'var(--accent)')
 
   return (
     <article
-      className="relative overflow-hidden rounded-[22px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-5 transition-colors hover:border-white/10 hover:bg-[rgba(255,255,255,0.035)]"
+      className="relative overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-panel)] transition-colors hover:border-[var(--border-strong)] sm:p-5"
       style={{ boxShadow: product.active ? `inset 3px 0 0 ${accentColor}` : undefined }}
     >
       {/* header row */}
@@ -107,7 +145,7 @@ export const ProductCard = memo(function ProductCard({
         <div className="flex-1 min-w-0">
           {/* name + status */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-base font-semibold text-white truncate">{product.name}</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)] truncate">{product.name}</h3>
             <span
               className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] border ${
                 product.active
@@ -118,7 +156,7 @@ export const ProductCard = memo(function ProductCard({
               {product.active ? 'ativo' : 'arquivado'}
             </span>
             {product.isCombo ? (
-              <span className="rounded-full border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.12)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
+              <span className="rounded-full border border-accent/25 bg-accent/[0.1] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
                 combo
               </span>
             ) : null}
@@ -131,68 +169,40 @@ export const ProductCard = memo(function ProductCard({
             ) : null}
           </div>
 
-          {/* chips: categoria, marca, medida */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-              {product.category}
-            </span>
-            {product.brand ? (
-              <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[var(--text-soft)]">
-                {product.brand}
-              </span>
-            ) : null}
-            <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-              {measurementLabel}
-            </span>
-            {product.packagingClass && product.packagingClass !== 'UN' ? (
-              <span className="rounded-[8px] border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-[var(--text-soft)]">
-                {product.packagingClass}
-              </span>
-            ) : null}
-          </div>
+          <ProductChips measurementLabel={measurementLabel} product={product} />
 
-          {product.description ? (
-            <p className="mt-3 text-sm leading-6 text-[var(--text-soft)] line-clamp-2">{product.description}</p>
-          ) : null}
-
-          {product.isCombo && product.comboDescription ? (
-            <p className="mt-2 text-xs leading-5 text-[var(--accent)]">{product.comboDescription}</p>
-          ) : null}
-
-          {product.isCombo && (product.comboItems?.length ?? 0) > 0 ? (
-            <p className="mt-1 text-[11px] leading-5 text-[var(--text-soft)]">
-              {product.comboItems
-                ?.slice(0, 3)
-                .map((item) => `${item.componentProductName} (${item.totalUnits} und)`)
-                .join(' • ')}
-              {(product.comboItems?.length ?? 0) > 3 ? ' • ...' : ''}
-            </p>
-          ) : null}
+          <ProductDescriptions product={product} />
         </div>
 
         {/* actions */}
-        <div className="flex shrink-0 gap-2">
-          <Button disabled={busy} onClick={() => onEdit(product)} size="sm" variant="secondary">
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          <Button
+            aria-label={`Editar ${product.name}`}
+            disabled={busy}
+            size="sm"
+            variant="secondary"
+            onClick={() => onEdit(product)}
+          >
             <PencilLine className="size-3.5" />
             Editar
           </Button>
           {product.active ? (
-            <Button disabled={busy} onClick={() => onArchive(product.id)} size="sm" variant="ghost">
+            <Button disabled={busy} size="sm" variant="ghost" onClick={() => onArchive(product.id)}>
               <Archive className="size-3.5" />
               Arquivar
             </Button>
           ) : (
             <>
-              <Button disabled={busy} onClick={() => onRestore(product.id)} size="sm" variant="ghost">
+              <Button disabled={busy} size="sm" variant="ghost" onClick={() => onRestore(product.id)}>
                 <RotateCcw className="size-3.5" />
                 Reativar
               </Button>
               <Button
                 className="border-[rgba(248,113,113,0.18)] text-[#fca5a5] hover:border-[rgba(248,113,113,0.3)] hover:bg-[rgba(248,113,113,0.08)] hover:text-[#fecaca]"
                 disabled={busy}
-                onClick={() => onDelete(product.id)}
                 size="sm"
                 variant="ghost"
+                onClick={() => onDelete(product.id)}
               >
                 <Trash2 className="size-3.5" />
                 Excluir
@@ -207,17 +217,17 @@ export const ProductCard = memo(function ProductCard({
         <StatTile label="Custo" primary={costValue.primary} secondary={costValue.secondary} />
         <StatTile label="Preço de venda" primary={priceValue.primary} secondary={priceValue.secondary} />
         <StatTile
+          dot={stock.dot}
+          dotLabel={stock.label}
           label="Estoque"
           primary={stockBreakdown}
           secondary={`${product.stock} und · ${packageHelper}`}
-          dot={stock.dot}
-          dotLabel={stock.label}
         />
         <StatTile
+          accent={margin?.accentColor}
           label="Lucro potencial"
           primary={profitValue.primary}
           secondary={profitValue.secondary}
-          accent={margin?.accentColor}
         />
       </div>
     </article>
@@ -241,7 +251,7 @@ function StatTile({
   accent?: string
 }) {
   return (
-    <div className="rounded-[14px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-3.5 py-3">
+    <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-muted)] px-3.5 py-3">
       <div className="flex items-center justify-between gap-1.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">{label}</p>
         {dot ? (
@@ -250,7 +260,10 @@ function StatTile({
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-sm font-semibold text-white" style={accent ? { color: accent } : undefined}>
+      <p
+        className="mt-2 text-sm font-semibold text-[var(--text-primary)]"
+        style={accent ? { color: accent } : undefined}
+      >
         {primary}
       </p>
       {(secondary ?? dotLabel) ? (

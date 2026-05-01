@@ -1,81 +1,80 @@
 # Documentacao do Projeto
 
-Este arquivo organiza a documentacao do Desk Imperial por prioridade de leitura e confiabilidade.
+Este arquivo organiza a documentacao do Desk Imperial por prioridade de leitura, confiabilidade e status editorial.
 
 ## 1. Ordem Recomendada de Leitura
 
 1. `../README.md`
-2. `../DOCS_DESK_IMPERIAL.md`
-3. `release/` (diagnosticos e plano de release)
-4. demais trilhas de `architecture/`, `operations/`, `security/`, `testing/`
+2. `./INDEX.md`
+3. trilhas canonicas de `product/`, `architecture/`, `operations/`, `security/` e `testing/`
+4. `waves/` ativas para trabalhos em andamento
+5. `release/` e `../DOCS_DESK_IMPERIAL.md` como material historico e de auditoria
 
 ## 2. Fontes Canonicas
 
 As fontes canonicas para entendimento tecnico atual sao:
 
 - `../README.md`
-- `../DOCS_DESK_IMPERIAL.md`
-- `release/`
+- `./INDEX.md`
+- `architecture/overview.md`
+- `architecture/modules.md`
+- `architecture/authentication-flow.md`
+- `architecture/local-development.md`
+- `product/overview.md`
+- `product/requirements.md`
+- `operations/telegram-bot-rollout.md`
+- `operations/sentry-rollout-2026-05-01.md`
+- `operations/realtime-performance-runbook.md`
+- `security/security-baseline.md`
+- `security/security-testing-workflow-2026-04-30.md`
+- `testing/testing-guide.md`
+- `waves/realtime-recovery-plan-2026-05-01.md`
 
-## 3. Status da Documentacao
+## 3. Fontes Historicas ou Secundarias
 
-### 3.1 Atual e confiavel
+Estes grupos continuam uteis, mas nao sao a fonte primaria do estado atual:
+
+- `../DOCS_DESK_IMPERIAL.md` — snapshot consolidado historico de auditoria
+- `release/` — diagnosticos, pareceres e planos de momentos anteriores
+- `case-studies/` — estudos e analises de mudanca
+- `agents/`, `review_audit/` e `_meta/` — apoio interno de auditoria e governanca
+
+## 4. Status da Documentacao
+
+### 4.1 Atual e confiavel
 
 - `../README.md`
-- `../DOCS_DESK_IMPERIAL.md`
-- `release/` (especialmente mapa real, diagnostico e parecer)
+- `./INDEX.md`
 - `architecture/overview.md`
+- `architecture/realtime.md`
 - `architecture/authentication-flow.md`
+- `architecture/local-development.md`
+- `product/overview.md`
+- `product/requirements.md`
 - `testing/testing-guide.md`
-- `troubleshooting.md`
+- `operations/telegram-bot-rollout.md`
+- `operations/sentry-rollout-2026-05-01.md`
+- `operations/realtime-performance-runbook.md`
+- `security/security-testing-workflow-2026-04-30.md`
+- `waves/realtime-*`
 
-### 3.2 Parcialmente atual
+### 4.2 Parcialmente atual
 
 - `security/security-baseline.md`
 - `operations/kpi-realtime-mapping.md`
+- `DOC-PLAN.md`
 
-## 4. Estrutura Recomendada de Longo Prazo
+### 4.3 Historico, nao canonico
 
-```text
-docs/
-├── README.md
-├── architecture/
-│   ├── system-overview.md
-│   ├── api-boundaries.md
-│   ├── frontend-dataflow.md
-│   └── realtime-model.md
-├── operations/
-│   ├── salon-flow.md
-│   ├── cash-session-flow.md
-│   ├── comanda-kitchen-flow.md
-│   └── kpi-realtime-mapping.md
-├── security/
-│   ├── security-baseline.md
-│   ├── auth-and-session.md
-│   ├── csrf-cors-model.md
-│   └── hardening-backlog.md
-├── testing/
-│   ├── testing-strategy.md
-│   ├── backend-test-matrix.md
-│   ├── frontend-test-matrix.md
-│   └── e2e-critical-paths.md
-├── integrations/
-│   ├── email-brevo.md
-│   ├── gemini-insights.md
-│   ├── geocoding.md
-│   └── currency-rates.md
-└── release/
-    ├── mapa-real-sistema.md
-    ├── diagnostico-release-readiness.md
-    ├── plano-lapidacao-release.md
-    └── parecer-final-release-v3.md
-```
+- `../DOCS_DESK_IMPERIAL.md`
+- `release/`
 
 ## 5. Regras de Manutencao
 
-- Toda mudanca de comportamento de API ou fluxo critico deve atualizar documento canonico no mesmo PR.
+- Toda mudanca de comportamento de API, auth, realtime, notificacao ou deploy deve atualizar documento canonico no mesmo commit.
 - Documento parcialmente atual deve explicitar limites de cobertura.
-- Evitar textos de marketing tecnico; documentar comportamento observavel e riscos residuais.
+- Documento historico nao pode ser promovido a fonte primaria sem revisao formal.
+- Evitar texto de marketing tecnico; documentar comportamento observavel, risco residual e tradeoff.
 - Para claims de seguranca, sempre ligar com implementacao real e limitacao conhecida.
 
 ## 6. Definicao de Pronto para Docs

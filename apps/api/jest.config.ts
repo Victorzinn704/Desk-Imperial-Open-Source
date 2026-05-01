@@ -7,6 +7,10 @@ const config: Config = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@contracts/contracts$': '<rootDir>/../../packages/types/src/index.ts',
+  },
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/main.ts',
@@ -17,14 +21,18 @@ const config: Config = {
   ],
   coverageDirectory: './coverage',
   testEnvironment: 'node',
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 90,
-      lines: 90,
-      statements: 90,
-    },
-  },
+  ...(process.env.SONAR_COVERAGE === 'true'
+    ? {}
+    : {
+        coverageThreshold: {
+          global: {
+            branches: 70,
+            functions: 90,
+            lines: 90,
+            statements: 90,
+          },
+        },
+      }),
 }
 
 export default config

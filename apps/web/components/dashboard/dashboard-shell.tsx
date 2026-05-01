@@ -2,34 +2,35 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useTheme } from 'next-themes'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, Clock, LogOut, TimerReset } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { ApiError, fetchCurrentUser } from '@/lib/api'
 import { useDashboardMutations } from '@/components/dashboard/hooks'
-import { useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
+import { COMPACT_DESKTOP_BREAKPOINT, useMobileDetection } from '@/components/dashboard/hooks/useMobileDetection'
 import { useDashboardNavigation } from '@/components/dashboard/hooks/useDashboardNavigation'
 import { useDashboardScopedQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useScrollMemory } from '@/components/dashboard/hooks/useScrollMemory'
-import { useEvaluationCountdown } from '@/components/dashboard/hooks/useEvaluationCountdown'
 import { useDashboardLogout } from '@/components/dashboard/hooks/useDashboardLogout'
-import { formatCurrency } from '@/lib/currency'
 import { BrandMark } from '@/components/shared/brand-mark'
 import { VerifyEmailForm } from '@/components/auth/verify-email-form'
 import { Button } from '@/components/shared/button'
-import { SpotlightButton } from '@/components/shared/spotlight-button'
 import { renderActiveEnvironment } from '@/components/dashboard/dashboard-environments'
 import { useOperationsRealtime } from '@/components/operations/use-operations-realtime'
-import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar'
 import {
+  buildDashboardHref,
   dashboardDefaultSection,
   dashboardDefaultSettingsSection,
-  type DashboardQuickAction,
+  type DashboardNavigationGroup,
+  type DashboardProductSectionId,
   type DashboardSectionId,
+  type DashboardSectionTab,
   type DashboardSettingsSectionId,
+  type DashboardTabId,
 } from '@/components/dashboard/dashboard-navigation'
-import { ActivityTimeline } from '@/components/dashboard/activity-timeline'
+import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
+import { formatCurrency } from '@/lib/currency'
 
 const StaffMobileShell = dynamic(
   () => import('@/components/staff-mobile').then((module) => module.StaffMobileShell),
@@ -47,85 +48,113 @@ const OwnerMobileShell = dynamic(
   },
 )
 
-// ── Static hero copy per section ────────────────────────────────────────────────
+// ── Section heading labels ──────────────────────────────────────────────────────
 
-const sectionHeroCopy: Record<DashboardSectionId, { badge: string; title: string; description: string }> = {
+const sectionLabels: Record<DashboardProductSectionId | 'settings', { title: string; description: string; meta: string }> = {
   overview: {
-    badge: 'Ambiente executivo',
-    title: 'Visão consolidada da empresa em um único ambiente.',
-    description:
-      'A camada principal cruza financeiro, indicadores, operação e segurança para uma leitura rápida e mais estratégica.',
-  },
-  sales: {
-    badge: 'Ambiente comercial',
-    title: 'Pedidos e vendas em um módulo exclusivo da operação.',
-    description:
-      'Esse ambiente concentra o registro de vendas, leitura dos pedidos mais recentes e o pulso do resultado realizado.',
-  },
-  portfolio: {
-    badge: 'Ambiente de portfólio',
-    title: 'Produtos, estoque e margem organizados em um fluxo próprio.',
-    description:
-      'Aqui o foco sai da visão geral e entra no cadastro, na rentabilidade e na estrutura que sustenta o caixa.',
+    title: 'Overview',
+    description: 'Visão geral da operação',
+    meta: 'visão geral do negócio',
   },
   pdv: {
-    badge: 'Ponto de venda',
-    title: 'Comandas e atendimento em tempo real.',
-    description:
-      'Gerencie as comandas do salão em um kanban visual. Mova os pedidos entre Aberta, Em Preparo, Pronta e Fechada com drag-and-drop.',
-  },
-  calendario: {
-    badge: 'Agenda comercial',
-    title: 'Planeje eventos, promoções e jogos no calendário.',
-    description:
-      'Arraste atividades para mudar datas, redimensione para ajustar duração e acompanhe o impacto esperado em vendas de cada evento.',
-  },
-  payroll: {
-    badge: 'Folha operacional',
-    title: 'Salários, comissões e fechamento da equipe em um único fluxo.',
-    description:
-      'Acompanhe base salarial, comissão variável e leitura consolidada da folha com o mesmo padrão da operação comercial.',
+    title: 'PDV · Comandas',
+    description: 'Comandas e atendimento em tempo real',
+    meta: 'ponto de venda · cobrança · cozinha',
   },
   salao: {
-    badge: 'Gestão do salão',
-    title: 'Mesas, capacidade e planta baixa.',
-    description:
-      'Cadastre e organize as mesas do salão, defina capacidade e seção, e posicione cada uma na planta baixa com drag-and-drop.',
+    title: 'Salão',
+    description: 'Mesas, capacidade e planta baixa',
+    meta: 'mapa de mesas · ocupação · padrões',
   },
-  map: {
-    badge: 'Inteligência territorial',
-    title: 'Mapa de vendas — território de guerra.',
-    description:
-      'Visualize a concentração geográfica da operação. Cada ponto representa um local de venda geocodificado automaticamente a partir do estado e cidade do pedido.',
+  financeiro: {
+    title: 'Financeiro',
+    description: 'Movimentação, fluxo de caixa e DRE',
+    meta: 'receita · despesa · resultado',
+  },
+  pedidos: {
+    title: 'Pedidos',
+    description: 'Histórico, detalhe e fluxo por status',
+    meta: 'histórico · detalhe · fluxo',
+  },
+  equipe: {
+    title: 'Equipe',
+    description: 'Funcionários, escala e folha de pagamento',
+    meta: 'funcionários · escala · folha',
   },
   settings: {
-    badge: 'Conta e governança',
-    title: 'Configurações, segurança e conformidade em uma única central.',
-    description:
-      'A camada administrativa agora reúne conta, preferências, sessão e consentimento sem quebrar a navegação operacional.',
+    title: 'Configurações',
+    description: 'Conta, segurança e preferências',
+    meta: 'conta · segurança · sessão',
   },
 }
-
-type DashboardSignal = {
-  label: string
-  value: string
-  helper: string
-}
-
-type DashboardCurrency = Parameters<typeof formatCurrency>[1]
 
 type ActiveNavigationSummary = {
   id: string
   label: string
   description: string
-  icon: typeof Clock
 }
 
 const settingsNavigationFallback: ActiveNavigationSummary = {
   id: 'settings',
   label: 'Conta e preferências',
   description: 'Conta, segurança e conformidade',
-  icon: Clock,
+}
+
+type WireframeIntroFact = {
+  label: string
+  tone: 'accent' | 'success' | 'warning' | 'soft'
+  value: string
+}
+
+function formatIntroPercent(value: number) {
+  return `${new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
+    maximumFractionDigits: 1,
+  }).format(value)}%`
+}
+
+function buildWireframeIntroFacts({
+  activeDisplaySection,
+  employeesCount,
+  finance,
+}: {
+  activeDisplaySection: DashboardProductSectionId | 'settings'
+  employeesCount: number
+  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
+}): WireframeIntroFact[] {
+  const totals = finance?.totals
+  const displayCurrency = finance?.displayCurrency ?? 'BRL'
+
+  switch (activeDisplaySection) {
+    case 'overview':
+      return [
+        {
+          label: 'receita do mês',
+          tone: 'accent',
+          value: formatCurrency(totals?.currentMonthRevenue ?? 0, displayCurrency),
+        },
+        {
+          label: 'pedidos fechados',
+          tone: 'soft',
+          value: String(totals?.completedOrders ?? 0),
+        },
+        {
+          label: 'margem média',
+          tone: (totals?.averageMarginPercent ?? 0) >= 30 ? 'success' : 'warning',
+          value: formatIntroPercent(totals?.averageMarginPercent ?? 0),
+        },
+      ]
+    case 'equipe':
+      return [
+        {
+          label: 'time ativo',
+          tone: 'soft',
+          value: `${employeesCount} pessoas`,
+        },
+      ]
+    default:
+      return []
+  }
 }
 
 export function getSessionErrorMessage(error: unknown) {
@@ -138,232 +167,31 @@ export function resolveActiveNavigation(
 ) {
   const fallbackNavigation = activeSection === 'settings' ? settingsNavigationFallback : navigationGroups[0]?.items[0]
   return (
-    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ??
-    fallbackNavigation
-  )
-}
-
-function buildStaffDashboardSignals(activeSection: DashboardSectionId, ordersCompleted: number, productsActive: number): DashboardSignal[] {
-  const isSalesSection = activeSection === 'sales'
-  const isPdvSection = activeSection === 'pdv'
-
-  return [
-    {
-      label: isSalesSection ? 'Pedidos' : 'Operação',
-      value: String(ordersCompleted),
-      helper: isSalesSection ? 'operações concluídas no workspace' : 'painel sincronizado com trilha operacional',
-    },
-    {
-      label: isPdvSection ? 'PDV vivo' : 'Portfólio',
-      value: isPdvSection ? 'Ao vivo' : String(productsActive),
-      helper: isPdvSection ? 'comandas e mesas em atualização contínua' : 'produtos ativos para venda',
-    },
-    { label: 'Perfil', value: 'Staff', helper: 'acesso operacional com auditoria' },
-  ]
-}
-
-function getAccountSignalValue(
-  activeSection: DashboardSectionId,
-  companyName: string,
-  legalAcceptancesCount: number,
-  requiredDocumentCount: number,
-) {
-  if (activeSection !== 'settings') {
-    return companyName
-  }
-
-  return requiredDocumentCount ? `${legalAcceptancesCount}/${requiredDocumentCount}` : '0/0'
-}
-
-function getAccountSignalHelper(activeSection: DashboardSectionId) {
-  return activeSection === 'settings' ? 'aceites exigidos no sistema' : 'identidade principal do portal'
-}
-
-function buildOwnerDashboardSignals({
-  activeNavigationLabel,
-  activeSection,
-  companyName,
-  displayCurrency,
-  finance,
-  legalAcceptancesCount,
-  requiredDocumentCount,
-}: Readonly<{
-  activeNavigationLabel: string
-  activeSection: DashboardSectionId
-  companyName: string
-  displayCurrency: DashboardCurrency
-  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
-  legalAcceptancesCount: number
-  requiredDocumentCount: number
-}>): DashboardSignal[] {
-  const hasFinance = Boolean(finance)
-  const financeTotals = finance?.totals
-
-  return [
-    {
-      label: hasFinance ? 'Receita do mes' : 'Workspace',
-      value: hasFinance ? formatCurrency(financeTotals?.currentMonthRevenue ?? 0, displayCurrency) : activeNavigationLabel,
-      helper: hasFinance ? 'resultado bruto do período' : 'seção ativa do centro operacional',
-    },
-    {
-      label: hasFinance ? 'Estoque baixo' : 'Status',
-      value: hasFinance ? String(financeTotals?.lowStockItems ?? 0) : 'Ativo',
-      helper: hasFinance ? 'itens para reposição rápida' : 'sessão segura e pronta para operar',
-    },
-    {
-      label: activeSection === 'settings' ? 'Documentos' : 'Conta',
-      value: getAccountSignalValue(activeSection, companyName, legalAcceptancesCount, requiredDocumentCount),
-      helper: getAccountSignalHelper(activeSection),
-    },
-  ]
-}
-
-export function buildDashboardSignals({
-  activeNavigationLabel,
-  activeSection,
-  companyName,
-  displayCurrency,
-  finance,
-  isStaffUser,
-  legalAcceptancesCount,
-  ordersCompleted,
-  productsActive,
-  requiredDocumentCount,
-}: Readonly<{
-  activeNavigationLabel: string
-  activeSection: DashboardSectionId
-  companyName: string
-  displayCurrency: DashboardCurrency
-  finance: ReturnType<typeof useDashboardScopedQueries>['financeQuery']['data']
-  isStaffUser: boolean
-  legalAcceptancesCount: number
-  ordersCompleted: number
-  productsActive: number
-  requiredDocumentCount: number
-}>): DashboardSignal[] {
-  if (isStaffUser) {
-    return buildStaffDashboardSignals(activeSection, ordersCompleted, productsActive)
-  }
-
-  return buildOwnerDashboardSignals({
-    activeNavigationLabel,
-    activeSection,
-    companyName,
-    displayCurrency,
-    finance,
-    legalAcceptancesCount,
-    requiredDocumentCount,
-  })
-}
-
-export function DashboardWorkspaceHeader({
-  activeHero,
-  activeNavigationLabel,
-  handleQuickAction,
-  isLoggingOut,
-  isTimelineOpen,
-  logout,
-  quickActions,
-  setIsTimelineOpen,
-  signals,
-}: Readonly<{
-  activeHero: (typeof sectionHeroCopy)[DashboardSectionId]
-  activeNavigationLabel: string
-  handleQuickAction: (action: DashboardQuickAction) => void
-  isLoggingOut: boolean
-  isTimelineOpen: boolean
-  logout: () => void
-  quickActions: DashboardQuickAction[]
-  setIsTimelineOpen: (value: boolean) => void
-  signals: DashboardSignal[]
-}>) {
-  return (
-    <header className="imperial-card p-6 md:p-8" id="workspace-header">
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,177,106,0.18)] bg-[rgba(212,177,106,0.08)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            <span className="size-2 rounded-full bg-[var(--accent)]" />
-            {activeHero.badge}
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">Início / Painel operacional / {activeNavigationLabel}</p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold text-white sm:text-5xl">{activeHero.title}</h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">{activeHero.description}</p>
-        </div>
-
-        <div className="flex flex-col gap-4 xl:max-w-[520px]">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {signals.map((signal) => (
-              <div className="workspace-sidebar__surface px-4 py-4" key={signal.label}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{signal.label}</p>
-                <p className="mt-3 text-lg font-semibold text-white">{signal.value}</p>
-                <p className="mt-2 text-xs leading-6 text-muted-foreground">{signal.helper}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            {quickActions.map((action) => {
-              const Icon = action.icon
-              return (
-                <button
-                  className="workspace-quick-action flex-1 sm:min-w-[150px]"
-                  key={action.id}
-                  onClick={() => handleQuickAction(action)}
-                  type="button"
-                >
-                  <span className="workspace-quick-action__icon">
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold text-white">{action.label}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{action.description}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/">
-              <Button size="lg" variant="ghost">
-                Ver site
-                <ArrowUpRight className="size-4" />
-              </Button>
-            </Link>
-            <Button size="lg" variant={isTimelineOpen ? 'primary' : 'ghost'} onClick={() => setIsTimelineOpen(!isTimelineOpen)}>
-              <Clock className="size-4" />
-              Atividades
-            </Button>
-            <SpotlightButton loading={isLoggingOut} onClick={logout}>
-              <LogOut className="size-4" />
-              Encerrar sessão
-            </SpotlightButton>
-          </div>
-        </div>
-      </div>
-    </header>
+    navigationGroups.flatMap((group) => group.items).find((item) => item.id === activeSection) ?? fallbackNavigation
   )
 }
 
 // ── Main component ──────────────────────────────────────────────────────────────
 
 type DashboardShellProps = {
+  basePath?: string
   initialSection?: DashboardSectionId
   initialSettingsSection?: DashboardSettingsSectionId
+  initialTab?: DashboardTabId | null
 }
 
 export function DashboardShell({
+  basePath = '/dashboard',
   initialSection = dashboardDefaultSection,
   initialSettingsSection = dashboardDefaultSettingsSection,
+  initialTab = null,
 }: Readonly<DashboardShellProps>) {
-  const router = useRouter()
   const queryClient = useQueryClient()
-  const [isTimelineOpen, setIsTimelineOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { isMobile } = useMobileDetection()
+  const { isMobile: isCompactDesktop } = useMobileDetection(COMPACT_DESKTOP_BREAKPOINT)
+  const [pdvMesaIntent, setPdvMesaIntent] = useState<PdvMesaIntent | null>(null)
 
   // ── Hooks ─────────────────────────────────────────────────────────────────────
-
-  const { isMobile } = useMobileDetection()
 
   const sessionQuery = useQuery({
     queryKey: ['auth', 'me'],
@@ -379,12 +207,15 @@ export function DashboardShell({
 
   const {
     activeSection,
+    activeDisplaySection,
     activeSettingsSection,
+    activeTab,
     navigationGroups,
-    quickActions,
+    sectionTabs,
     navigateToSection,
     navigateToSettings,
-  } = useDashboardNavigation({ initialSection, initialSettingsSection, isStaffUser })
+    navigateToTab,
+  } = useDashboardNavigation({ basePath, initialSection, initialSettingsSection, initialTab, isStaffUser })
 
   const { consentQuery, productsQuery, ordersQuery, employeesQuery, financeQuery } = useDashboardScopedQueries({
     userId: currentUser?.userId,
@@ -394,37 +225,64 @@ export function DashboardShell({
 
   const { scrollRef, onScroll, scrollIntoView } = useScrollMemory(activeSection, isMobile)
 
-  const { logout, isPending: isLoggingOut, startTransition } = useDashboardLogout(rawLogoutMutation)
+  const { logout, isPending: _isLoggingOut } = useDashboardLogout(rawLogoutMutation)
 
-  const evaluationAccess = sessionQuery.data?.user.evaluationAccess ?? null
-  const { remainingSeconds, isEvaluation } = useEvaluationCountdown(evaluationAccess, () => {
-    queryClient.clear()
-    startTransition(() => router.replace('/login'))
+  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient, {
+    currentUserId: sessionQuery.data?.user.userId ?? null,
+    notificationChannel: 'WEB_TOAST',
   })
 
-  useOperationsRealtime(Boolean(sessionQuery.data?.user.userId), queryClient)
+  // ── Derived data ──────────────────────────────────────────────────────────────
 
-  // ── Quick action handler (orchestrates navigation + scroll) ───────────────────
+  const employees = employeesQuery.data?.items ?? []
+  const finance = financeQuery.data
+  const introFacts = buildWireframeIntroFacts({
+    activeDisplaySection,
+    employeesCount: employees.length,
+    finance,
+  })
 
-  const handleQuickAction = (action: DashboardQuickAction) => {
-    navigateToSection(action.target)
+  const activeLabel = sectionLabels[activeDisplaySection]
+  const activeTabSummary = sectionTabs.find((tab) => tab.id === activeTab) ?? sectionTabs[0]
+  const activeTabLabel = activeTabSummary?.label
+  const activeTabDescription = activeTabSummary?.description
+  const activeTabIndex = Math.max(
+    activeTabSummary ? sectionTabs.findIndex((tab) => tab.id === activeTabSummary.id) : 0,
+    0,
+  )
+  const activeTabVersion =
+    sectionTabs.length > 0
+      ? `versão ${String(activeTabIndex + 1).padStart(2, '0')} de ${String(sectionTabs.length).padStart(2, '0')}`
+      : null
 
-    if (typeof document === 'undefined') return
+  const consumePdvMesaIntent = useCallback(() => {
+    setPdvMesaIntent(null)
+  }, [])
 
-    window.setTimeout(() => {
-      const targetElement = action.anchorId
-        ? document.getElementById(action.anchorId)
-        : document.getElementById('workspace-header')
-      if (targetElement instanceof HTMLElement) {
-        scrollIntoView(targetElement)
-      }
-    }, 80)
-  }
+  const openPdvFromMesa = useCallback(
+    (intent: Omit<PdvMesaIntent, 'requestId'>) => {
+      setPdvMesaIntent({
+        ...intent,
+        requestId: Date.now(),
+      })
+      navigateToSection('pdv')
+
+      if (typeof document === 'undefined') {return}
+
+      globalThis.setTimeout(() => {
+        const targetElement = document.getElementById('workspace-header')
+        if (targetElement instanceof HTMLElement) {
+          scrollIntoView(targetElement)
+        }
+      }, 80)
+    },
+    [navigateToSection, scrollIntoView],
+  )
 
   // ── Early returns (loading, auth, verification) ───────────────────────────────
 
   if (sessionQuery.isLoading) {
-    return <LoadingState />
+    return <LoadingState compact={isCompactDesktop} />
   }
 
   const isUnauthorized = sessionQuery.error instanceof ApiError && sessionQuery.error.status === 401
@@ -440,28 +298,6 @@ export function DashboardShell({
     return <EmailVerificationLockState email={user.email} />
   }
 
-  // ── Derived data ──────────────────────────────────────────────────────────────
-
-  const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
-  const requiredDocumentCount = consentQuery.data?.documents.filter((document) => document.required).length ?? 0
-  const employees = employeesQuery.data?.items ?? []
-  const finance = financeQuery.data
-  const displayCurrency = finance?.displayCurrency ?? user.preferredCurrency
-  const activeNavigation = resolveActiveNavigation(activeSection, navigationGroups)
-  const signals = buildDashboardSignals({
-    activeNavigationLabel: activeNavigation.label,
-    activeSection,
-    companyName: user.companyName || 'Workspace',
-    displayCurrency,
-    finance,
-    isStaffUser,
-    legalAcceptancesCount: legalAcceptances.length,
-    ordersCompleted: ordersQuery.data?.totals.completedOrders ?? 0,
-    productsActive: productsQuery.data?.totals.activeProducts ?? 0,
-    requiredDocumentCount,
-  })
-  const activeHero = sectionHeroCopy[activeSection]
-
   // ── Mobile shells ─────────────────────────────────────────────────────────────
 
   if (isStaffUser && isMobile && activeSection !== 'settings') {
@@ -475,69 +311,245 @@ export function DashboardShell({
   // ── Desktop layout ────────────────────────────────────────────────────────────
 
   return (
-    <main className="bg-background text-foreground h-screen overflow-hidden">
+    <main className="wireframe-dashboard min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
       <div
-        className="workspace-shell xl:grid xl:h-full"
-        style={{ gridTemplateColumns: sidebarCollapsed ? '84px minmax(0,1fr)' : '288px minmax(0,1fr)' }}
+        className="workspace-shell__main relative flex min-w-0 flex-col lg:h-[100svh] lg:min-h-0 lg:overflow-y-auto"
+        ref={scrollRef}
+        onScroll={onScroll}
       >
-        <DashboardSidebar
-          activeSection={activeSection}
-          companyName={user.companyName}
-          email={user.email}
-          groups={navigationGroups}
-          onCollapseChange={setSidebarCollapsed}
-          quickActions={quickActions}
+        <DashboardWireframeHeader
+          activeDisplaySection={activeDisplaySection}
+          activeSettingsSection={activeSettingsSection}
+          activeTab={activeTab}
+          basePath={basePath}
+          compact={isCompactDesktop}
+          navigationGroups={navigationGroups}
+          sectionTabs={sectionTabs}
+          user={user}
           onNavigate={navigateToSection}
-          onOpenSettings={navigateToSettings}
-          onQuickAction={handleQuickAction}
+          onNavigateSettings={navigateToSettings}
+          onNavigateTab={navigateToTab}
           onSignOut={logout}
-          role={user.role}
-          status={user.status}
-          userName={user.fullName}
         />
 
-        <div ref={scrollRef} className="workspace-shell__main h-screen overflow-y-auto" onScroll={onScroll}>
-          <div className="mx-auto flex min-h-full w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
-            <DashboardWorkspaceHeader
-              activeHero={activeHero}
-              activeNavigationLabel={activeNavigation.label}
-              handleQuickAction={handleQuickAction}
-              isLoggingOut={isLoggingOut}
-              isTimelineOpen={isTimelineOpen}
-              logout={logout}
-              quickActions={quickActions}
-              setIsTimelineOpen={setIsTimelineOpen}
-              signals={signals}
-            />
-
-            {isEvaluation ? (
-              <EvaluationModeBanner
-                dailyLimitMinutes={user.evaluationAccess!.dailyLimitMinutes}
-                remainingSeconds={remainingSeconds}
-              />
+        <div
+          className={`mx-auto flex w-full max-w-[1880px] flex-col ${isCompactDesktop ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-5 xl:py-5' : 'gap-5 px-3 py-4 sm:px-4 lg:px-4 lg:py-5 xl:px-5 xl:py-6'}`}
+        >
+          <div className="wireframe-page-intro" id="workspace-header">
+            <div className="wireframe-page-copy min-w-0">
+              <h1 className="wireframe-title">{activeLabel.title}</h1>
+              <p className="wireframe-page-lead">{activeTabLabel ?? activeLabel.description}</p>
+              <p className="wireframe-page-note">{activeTabDescription ?? activeLabel.description}</p>
+            </div>
+            {introFacts.length > 0 ? (
+              <div className="wireframe-intro-rail" aria-label="Resumo da seção">
+                {introFacts.map((fact) => (
+                  <div className="wireframe-intro-fact" key={fact.label}>
+                    <span className="wireframe-intro-fact__label">{fact.label}</span>
+                    <span className={`wireframe-intro-fact__value wireframe-intro-fact__value--${fact.tone}`}>{fact.value}</span>
+                  </div>
+                ))}
+              </div>
             ) : null}
-
-            {renderActiveEnvironment({
-              activeSection,
-              activeSettingsSection,
-              employees,
-              finance,
-              onNavigateSection: navigateToSection,
-              onSettingsSectionChange: navigateToSettings,
-              user,
-            })}
+            <div className="wireframe-intro-meta">
+              <span>{activeLabel.meta}</span>
+              {activeTabVersion ? <span>{activeTabVersion}</span> : null}
+            </div>
           </div>
+
+          {renderActiveEnvironment({
+            activeSection,
+            activeSettingsSection,
+            activeTab,
+            employees,
+            finance,
+            onConsumePdvMesaIntent: consumePdvMesaIntent,
+            onOpenPdvFromMesa: openPdvFromMesa,
+            onNavigateSection: navigateToSection,
+            onSettingsSectionChange: navigateToSettings,
+            pdvMesaIntent,
+            user,
+          })}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function DashboardWireframeHeader({
+  activeDisplaySection,
+  activeSettingsSection,
+  activeTab,
+  basePath,
+  compact,
+  navigationGroups,
+  onNavigate,
+  onNavigateSettings,
+  onNavigateTab,
+  onSignOut,
+  sectionTabs,
+  user,
+}: Readonly<{
+  activeDisplaySection: DashboardProductSectionId | 'settings'
+  activeSettingsSection: DashboardSettingsSectionId
+  activeTab: DashboardTabId | null
+  basePath: string
+  compact: boolean
+  navigationGroups: DashboardNavigationGroup[]
+  onNavigate: (sectionId: DashboardSectionId, tabId?: DashboardTabId | null) => void
+  onNavigateSettings: (sectionId: DashboardSettingsSectionId) => void
+  onNavigateTab: (tabId: DashboardTabId) => void
+  onSignOut: () => void
+  sectionTabs: DashboardSectionTab[]
+  user: {
+    companyName: string | null
+    email: string
+    fullName: string
+    role: string
+  }
+}>) {
+  const primaryItems = navigationGroups.flatMap((group) => group.items)
+  const activePrimaryId = activeDisplaySection === 'settings' ? null : activeDisplaySection
+  const initials = getInitials(user.fullName)
+
+  return (
+    <header className="wireframe-header">
+      <div className={`wireframe-header__bar ${compact ? 'wireframe-header__bar--compact' : ''}`}>
+        <BrandMark
+          href={buildDashboardHref('overview', activeSettingsSection, 'principal', basePath)}
+          onClick={(event) => {
+            if (!shouldHandleDashboardNav(event)) {return}
+            event.preventDefault()
+            onNavigate('overview', 'principal')
+          }}
+          presentation="wireframe"
+          wordmark="always"
+        />
+
+        <div className="wireframe-header__actions">
+          <WireframeThemeButton />
+          <Link
+            aria-label="Conta e configurações"
+            className="wireframe-account-button"
+            href={buildDashboardHref('settings', 'account', undefined, basePath)}
+            title={`${user.fullName} · ${user.email}`}
+            onClick={(event) => {
+              if (!shouldHandleDashboardNav(event)) {return}
+              event.preventDefault()
+              onNavigateSettings('account')
+            }}
+          >
+            <span className="wireframe-account-button__avatar">{initials}</span>
+            <span>conta</span>
+          </Link>
+          <button className="wireframe-text-button" title="Sair" type="button" onClick={onSignOut}>
+            sair
+          </button>
         </div>
       </div>
 
-      {isTimelineOpen && <ActivityTimeline onClose={() => setIsTimelineOpen(false)} />}
-    </main>
+      <div className="wireframe-header__nav-row">
+        <nav aria-label="Seções principais" className="wireframe-primary-nav">
+          {primaryItems.map((item) => {
+            const active = activePrimaryId === item.id
+            return (
+              <Link
+                aria-current={active ? 'page' : undefined}
+                className={active ? 'wireframe-primary-nav__item wireframe-primary-nav__item--active' : 'wireframe-primary-nav__item'}
+                href={buildDashboardHref(item.id, activeSettingsSection, undefined, basePath)}
+                key={item.id}
+                onClick={(event) => {
+                  if (!shouldHandleDashboardNav(event)) {return}
+                  event.preventDefault()
+                  onNavigate(item.id)
+                }}
+              >
+                <span className="wireframe-primary-nav__dot" />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="wireframe-period">
+          <span>ter · 07 abr · 14:32</span>
+          <span>{compact ? user.role.slice(0, 1) : initials}</span>
+        </div>
+      </div>
+
+      {sectionTabs.length > 0 ? (
+        <div className="wireframe-subnav" aria-label="Subseções">
+          {sectionTabs.map((tab) => {
+            const active = activeTab === tab.id
+            return (
+              <Link
+                aria-current={active ? 'true' : undefined}
+                className={active ? 'wireframe-subnav__item wireframe-subnav__item--active' : 'wireframe-subnav__item'}
+                href={buildDashboardHref(activeDisplaySection, activeSettingsSection, tab.id, basePath)}
+                key={tab.id}
+                title={tab.description}
+                onClick={(event) => {
+                  if (!shouldHandleDashboardNav(event)) {return}
+                  event.preventDefault()
+                  onNavigateTab(tab.id)
+                }}
+              >
+                <span>{tab.code}</span>
+                {tab.emoji ? <strong className="wireframe-subnav__emoji">{tab.emoji}</strong> : null}
+                {tab.label}
+              </Link>
+            )
+          })}
+        </div>
+      ) : null}
+    </header>
+  )
+}
+
+function shouldHandleDashboardNav(event: ReactMouseEvent<HTMLAnchorElement>) {
+  if (event.defaultPrevented) {return false}
+  if (event.button !== 0) {return false}
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {return false}
+  const target = event.currentTarget.getAttribute('target')
+  return !target || target === '_self'
+}
+
+function getInitials(name: string) {
+  return (
+    name
+      ?.split(' ')
+      .map((part) => part[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'U'
+  )
+}
+
+function WireframeThemeButton() {
+  const { resolvedTheme, setTheme } = useTheme()
+
+  if (!resolvedTheme) {
+    return <span aria-hidden="true" className="wireframe-theme-button" />
+  }
+
+  const isDark = resolvedTheme === 'dark'
+
+  return (
+    <button
+      aria-label={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+      className="wireframe-theme-button"
+      title={isDark ? 'Tema escuro ativo' : 'Tema claro ativo'}
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+    >
+      {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+    </button>
   )
 }
 
 function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-[var(--text-soft)]">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-6 text-center text-sm text-[var(--text-soft)]">
       {label}
     </main>
   )
@@ -545,99 +557,65 @@ function MobileShellLoadingState({ label }: Readonly<{ label: string }>) {
 
 // ── Sub-components ──────────────────────────────────────────────────────────────
 
-function LoadingState() {
+function LoadingState({ compact = false }: Readonly<{ compact?: boolean }>) {
   return (
-    <main className="min-h-screen bg-background text-foreground xl:h-screen xl:overflow-hidden">
-      <div className="workspace-shell xl:grid xl:h-full" style={{ gridTemplateColumns: '288px minmax(0,1fr)' }}>
-        <aside className="hidden xl:block xl:h-screen xl:overflow-hidden">
-          <div className="workspace-sidebar flex h-full flex-col gap-4 px-4 py-5">
-            <div className="skeleton-shimmer h-11 w-40 rounded-2xl" />
-            <div className="skeleton-shimmer mt-2 h-16 rounded-2xl" />
-            <div className="mt-2 flex-1 space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div className="skeleton-shimmer h-12 rounded-[20px]" key={i} />
-              ))}
-            </div>
-            <div className="skeleton-shimmer h-20 rounded-2xl" />
+    <main className="wireframe-dashboard min-h-screen bg-[var(--bg)] text-[var(--text-primary)] lg:h-[100svh] lg:overflow-hidden">
+      <div className="workspace-shell__main lg:h-[100svh] lg:overflow-y-auto">
+        <div className="wireframe-header">
+          <div className={`wireframe-header__bar ${compact ? 'wireframe-header__bar--compact' : ''}`}>
+            <div className="skeleton-shimmer h-10 w-44 rounded-lg" />
+            <div className="skeleton-shimmer h-9 w-36 rounded-full" />
           </div>
-        </aside>
+          <div className="wireframe-header__nav-row">
+            <div className="skeleton-shimmer h-9 w-full max-w-3xl rounded-lg" />
+            <div className="skeleton-shimmer h-8 w-24 rounded-lg" />
+          </div>
+          <div className="wireframe-subnav">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div className="skeleton-shimmer h-9 w-40 rounded-full" key={index} />
+            ))}
+          </div>
+        </div>
 
-        <div className="workspace-shell__main xl:h-screen xl:overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8 xl:py-8">
-            <div className="imperial-card p-6 md:p-8">
-              <div className="skeleton-shimmer h-6 w-32 rounded-full" />
-              <div className="skeleton-shimmer mt-4 h-4 w-48 rounded-full" />
-              <div className="skeleton-shimmer mt-4 h-12 w-3/4 rounded-2xl" />
-              <div className="skeleton-shimmer mt-4 h-4 w-full max-w-2xl rounded-full" />
+        <div
+          className={`mx-auto flex w-full max-w-[1880px] flex-col ${compact ? 'gap-4 px-3 py-4 sm:px-4 lg:px-4 lg:py-4 xl:px-5 xl:py-5' : 'gap-6 px-3 py-5 sm:px-4 lg:px-4 lg:py-5 xl:px-5 xl:py-6'}`}
+        >
+          <div className="wireframe-page-intro">
+            <div>
+              <div className="skeleton-shimmer h-8 w-40 rounded-xl" />
+              <div className="skeleton-shimmer mt-2 h-4 w-64 rounded-full" />
             </div>
+            <div className="skeleton-shimmer h-10 w-52 rounded-lg" />
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div className="imperial-card-stat p-5" key={i}>
-                  <div className="skeleton-shimmer size-11 rounded-2xl" />
-                  <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
-                  <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
-                  <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="imperial-card p-6">
-                <div className="skeleton-shimmer h-4 w-32 rounded-full" />
-                <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div className="imperial-card-stat p-5" key={i}>
+                <div className="skeleton-shimmer size-11 rounded-2xl" />
+                <div className="skeleton-shimmer mt-5 h-3 w-20 rounded-full" />
+                <div className="skeleton-shimmer mt-3 h-8 w-28 rounded-xl" />
+                <div className="skeleton-shimmer mt-2 h-3 w-16 rounded-full" />
               </div>
-              <div className="imperial-card p-6">
-                <div className="skeleton-shimmer h-4 w-28 rounded-full" />
-                <div className="mt-4 space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
-                  ))}
-                </div>
+            ))}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-32 rounded-full" />
+              <div className="skeleton-shimmer mt-4 h-[260px] rounded-2xl" />
+            </div>
+            <div className="imperial-card p-6">
+              <div className="skeleton-shimmer h-4 w-28 rounded-full" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="skeleton-shimmer h-10 rounded-xl" key={i} />
+                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
     </main>
-  )
-}
-
-function EvaluationModeBanner({
-  dailyLimitMinutes,
-  remainingSeconds,
-}: Readonly<{
-  dailyLimitMinutes: number
-  remainingSeconds: number
-}>) {
-  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60)
-  const seconds = Math.max(0, remainingSeconds) % 60
-  const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-
-  return (
-    <section className="imperial-card-soft px-5 py-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(212,177,106,0.22)] bg-[rgba(212,177,106,0.14)] text-[var(--accent)]">
-            <TimerReset className="size-5" />
-          </span>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Sessão temporária</p>
-            <h2 className="mt-2 text-lg font-semibold text-white">
-              Este acesso fica disponivel por ate {dailyLimitMinutes} minutos por dia neste dispositivo.
-            </h2>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Quando o tempo acabar, o portal encerra a sessão e retorna para a tela de login.
-            </p>
-          </div>
-        </div>
-
-        <div className="imperial-card-stat px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tempo restante</p>
-          <p className="mt-2 text-2xl font-semibold text-white">{formatted}</p>
-        </div>
-      </div>
-    </section>
   )
 }
 
@@ -647,7 +625,7 @@ function UnauthorizedState({ message }: Readonly<{ message: string }>) {
       <div className="imperial-card mx-auto max-w-4xl p-8 sm:p-10">
         <BrandMark />
         <p className="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Acesso necessario</p>
-        <h1 className="mt-4 text-4xl font-semibold text-white">Sua sessão ainda não está ativa.</h1>
+        <h1 className="mt-4 text-4xl font-semibold text-[var(--text-primary)]">Sua sessão ainda não está ativa.</h1>
         <p className="mt-4 max-w-2xl text-base leading-8 text-muted-foreground">{message}</p>
 
         <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -673,13 +651,15 @@ function EmailVerificationLockState({ email }: Readonly<{ email: string }>) {
         <p className="mt-10 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
           Confirmacao obrigatoria
         </p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">Valide seu email para liberar o sistema</h1>
+        <h1 className="mt-4 text-3xl font-semibold text-[var(--text-primary)]">
+          Valide seu email para liberar o sistema
+        </h1>
         <p className="mt-4 text-base leading-8 text-muted-foreground">
           Por seguranca, o painel so e liberado apos a confirmacao do codigo enviado para o email cadastrado.
         </p>
 
-        <div className="mt-8 rounded-[24px] border border-[rgba(212,177,106,0.2)] bg-[rgba(212,177,106,0.06)] p-4 text-sm text-[var(--text-soft)]">
-          Email em validacao: <span className="font-semibold text-white">{email}</span>
+        <div className="mt-8 rounded-[24px] border border-[rgba(37,99,235,0.2)] bg-[rgba(37,99,235,0.06)] p-4 text-sm text-[var(--text-soft)]">
+          Email em validacao: <span className="font-semibold text-[var(--text-primary)]">{email}</span>
         </div>
 
         <div className="mt-8">

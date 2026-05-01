@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  BadRequestException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -10,6 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { FinanceService } from '../finance/finance.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { AuthContext } from '../auth/auth.types'
@@ -62,12 +64,18 @@ export class MarketIntelligenceService {
         rejectFormula: true,
       }) ?? 'Visao executiva geral'
 
+    if (!isDeskImperialAppFocus(normalizedFocus)) {
+      throw new BadRequestException(
+        'A IA do Desk Imperial responde apenas perguntas sobre o aplicativo, caixa, vendas, estoque, portfólio, PDV, salão, agenda, equipe e operação.',
+      )
+    }
+
     const insightCacheKey = CacheService.geminiKey(auth.userId, auth.preferredCurrency, normalizedFocus)
     const cached = await this.cache.get<MarketInsightResponse>(insightCacheKey)
 
     if (cached) {
       await this.auditLogService.record({
-        actorUserId: auth.userId,
+        actorUserId: resolveAuthActorUserId(auth),
         event: 'market-intelligence.cached',
         resource: 'market_intelligence',
         metadata: { focus: normalizedFocus, model: cached.model },
@@ -164,7 +172,7 @@ export class MarketIntelligenceService {
     await this.cache.set(insightCacheKey, result, this.getCacheTtlSeconds())
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'market-intelligence.generated',
       resource: 'market_intelligence',
       metadata: {
@@ -182,7 +190,9 @@ export class MarketIntelligenceService {
 
   private async assertRequestAllowed(redisKey: string): Promise<void> {
     const entry = await this.cache.get<RateLimitEntry>(redisKey)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     const now = Date.now()
 
@@ -299,6 +309,8 @@ function buildPrompt(params: {
 
   return [
     'Voce e um consultor executivo de mercado e previsao comercial para pequenas e medias operacoes.',
+    'Responda apenas perguntas sobre o aplicativo Desk Imperial e sua operacao: caixa, vendas, estoque, portfolio, PDV, salao, agenda, equipe, perfil, relatorios e indicadores internos.',
+    'Se o foco pedir assunto fora do aplicativo ou fora dos dados internos, recuse educadamente dentro do JSON e redirecione para uma pergunta operacional do Desk Imperial.',
     'Use apenas os dados internos abaixo. Nao invente noticias externas, cotacoes adicionais ou fatos nao fornecidos.',
     'Quando fizer previsoes, trate-as como inferencias de curto prazo baseadas na operacao observada.',
     'Responda em portugues do Brasil.',
@@ -314,6 +326,58 @@ function buildPrompt(params: {
     'Dados da operacao:',
     JSON.stringify(payload, null, 2),
   ].join('\n')
+}
+
+function isDeskImperialAppFocus(focus: string) {
+  const normalizedFocus = normalizeScopeText(focus)
+  const allowedPhrases = ['visao executiva geral']
+  const allowedTerms = [
+    'agenda',
+    'app',
+    'aplicativo',
+    'caixa',
+    'calendario',
+    'canal',
+    'canais',
+    'cliente',
+    'comanda',
+    'comercio',
+    'dashboard',
+    'demanda',
+    'desk',
+    'equipe',
+    'estoque',
+    'financeiro',
+    'funcionario',
+    'jogo',
+    'lucro',
+    'margem',
+    'mesa',
+    'operacao',
+    'operacional',
+    'pedido',
+    'pdv',
+    'perfil',
+    'portfolio',
+    'preco',
+    'precificacao',
+    'concorrencia',
+    'cross-selling',
+    'produto',
+    'relatorio',
+    'salao',
+    'seguranca',
+    'venda',
+  ]
+
+  return [...allowedPhrases, ...allowedTerms].some((term) => normalizedFocus.includes(term))
+}
+
+function normalizeScopeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replaceAll(/\p{Diacritic}/gu, '')
+    .toLowerCase()
 }
 
 function normalizeInsightPayload(rawText: string) {
@@ -339,12 +403,16 @@ function normalizeInsightPayload(rawText: string) {
 }
 
 function normalizeString(value: unknown) {
-  if (typeof value !== 'string') return ''
+  if (typeof value !== 'string') {
+    return ''
+  }
   return value.replace(/\s+/g, ' ').trim()
 }
 
 function normalizeStringArray(value: unknown, maxItems: number) {
-  if (!Array.isArray(value)) return []
+  if (!Array.isArray(value)) {
+    return []
+  }
   return value
     .filter((item): item is string => typeof item === 'string')
     .map((item) => item.replace(/\s+/g, ' ').trim())

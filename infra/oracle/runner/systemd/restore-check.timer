@@ -1,0 +1,9 @@
+[Unit]
+Description=Desk Imperial restore drill weekly timer
+
+[Timer]
+OnCalendar=Sun *-*-* 03:30:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

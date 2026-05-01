@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kucherenko/jscpd/master/packages/jscpd/schema.json",
+  "path": [
+    "apps/api/src",
+    "apps/web/app",
+    "apps/web/components",
+    "apps/web/lib",
+    "apps/web/hooks",
+    "packages/types/src"
+  ],
+  "ignore": [
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "**/*.vitest.{ts,tsx}",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/prisma/migrations/**",
+    "**/*.d.ts",
+    "**/generated/**",
+    "**/__mocks__/**",
+    "**/__fixtures__/**"
+  ],
+  "languages": ["typescript"],
+  "minTokens": 50,
+  "threshold": 3,
+  "format": ["typescript"],
+  "reporters": ["console", "json"],
+  "output": "coverage/jscpd",
+  "absolute": false,
+  "gitignore": true,
+  "noSymlinks": true,
+  "skipLocal": false
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "labels": {
+      "job": "desk-db-node-exporter",
+      "oracle_vm": "lohana-ampere-01",
+      "role": "database"
+    },
+    "targets": ["10.220.10.10:9100"]
+  },
+  {
+    "labels": {
+      "job": "desk-db-postgres-exporter",
+      "oracle_vm": "lohana-ampere-01",
+      "role": "database"
+    },
+    "targets": ["10.220.10.10:9187"]
+  }
+]

@@ -16,12 +16,15 @@ type UseDashboardQueriesOptions = {
 function resolveSectionRequirements(section?: DashboardSectionId) {
   const sectionRequiresConsent = section === undefined || section === 'settings'
   const sectionRequiresProducts =
-    section === undefined || ['overview', 'sales', 'portfolio', 'pdv'].includes(section)
-  const sectionRequiresOrders = section === undefined || ['overview', 'sales', 'map'].includes(section)
+    section === undefined || ['overview', 'financeiro', 'pedidos', 'sales', 'portfolio', 'pdv'].includes(section)
+  const sectionRequiresOrders =
+    section === undefined || ['overview', 'financeiro', 'pedidos', 'sales', 'map'].includes(section)
   const sectionRequiresEmployees =
-    section === undefined || ['overview', 'sales', 'payroll', 'settings'].includes(section)
+    section === undefined ||
+    ['overview', 'financeiro', 'pedidos', 'equipe', 'sales', 'portfolio', 'payroll', 'settings'].includes(section)
   const sectionRequiresFinance =
-    section === undefined || ['overview', 'sales', 'portfolio', 'map', 'payroll'].includes(section)
+    section === undefined ||
+    ['overview', 'financeiro', 'pedidos', 'equipe', 'sales', 'portfolio', 'payroll', 'map'].includes(section)
 
   return {
     sectionRequiresConsent,
@@ -108,13 +111,7 @@ export function useDashboardScopedQueries({
  * Evita duplicação de lógica de queries e simplifica o componente pai
  */
 export function useDashboardQueries({ section }: UseDashboardQueriesOptions = {}) {
-  const sessionQuery = useQuery({
-    queryKey: ['auth', 'me'],
-    queryFn: fetchCurrentUser,
-    retry: false,
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  })
+  const sessionQuery = useDashboardSessionQuery()
 
   const userId = sessionQuery.data?.user.userId
   const isOwner = sessionQuery.data?.user.role === 'OWNER'
@@ -129,4 +126,14 @@ export function useDashboardQueries({ section }: UseDashboardQueriesOptions = {}
     sessionQuery,
     ...scopedQueries,
   }
+}
+
+export function useDashboardSessionQuery() {
+  return useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: fetchCurrentUser,
+    retry: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
 }

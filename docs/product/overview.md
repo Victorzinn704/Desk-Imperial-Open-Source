@@ -1,7 +1,7 @@
 # O Produto — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01
+**Versão:** 1.1  
+**Última atualização:** 2026-05-01
 
 ---
 
@@ -38,6 +38,8 @@ O Desk Imperial oferece o que esses comerciantes precisam, sem mensalidade.
 - Mapa de onde estão vindo os pedidos
 - Acesso via celular com painel executivo mobile
 - Admin PIN para proteger ações sensíveis
+- Telegram oficial com vínculo por chat e preferências por evento
+- Cadastro inteligente de produto com barcode, IA e catálogo auxiliar
 
 ---
 
@@ -54,8 +56,9 @@ O Desk Imperial oferece o que esses comerciantes precisam, sem mensalidade.
 **O que o sistema entrega para ele:**
 
 - PDV mobile com lista de produtos e abertura de comanda
-- Visão do kanban de atendimento em tempo real
+- Visão operacional em tempo real com cozinha, comanda e mesas
 - Interface simples, sem precisar de treinamento longo
+- Preferências pessoais de ruído operacional no portal
 
 ---
 
@@ -66,10 +69,10 @@ O Desk Imperial oferece o que esses comerciantes precisam, sem mensalidade.
 **O que ele encontra aqui:**
 
 - Monorepo NestJS + Next.js com arquitetura real de produção
-- 16 módulos de domínio bem separados
+- Módulos de domínio separados para auth, operação, produtos, pedidos, finanças, notificações e realtime
 - Padrões de segurança: CSRF, cookies HttpOnly, rate limit, isolamento de workspace
-- 53+ testes cobrindo os módulos críticos
-- CI completo com 6 estágios
+- Testes, CI e load tests nos fluxos críticos
+- CI full-stack com gates de qualidade, testes, segurança, build e Sonar pronto para ativação
 - Código aberto com licença MIT
 
 ---
@@ -104,16 +107,19 @@ Código aberto porque a transparência gera confiança. Gratuito porque é para 
 | Mobile dono                           | ✅ Produção |
 | Mobile funcionário                    | ✅ Produção |
 | Autenticação segura (CSRF + HttpOnly) | ✅ Produção |
+| Telegram oficial e preferências       | ✅ Produção |
+| Cadastro inteligente com barcode e IA | ✅ Produção |
+| Observabilidade com Sentry            | ✅ Produção |
 | Insight IA (Gemini)                   | ✅ Produção |
 | LGPD / consentimento                  | ✅ Produção |
 
 ### Em evolução
 
-| Módulo                             | Status                                            |
-| ---------------------------------- | ------------------------------------------------- |
-| Import CSV de produtos             | ⚠️ Desativado (lógica existe, endpoint bloqueado) |
-| Monitoramento de erros em produção | ⚠️ Stack OSS em implantação progressiva           |
-| Cobertura de testes frontend       | ⚠️ Parcial                                        |
+| Módulo                             | Status                                  |
+| ---------------------------------- | --------------------------------------- |
+| Contrato e consistência do realtime| ⚠️ Em recuperação incremental por waves |
+| Cobertura de testes frontend       | ⚠️ Parcial                              |
+| Governança documental              | ⚠️ Em atualização editorial             |
 
 ---
 
@@ -129,7 +135,8 @@ Código aberto porque a transparência gera confiança. Gratuito porque é para 
 ## Acesso
 
 - **Produção:** [app.deskimperial.online](https://app.deskimperial.online)
-- **API:** [api.deskimperial.online](https://api.deskimperial.online/api/health)
+- **API / health:** [api.deskimperial.online/api/v1/health](https://api.deskimperial.online/api/v1/health)
+- **Docs da API:** [api.deskimperial.online/api/v1/docs](https://api.deskimperial.online/api/v1/docs)
 - **Demo:** [docs/DEMO.md](../DEMO.md)
 
 ---

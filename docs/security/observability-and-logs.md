@@ -7,10 +7,26 @@ Garantir deteccao rapida de erros e falhas silenciosas sem degradar desempenho d
 ## Stack atual e transicao OSS
 
 - logs estruturados: Pino
-- erros aplicacionais: Grafana Faro (frontend) + logs estruturados (backend)
-- tracing OSS (fase 1): OpenTelemetry na API via OTLP
-- frontend OSS (fase 2): Grafana Faro no cliente web
+- erros aplicacionais: **Sentry** na API e no web, com Faro complementar no frontend
+- tracing de runtime: OpenTelemetry na API via OTLP + tracing do Sentry nas superfícies web/api
+- frontend OSS complementar: Grafana Faro no cliente web para sinais de UX e RUM leve
 - pipeline OSS alvo: Alloy + Tempo + Loki + Prometheus + Alertmanager + Grafana
+
+## Estado atual do caminho principal
+
+- API Nest:
+  - `@sentry/nestjs` inicializado cedo em `apps/api/src/instrument.ts`
+  - `SentryModule.forRoot()` no `AppModule`
+  - filtro global com captura de exceção para erros não tratados
+- Web Next:
+  - bootstrap client/server/edge com `@sentry/nextjs`
+  - `withSentryConfig` no `next.config.ts`
+  - upload de release/sourcemaps no build quando `SENTRY_AUTH_TOKEN` está presente
+  - `global-error.tsx` capturando falha de renderização no App Router
+
+Leitura correta:
+- **Sentry é o caminho principal para erro e tracing distribuído**
+- **Faro continua útil**, mas não substitui o pipeline principal de captura de exceção
 
 ## Guardrails de desempenho
 
@@ -20,6 +36,7 @@ Garantir deteccao rapida de erros e falhas silenciosas sem degradar desempenho d
 - observabilidade sem endpoint configurado deve ficar desligada por default
 - no frontend, Faro usa limite de sinais por janela + dedupe temporal de erros
 - no frontend, coleta de request lenta e amostrada para reduzir overhead
+- sourcemaps do Next so devem subir com `SENTRY_AUTH_TOKEN` valido e nunca ir para runtime
 
 ## Falhas silenciosas
 
@@ -29,6 +46,7 @@ Cobertura minima obrigatoria:
 - frontend: detector E2E para `pageerror`, `console.error` nao ignoravel e `unhandledrejection`
 - health probes + alerta para indisponibilidade recorrente
 - correlacao por `requestId` entre logs, erro de cliente e traces de backend
+- smoke local do Sentry no web deve validar browser -> tunnel e evento server-side
 
 ## Tipos de logs
 
@@ -65,6 +83,7 @@ Cobertura minima obrigatoria:
 - aumento anormal de falhas de login
 - tempo de resposta acima do esperado
 - crescimento continuo de timeout/retry no auth
+- queda de entrega de eventos Sentry ou falha recorrente de sourcemap/release no build
 
 Governanca recomendada:
 
@@ -81,3 +100,4 @@ Governanca recomendada:
 - evitar labels de alta cardinalidade em traces/logs
 - collector Faro em producao deve ser HTTPS
 - redigir campos sensiveis antes de envio de eventos do browser
+- `SENTRY_AUTH_TOKEN` deve existir apenas em build/CI; nao deve ficar no runtime do web

@@ -1,26 +1,8 @@
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import * as argon2 from 'argon2'
 import { BuyerType, OrderStatus, PrismaClient, UserStatus } from '@prisma/client'
 import { isKitchenCategory } from '../src/common/utils/is-kitchen-category.util'
-
-function loadSeedEnv() {
-  if (typeof process.loadEnvFile !== 'function') {
-    return
-  }
-
-  const candidatePaths = [
-    resolve(process.cwd(), '.env'),
-    resolve(__dirname, '..', '.env'),
-    resolve(__dirname, '..', '..', '..', '.env'),
-  ]
-
-  for (const envPath of candidatePaths) {
-    if (existsSync(envPath)) {
-      process.loadEnvFile(envPath)
-    }
-  }
-}
+import { ensureEmployeeLoginUser } from '../src/modules/auth/auth-login-actor.utils'
+import { loadSeedEnv } from './seed-runtime'
 
 loadSeedEnv()
 
@@ -240,6 +222,8 @@ async function main() {
 
   const email = 'demo@deskimperial.online'
   const passwordHash = await argon2.hash('Demo@123', { type: argon2.argon2id })
+  const demoStaffPassword = process.env.DEMO_STAFF_PASSWORD ?? '123456'
+  const demoStaffPasswordHash = await argon2.hash(demoStaffPassword, { type: argon2.argon2id })
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -288,14 +272,34 @@ async function main() {
       },
       update: {
         displayName: vendedores[i],
+        passwordHash: demoStaffPasswordHash,
         active: true,
       },
       create: {
         userId: user.id,
         employeeCode: `VD-${String(i + 1).padStart(3, '0')}`,
         displayName: vendedores[i],
+        passwordHash: demoStaffPasswordHash,
         active: true,
       },
+      select: {
+        id: true,
+        active: true,
+        employeeCode: true,
+        displayName: true,
+        passwordHash: true,
+        loginUser: {
+          select: {
+            id: true,
+            passwordHash: true,
+          },
+        },
+      },
+    })
+    await ensureEmployeeLoginUser(prisma, {
+      employee: emp,
+      ownerUser: user,
+      fallbackPasswordHash: demoStaffPasswordHash,
     })
     employees.push(emp)
   }
@@ -428,6 +432,7 @@ async function main() {
   console.log(`   👥 Vendedores: ${employees.length}`)
   console.log(`   🍻 Produtos: ${createdProducts.length}`)
   console.log(`   📝 Pedidos: ${ordersCreated} (últimos ~6 meses)`)
+  console.log(`   🔐 Senha staff demo: ${demoStaffPassword}`)
 }
 
 main()

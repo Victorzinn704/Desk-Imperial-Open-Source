@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { buildComanda, buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import {
   appendOptimisticComanda,
+  appendOptimisticComandaPayment,
   buildOptimisticComandaRecord,
   setOptimisticComandaStatus,
 } from './operations-optimistic'
@@ -104,6 +105,72 @@ describe('operations optimistic', () => {
         status: 'livre',
         comandaId: null,
         currentEmployeeId: null,
+      }),
+    )
+  })
+
+  it('adiciona pagamento parcial e preserva status PARTIAL', () => {
+    const snapshot = buildOperationsSnapshot({
+      unassigned: {
+        employeeId: null,
+        displayName: 'Sem garçom',
+        comandas: [
+          buildComanda({
+            id: 'comanda-2',
+            mesaId: null,
+            currentEmployeeId: null,
+            tableLabel: 'Balcão',
+            totalAmount: 100,
+            paidAmount: 0,
+            remainingAmount: 100,
+            paymentStatus: 'UNPAID',
+          }),
+        ],
+      },
+    })
+    const queryClient = createQueryClient(snapshot)
+
+    appendOptimisticComandaPayment(queryClient, QUERY_KEY, 'comanda-2', { amount: 40, method: 'CREDIT' })
+
+    const next = queryClient.getQueryData<typeof snapshot>(QUERY_KEY)!
+    expect(next.unassigned.comandas[0]).toEqual(
+      expect.objectContaining({
+        paidAmount: 40,
+        remainingAmount: 60,
+        paymentStatus: 'PARTIAL',
+      }),
+    )
+  })
+
+  it('fecha o saldo e marca a comanda como PAID quando o pagamento cobre o total', () => {
+    const snapshot = buildOperationsSnapshot({
+      unassigned: {
+        employeeId: null,
+        displayName: 'Sem garçom',
+        comandas: [
+          buildComanda({
+            id: 'comanda-3',
+            mesaId: null,
+            currentEmployeeId: null,
+            tableLabel: 'Balcão',
+            totalAmount: 50,
+            paidAmount: 10,
+            remainingAmount: 40,
+            paymentStatus: 'PARTIAL',
+          }),
+        ],
+      },
+    })
+    const queryClient = createQueryClient(snapshot)
+
+    appendOptimisticComandaPayment(queryClient, QUERY_KEY, 'comanda-3', { amount: 50, method: 'CASH' })
+
+    const next = queryClient.getQueryData<typeof snapshot>(QUERY_KEY)!
+    expect(next.unassigned.comandas[0]).toEqual(
+      expect.objectContaining({
+        paidAmount: 50,
+        remainingAmount: 0,
+        paymentStatus: 'PAID',
       }),
     )
   })

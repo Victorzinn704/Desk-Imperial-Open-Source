@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { CardRowSkeleton } from '@/components/shared/skeleton'
-import { fetchActivityFeed, type ActivityFeedEntry } from '@/lib/api'
+import { type ActivityFeedEntry, fetchActivityFeed } from '@/lib/api'
 
 const getRelativeTime = (date: Date) => {
   const now = new Date()
@@ -24,10 +24,10 @@ const getRelativeTime = (date: Date) => {
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
 
-  if (minutes < 1) return 'agora mesmo'
-  if (minutes < 60) return `há ${minutes}m`
-  if (hours < 24) return `há ${hours}h`
-  if (days < 7) return `há ${days}d`
+  if (minutes < 1) {return 'agora mesmo'}
+  if (minutes < 60) {return `há ${minutes}m`}
+  if (hours < 24) {return `há ${hours}h`}
+  if (days < 7) {return `há ${days}d`}
   return date.toLocaleDateString('pt-BR')
 }
 
@@ -47,7 +47,6 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
     queryFn: fetchActivityFeed,
     staleTime: 30_000,
     refetchInterval: 15_000,
-    refetchIntervalInBackground: true,
   })
 
   const activities = (data ?? []).map(toActivityViewModel)
@@ -67,11 +66,13 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
             <Activity className="size-5 text-[var(--accent)]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-white">Pulso do workspace</h2>
-            <p className="text-xs text-[var(--text-soft)]">Leitura manual das movimentações mais recentes, com atualização automática.</p>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Pulso do workspace</h2>
+            <p className="text-xs text-[var(--text-soft)]">
+              Leitura manual das movimentações mais recentes, com atualização automática.
+            </p>
           </div>
           <button
-            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-white"
+            className="flex size-8 items-center justify-center rounded-xl border border-[var(--border)] text-[var(--text-soft)] transition-colors duration-200 hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.06)] hover:text-[var(--text-primary)]"
             type="button"
             onClick={onClose}
           >
@@ -100,8 +101,8 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
 
               return (
                 <div
-                  key={activity.id}
                   className="rounded-[18px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-4 py-3"
+                  key={activity.id}
                 >
                   <div className="flex gap-3">
                     <div
@@ -113,7 +114,7 @@ export function ActivityTimeline({ onClose }: { onClose: () => void }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-white">{activity.title}</p>
+                          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{activity.title}</p>
                           <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{activity.description}</p>
                         </div>
                         <time className="shrink-0 text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">

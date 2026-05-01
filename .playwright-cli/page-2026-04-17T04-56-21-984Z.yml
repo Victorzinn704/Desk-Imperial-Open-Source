@@ -1,0 +1,249 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - heading "Overview" [level=1] [ref=e124]
+            - paragraph [ref=e125]: Visão geral da operação — hoje, 07 de Abril de 2026
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - img [ref=e130]
+                - generic [ref=e132]:
+                  - img [ref=e133]
+                  - text: +18,4%
+              - generic [ref=e135]:
+                - paragraph [ref=e136]: Receita do Dia
+                - paragraph [ref=e137]: R$ 4.820
+                - paragraph [ref=e138]: vs. ontem
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - img [ref=e142]
+                - generic [ref=e146]:
+                  - img [ref=e147]
+                  - text: "+3"
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: Comandas Abertas
+                - paragraph [ref=e151]: "12"
+                - paragraph [ref=e152]: em andamento
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - img [ref=e156]
+                - generic [ref=e159]:
+                  - img [ref=e160]
+                  - text: "-4,2%"
+              - generic [ref=e162]:
+                - paragraph [ref=e163]: Ticket Médio
+                - paragraph [ref=e164]: R$ 68,50
+                - paragraph [ref=e165]: vs. semana passada
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - img [ref=e169]
+                - generic [ref=e174]:
+                  - img [ref=e175]
+                  - text: "+12"
+              - generic [ref=e177]:
+                - paragraph [ref=e178]: Clientes Hoje
+                - paragraph [ref=e179]: "71"
+                - paragraph [ref=e180]: vs. mesma hora ontem
+          - generic [ref=e181]:
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - heading "Receita & Lucro — Hoje" [level=2] [ref=e185]
+                - paragraph [ref=e186]: Por hora, das 08h às 18h
+              - button [ref=e187] [cursor=pointer]:
+                - img [ref=e188]
+            - generic [ref=e193]:
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - heading "Top Produtos" [level=2] [ref=e196]
+                  - paragraph [ref=e197]: Mais vendidos hoje
+                - img [ref=e198]
+              - generic [ref=e202]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]: X-Burguer Especial
+                  - generic [ref=e206]: 42× · R$ 1.260
+                - generic [ref=e210]:
+                  - generic [ref=e211]: Refrigerante 600ml
+                  - generic [ref=e212]: 78× · R$ 546
+                - generic [ref=e216]:
+                  - generic [ref=e217]: Batata Frita G
+                  - generic [ref=e218]: 31× · R$ 465
+                - generic [ref=e222]:
+                  - generic [ref=e223]: Suco de Laranja
+                  - generic [ref=e224]: 24× · R$ 312
+                - generic [ref=e228]:
+                  - generic [ref=e229]: Sobremesa do Dia
+                  - generic [ref=e230]: 18× · R$ 270
+          - generic [ref=e233]:
+            - generic [ref=e234]:
+              - generic [ref=e235]:
+                - heading "Pedidos Recentes" [level=2] [ref=e236]
+                - paragraph [ref=e237]: Últimas 5 comandas
+              - generic [ref=e239]: 12 abertas
+            - table [ref=e241]:
+              - rowgroup [ref=e242]:
+                - row "ID Cliente Itens Valor Garçom Status" [ref=e243]:
+                  - columnheader "ID" [ref=e244]
+                  - columnheader "Cliente" [ref=e245]
+                  - columnheader "Itens" [ref=e246]
+                  - columnheader "Valor" [ref=e247]
+                  - columnheader "Garçom" [ref=e248]
+                  - columnheader "Status" [ref=e249]
+              - rowgroup [ref=e250]:
+                - row "#1042 Mesa 5 4 itens R$ 134,00 João Pronta" [ref=e251]:
+                  - cell "#1042" [ref=e252]
+                  - cell "Mesa 5" [ref=e253]
+                  - cell "4 itens" [ref=e254]
+                  - cell "R$ 134,00" [ref=e255]
+                  - cell "João" [ref=e256]
+                  - cell "Pronta" [ref=e257]:
+                    - generic [ref=e258]: Pronta
+                - row "#1041 Mesa 2 2 itens R$ 67,50 Ana Em Preparo" [ref=e259]:
+                  - cell "#1041" [ref=e260]
+                  - cell "Mesa 2" [ref=e261]
+                  - cell "2 itens" [ref=e262]
+                  - cell "R$ 67,50" [ref=e263]
+                  - cell "Ana" [ref=e264]
+                  - cell "Em Preparo" [ref=e265]:
+                    - generic [ref=e266]: Em Preparo
+                - row "#1040 Mesa 8 6 itens R$ 218,00 Pedro Aberta" [ref=e267]:
+                  - cell "#1040" [ref=e268]
+                  - cell "Mesa 8" [ref=e269]
+                  - cell "6 itens" [ref=e270]
+                  - cell "R$ 218,00" [ref=e271]
+                  - cell "Pedro" [ref=e272]
+                  - cell "Aberta" [ref=e273]:
+                    - generic [ref=e274]: Aberta
+                - row "#1039 Delivery 3 itens R$ 89,00 Ana Fechada" [ref=e275]:
+                  - cell "#1039" [ref=e276]
+                  - cell "Delivery" [ref=e277]
+                  - cell "3 itens" [ref=e278]
+                  - cell "R$ 89,00" [ref=e279]
+                  - cell "Ana" [ref=e280]
+                  - cell "Fechada" [ref=e281]:
+                    - generic [ref=e282]: Fechada
+                - row "#1038 Mesa 1 5 itens R$ 176,50 João Fechada" [ref=e283]:
+                  - cell "#1038" [ref=e284]
+                  - cell "Mesa 1" [ref=e285]
+                  - cell "5 itens" [ref=e286]
+                  - cell "R$ 176,50" [ref=e287]
+                  - cell "João" [ref=e288]
+                  - cell "Fechada" [ref=e289]:
+                    - generic [ref=e290]: Fechada
+          - generic [ref=e291]:
+            - generic [ref=e292]:
+              - generic [ref=e293]: 🪑
+              - paragraph [ref=e294]: 8 / 14
+              - paragraph [ref=e295]: Mesas ocupadas
+            - generic [ref=e296]:
+              - generic [ref=e297]: ⏱
+              - paragraph [ref=e298]: 38 min
+              - paragraph [ref=e299]: Tempo médio por mesa
+            - generic [ref=e300]:
+              - generic [ref=e301]: ❌
+              - paragraph [ref=e302]: 2,1%
+              - paragraph [ref=e303]: Taxa de cancelamento
+            - generic [ref=e304]:
+              - generic [ref=e305]: ⭐
+              - paragraph [ref=e306]: "74"
+              - paragraph [ref=e307]: NPS do turno
+          - generic [ref=e308]:
+            - generic [ref=e309]:
+              - img [ref=e311]
+              - generic [ref=e314]:
+                - paragraph [ref=e315]: Semana vs anterior
+                - paragraph [ref=e316]: +12,3%
+                - paragraph [ref=e317]: R$ 28.400 esta semana
+            - generic [ref=e318]:
+              - img [ref=e320]
+              - generic [ref=e322]:
+                - paragraph [ref=e323]: Mês acumulado
+                - paragraph [ref=e324]: R$ 94.200
+                - paragraph [ref=e325]: 68% da meta atingida
+            - generic [ref=e326]:
+              - img [ref=e328]
+              - generic [ref=e333]:
+                - paragraph [ref=e334]: Funcionários ativos
+                - paragraph [ref=e335]: 6 / 8
+                - paragraph [ref=e336]: 2 de folga hoje
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e342] [cursor=pointer]:
+    - img [ref=e343]

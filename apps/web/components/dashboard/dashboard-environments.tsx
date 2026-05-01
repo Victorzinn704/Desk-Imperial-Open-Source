@@ -2,19 +2,20 @@
 
 import dynamic from 'next/dynamic'
 import type { FinanceSummaryResponse } from '@contracts/contracts'
-// Lightweight environments — loaded eagerly (small, always needed)
-import { SalesEnvironment } from './environments/sales-environment'
-import { PortfolioEnvironment } from './environments/portfolio-environment'
 import { SettingsEnvironment } from './environments/settings-environment'
-import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
+import type { DashboardSectionId, DashboardSettingsSectionId, DashboardTabId } from '@/components/dashboard/dashboard-navigation'
 import type { AuthUser, EmployeeRecord } from '@/lib/api'
+import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
 
 // ── Medium-heavy environments — lazy loaded ────────────────────────────────────
-// PdvEnvironment: AG Grid (~500 KB) + react-big-calendar (~100 KB)
-const PdvEnvironment = dynamic(() => import('./environments/pdv-environment').then((m) => m.PdvEnvironment), {
-  loading: () => <EnvironmentSkeleton rows={5} />,
-  ssr: false,
-})
+// PdvWireframeEnvironment: compact dashboard PDV views aligned to the wireframe shell
+const PdvWireframeEnvironment = dynamic(
+  () => import('./environments/pdv-wireframe-environment').then((m) => m.PdvWireframeEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={5} />,
+    ssr: false,
+  },
+)
 
 // OverviewEnvironment: Recharts (~300 KB) via MetricCard + SalesPerformanceCard
 const OverviewEnvironment = dynamic(
@@ -35,50 +36,125 @@ const CalendarioEnvironment = dynamic(
   },
 )
 
-// MapEnvironment: Leaflet tiles + markers (~320 KB)
-const MapEnvironment = dynamic(() => import('./environments/map-environment').then((m) => m.MapEnvironment), {
-  loading: () => <EnvironmentSkeleton rows={1} tall />,
-  ssr: false,
-})
-
-// PayrollEnvironment: multiple sub-tables, AG-Grid-like (~180 KB)
-const PayrollEnvironment = dynamic(() => import('./payroll-environment').then((m) => m.PayrollEnvironment), {
-  loading: () => <EnvironmentSkeleton rows={5} />,
-  ssr: false,
-})
-
 // SalaoEnvironment: floor-plan drag-and-drop via @dnd-kit (~41 KB component + dnd-kit)
 const SalaoEnvironment = dynamic(() => import('./salao-environment').then((m) => m.SalaoEnvironment), {
   loading: () => <EnvironmentSkeleton rows={4} />,
   ssr: false,
 })
 
+const FinanceiroEnvironment = dynamic(
+  () => import('./environments/financeiro-environment').then((m) => m.FinanceiroEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={5} />,
+    ssr: false,
+  },
+)
+
+const PedidosEnvironment = dynamic(
+  () => import('./environments/pedidos-environment').then((m) => m.PedidosEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={5} />,
+    ssr: false,
+  },
+)
+
+const EquipeEnvironment = dynamic(
+  () => import('./environments/equipe-environment').then((m) => m.EquipeEnvironment),
+  {
+    loading: () => <EnvironmentSkeleton rows={5} />,
+    ssr: false,
+  },
+)
+
 export type EnvironmentRenderProps = {
   activeSection: DashboardSectionId
   activeSettingsSection: DashboardSettingsSectionId
+  activeTab: DashboardTabId | null
   employees: EmployeeRecord[]
   finance?: FinanceSummaryResponse
+  onConsumePdvMesaIntent: () => void
+  onOpenPdvFromMesa: (intent: Omit<PdvMesaIntent, 'requestId'>) => void
   onNavigateSection: (sectionId: DashboardSectionId) => void
   onSettingsSectionChange: (sectionId: DashboardSettingsSectionId) => void
+  pdvMesaIntent: PdvMesaIntent | null
   user: AuthUser
 }
 
 export function renderActiveEnvironment(props: EnvironmentRenderProps) {
   switch (props.activeSection) {
+    case 'financeiro':
+      return <FinanceiroEnvironment activeTab={props.activeTab} />
+    case 'pedidos':
+      return <PedidosEnvironment activeTab={props.activeTab} />
     case 'sales':
-      return <SalesEnvironment user={props.user} />
+      return <FinanceiroEnvironment activeTab="movimentacao" />
     case 'portfolio':
-      return <PortfolioEnvironment />
+      return <PdvWireframeEnvironment mesaIntent={props.pdvMesaIntent} user={props.user} variant="grid" />
     case 'pdv':
-      return <PdvEnvironment />
+      return (
+        <PdvWireframeEnvironment
+          mesaIntent={props.pdvMesaIntent}
+          user={props.user}
+          variant={
+            props.activeTab === 'comandas' || props.activeTab === 'kds' || props.activeTab === 'cobranca'
+              ? props.activeTab
+              : 'grid'
+          }
+        />
+      )
+    case 'overview':
+      return (
+        <OverviewEnvironment
+          variant={
+            props.activeTab === 'layout' ||
+            props.activeTab === 'meta' ||
+            props.activeTab === 'operacional' ||
+            props.activeTab === 'editorial'
+              ? props.activeTab
+              : 'principal'
+          }
+        />
+      )
     case 'calendario':
-      return <CalendarioEnvironment />
-    case 'map':
-      return <MapEnvironment />
+      return <OverviewEnvironment variant="editorial" />
+    case 'equipe':
+      if (props.activeTab === 'escala') {
+        return <CalendarioEnvironment />
+      }
+      return (
+        <EquipeEnvironment
+          activeTab={props.activeTab}
+          employees={props.employees}
+          finance={props.finance}
+          userRole={props.user.role}
+        />
+      )
     case 'payroll':
-      return <PayrollEnvironment employees={props.employees} finance={props.finance} />
+      return (
+        <EquipeEnvironment
+          activeTab="folha"
+          employees={props.employees}
+          finance={props.finance}
+          userRole={props.user.role}
+        />
+      )
     case 'salao':
-      return <SalaoEnvironment />
+      return (
+        <SalaoEnvironment
+          initialView={
+            props.activeTab === 'planta'
+              ? 'planta'
+              : props.activeTab === 'permanencia'
+                ? 'comandas'
+                : props.activeTab === 'padroes'
+                  ? 'configuracao'
+                  : 'operacional'
+          }
+          onOpenPdvFromMesa={props.onOpenPdvFromMesa}
+        />
+      )
+    case 'map':
+      return <FinanceiroEnvironment activeTab="fluxo" />
     case 'settings':
       return (
         <SettingsEnvironment
@@ -87,9 +163,8 @@ export function renderActiveEnvironment(props: EnvironmentRenderProps) {
           onSettingsSectionChange={props.onSettingsSectionChange}
         />
       )
-    case 'overview':
     default:
-      return <OverviewEnvironment />
+      return <OverviewEnvironment variant="principal" />
   }
 }
 

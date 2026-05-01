@@ -4,34 +4,34 @@ import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
-import { assertOwnerRole } from '../../common/utils/workspace-access.util'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import { OperationsHelpersService } from './operations-helpers.service'
 import {
-  toCashMovementRecord,
   toCashSessionRecord,
   toClosureRecord,
-  toRealtimeCashSessionRecord,
 } from './operations.types'
 import {
-  buildOptionalOperationsSnapshot,
-  OPEN_COMANDA_STATUSES,
   buildCashClosurePayload,
-  buildCashUpdatedPayload,
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
+  OPEN_COMANDA_STATUSES,
   resolveBusinessDate,
-  toNumber,
+  toNumberOrZero,
 } from './operations-domain.utils'
+import { publishCashRealtime, publishCashOpenedRealtime } from './cash-realtime-publish.utils'
+import { buildCashSessionResponse, buildCashMovementResponse, buildCashClosureResponse } from './cash-response.utils'
+import type {
+  CloseCashClosureDto,
+  CloseCashSessionDto,
+  CreateCashMovementDto,
+  OpenCashSessionDto,
+  OperationsResponseOptionsDto,
+} from './operations.schemas'
 
 @Injectable()
 export class CashSessionService {
@@ -49,6 +49,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(dto.businessDate)
     const openingCashAmount = roundCurrency(dto.openingCashAmount)
@@ -116,7 +117,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_session.opened',
       resource: 'cash_session',
       resourceId: session.id,
@@ -129,10 +130,13 @@ export class CashSessionService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishCashOpenedRealtime(auth, session, closure)
+    invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, businessDate)
+    publishCashOpenedRealtime(this.operationsRealtimeService, auth, session, closure, {
+      mutationName: 'open-cash-session',
+      mutationStartedAtMs,
+    })
 
-    return this.buildCashSessionResponse(workspaceOwnerUserId, businessDate, session, options)
+    return buildCashSessionResponse(this.helpers, workspaceOwnerUserId, businessDate, session, options)
   }
 
   async createCashMovement(
@@ -142,6 +146,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     if (dto.type === CashMovementType.OPENING_FLOAT) {
       throw new BadRequestException('O tipo OPENING_FLOAT e reservado para a abertura do caixa.')
     }
@@ -189,7 +194,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_movement.created',
       resource: 'cash_session',
       resourceId: session.id,
@@ -202,10 +207,14 @@ export class CashSessionService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, session.businessDate)
-    this.publishCashRealtime(auth, refreshedSession, closure, session.businessDate)
+    invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, session.businessDate)
+    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate, {
+      mutationName: 'create-cash-movement',
+      mutationStartedAtMs,
+    })
 
-    return this.buildCashMovementResponse(
+    return buildCashMovementResponse(
+      this.helpers,
       workspaceOwnerUserId,
       session.businessDate,
       movement,
@@ -221,6 +230,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const session = await this.helpers.requireAuthorizedCashSession(
       this.prisma,
@@ -255,7 +265,7 @@ export class CashSessionService {
     const helpers = this.helpers
     const { refreshedSession, closure } = await this.prisma.$transaction(async (transaction) => {
       const recalculatedSession = await helpers.recalculateCashSession(transaction, session.id)
-      const differenceAmount = roundCurrency(countedCashAmount - toNumber(recalculatedSession.expectedCashAmount))
+      const differenceAmount = roundCurrency(countedCashAmount - toNumberOrZero(recalculatedSession.expectedCashAmount))
 
       const closedSession = await transaction.cashSession.update({
         where: { id: session.id },
@@ -284,7 +294,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.cash_session.closed',
       resource: 'cash_session',
       resourceId: session.id,
@@ -296,10 +306,13 @@ export class CashSessionService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, session.businessDate)
-    this.publishCashRealtime(auth, refreshedSession, closure, session.businessDate)
+    invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, session.businessDate)
+    publishCashRealtime(this.operationsRealtimeService, auth, refreshedSession, closure, session.businessDate, {
+      mutationName: 'close-cash-session',
+      mutationStartedAtMs,
+    })
 
-    return this.buildCashSessionResponse(workspaceOwnerUserId, session.businessDate, refreshedSession, options)
+    return buildCashSessionResponse(this.helpers, workspaceOwnerUserId, session.businessDate, refreshedSession, options)
   }
 
   async closeCashClosure(
@@ -308,6 +321,7 @@ export class CashSessionService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     assertOwnerRole(auth, 'Somente o dono pode fechar o caixa consolidado da empresa.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(dto.businessDate)
@@ -341,7 +355,7 @@ export class CashSessionService {
       )
     }
 
-    const differenceAmount = roundCurrency(countedCashAmount - toNumber(syncedClosure.expectedCashAmount))
+    const differenceAmount = roundCurrency(countedCashAmount - toNumberOrZero(syncedClosure.expectedCashAmount))
 
     const closure = await this.prisma.cashClosure.update({
       where: {
@@ -361,7 +375,7 @@ export class CashSessionService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: forceClose ? 'operations.cash_closure.force_closed' : 'operations.cash_closure.closed',
       resource: 'cash_closure',
       resourceId: closure.id,
@@ -375,122 +389,16 @@ export class CashSessionService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishCashClosureRealtime(auth, closure)
-
-    return this.buildCashClosureResponse(workspaceOwnerUserId, businessDate, closure, options)
-  }
-
-  private async buildOptionalSnapshot(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return buildOptionalOperationsSnapshot(this.helpers, workspaceOwnerUserId, businessDate, options)
-  }
-
-  private publishCashRealtime(
-    auth: AuthContext,
-    session: Parameters<typeof buildCashUpdatedPayload>[0],
-    closure: Parameters<typeof buildCashClosurePayload>[0],
-    businessDate?: Date,
-  ) {
-    this.operationsRealtimeService.publishCashUpdated(auth, {
-      ...buildCashUpdatedPayload(session),
-      businessDate: businessDate ? formatBusinessDateKey(businessDate) : undefined,
-      cashSession: toRealtimeCashSessionRecord(session),
-    })
-    this.publishCashClosureRealtime(auth, closure)
-  }
-
-  private publishCashOpenedRealtime(
-    auth: AuthContext,
-    session: {
-      id: string
-      openedAt: Date
-      openingCashAmount: { toNumber(): number } | number
-      employeeId: string | null
-      companyOwnerId: string
-      businessDate: Date
-      status: CashSessionStatus
-      countedCashAmount: { toNumber(): number } | number | null
-      expectedCashAmount: { toNumber(): number } | number
-      differenceAmount: { toNumber(): number } | number | null
-      grossRevenueAmount: { toNumber(): number } | number
-      realizedProfitAmount: { toNumber(): number } | number
-      notes: string | null
-      closedAt: Date | null
-      movements: Array<{
-        id: string
-        cashSessionId: string
-        employeeId: string | null
-        type: CashMovementType
-        amount: { toNumber(): number } | number
-        note: string | null
-        createdAt: Date
-      }>
-    },
-    closure: Parameters<typeof buildCashClosurePayload>[0],
-  ) {
-    this.operationsRealtimeService.publishCashOpened(auth, {
-      cashSessionId: session.id,
-      openedAt: session.openedAt.toISOString(),
-      openingAmount: toNumber(session.openingCashAmount),
-      currency: auth.preferredCurrency,
-      employeeId: session.employeeId,
-      businessDate: formatBusinessDateKey(session.businessDate),
-      cashSession: toRealtimeCashSessionRecord(session),
-    })
-    this.publishCashClosureRealtime(auth, closure)
-  }
-
-  private publishCashClosureRealtime(auth: AuthContext, closure: Parameters<typeof buildCashClosurePayload>[0]) {
-    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
-  }
-
-  private invalidateLiveSnapshotCache(workspaceOwnerUserId: string, businessDate: Date) {
     invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(syncedClosure), {
+      mutationName: 'close-cash-closure',
+      mutationStartedAtMs,
+    })
+
+    return buildCashClosureResponse(this.helpers, workspaceOwnerUserId, businessDate, closure, options)
   }
 
   private resolveActorEmployee(workspaceOwnerUserId: string, auth: AuthContext) {
     return this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
-  }
-
-  private async buildCashSessionResponse(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    session: Parameters<typeof toCashSessionRecord>[0],
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return {
-      cashSession: toCashSessionRecord(session),
-      ...(await this.buildOptionalSnapshot(workspaceOwnerUserId, businessDate, options)),
-    }
-  }
-
-  private async buildCashMovementResponse(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    movement: Parameters<typeof toCashMovementRecord>[0],
-    session: Parameters<typeof toCashSessionRecord>[0],
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return {
-      movement: toCashMovementRecord(movement),
-      cashSession: toCashSessionRecord(session),
-      ...(await this.buildOptionalSnapshot(workspaceOwnerUserId, businessDate, options)),
-    }
-  }
-
-  private async buildCashClosureResponse(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    closure: Parameters<typeof toClosureRecord>[0],
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return {
-      closure: toClosureRecord(closure),
-      ...(await this.buildOptionalSnapshot(workspaceOwnerUserId, businessDate, options)),
-    }
   }
 }

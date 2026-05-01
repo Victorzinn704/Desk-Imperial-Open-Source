@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import type { CSSProperties } from 'react'
-import { AllCommunityModule, ModuleRegistry, type ColDef, type RowClickedEvent } from 'ag-grid-community'
+import { type CSSProperties, useState } from 'react'
+import { AllCommunityModule, type ColDef, ModuleRegistry, type RowClickedEvent } from 'ag-grid-community'
 import type { AgGridReactProps } from 'ag-grid-react'
 import { LazyAgGrid as AgGridReact } from '@/components/shared/lazy-components'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-quartz.css'
-import { ArrowUpRight, Banknote, Layers3, Receipt, ShieldCheck, Table2, UserRound, type LucideIcon } from 'lucide-react'
+import { ArrowUpRight, Banknote, Layers3, type LucideIcon, Receipt, ShieldCheck, Table2, UserRound } from 'lucide-react'
 import type { OperationGridRow, OperationRole } from '@/lib/operations/operations-types'
 import {
   formatLongDateTime,
@@ -162,7 +161,9 @@ function buildSelectedEmployeeInsights(row: OperationGridRow | null): SelectedEm
     openRevenue:
       row?.tables.filter((table) => table.status !== 'closed').reduce((sum, table) => sum + table.totalAmount, 0) ?? 0,
     averageTicket:
-      row && row.tables.length > 0 ? row.tables.reduce((sum, table) => sum + table.totalAmount, 0) / row.tables.length : 0,
+      row && row.tables.length > 0
+        ? row.tables.reduce((sum, table) => sum + table.totalAmount, 0) / row.tables.length
+        : 0,
     movements,
     supplyAmount,
     withdrawalAmount,
@@ -199,14 +200,22 @@ function ExecutiveHeader({
       </header>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-4">
-        <SummaryCard label="Receita" value={formatMoney(totals.salesRevenue)} hint="Faturamento operacional consolidado." />
-        <SummaryCard label="Lucro" value={formatMoney(totals.salesProfit)} hint="Resultado bruto estimado do salão." />
-        <SummaryCard label="Caixa esperado" value={formatMoney(totals.cashExpected)} hint="Baseado em abertura e movimentos." />
+        <SummaryCard
+          hint="Faturamento operacional consolidado."
+          label="Receita"
+          value={formatMoney(totals.salesRevenue)}
+        />
+        <SummaryCard hint="Resultado bruto estimado do salão." label="Lucro" value={formatMoney(totals.salesProfit)} />
+        <SummaryCard
+          hint="Baseado em abertura e movimentos."
+          label="Caixa esperado"
+          value={formatMoney(totals.cashExpected)}
+        />
         <SummaryCard
           highlight={cashDelta >= 0 ? 'positive' : 'negative'}
+          hint={cashDelta >= 0 ? 'Leitura acima do esperado.' : 'Leitura abaixo do esperado.'}
           label="Caixa atual"
           value={formatMoney(totals.cashCurrent)}
-          hint={cashDelta >= 0 ? 'Leitura acima do esperado.' : 'Leitura abaixo do esperado.'}
         />
       </div>
     </>
@@ -234,17 +243,17 @@ function ExecutiveRadarPanel({
 
       <div className="ag-theme-quartz rounded-[22px] border border-white/6" style={{ ...gridThemeStyle, height: 360 }}>
         <TypedAgGrid<SummaryRow>
+          suppressCellFocus
           columnDefs={summaryColumns}
           domLayout="normal"
+          rowData={summaryRows}
+          rowSelection="single"
+          theme="legacy"
           onRowClicked={(event: RowClickedEvent<SummaryRow>) => {
             if (event.data) {
               onSelectEmployee(event.data.employeeId)
             }
           }}
-          rowData={summaryRows}
-          rowSelection="single"
-          suppressCellFocus
-          theme="legacy"
         />
       </div>
     </div>
@@ -287,7 +296,9 @@ function SelectedEmployeePanel({
       </div>
 
       <div className="mt-4 rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(0,0,0,0.18)] p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Leitura de caixa</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+          Leitura de caixa
+        </p>
         <div className="mt-3 space-y-3">
           <SessionReadoutRow label="Abertura" value={formatMoney(row.employee.cashOpeningAmount)} />
           <SessionReadoutRow label="Esperado" value={formatMoney(row.employee.cashExpectedAmount)} />
@@ -308,7 +319,9 @@ function ExecutiveTablesPanel({ row }: Readonly<{ row: OperationGridRow }>) {
     <div className="rounded-[28px] border border-white/6 bg-[rgba(255,255,255,0.02)] p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">Mesas do atendimento</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Mesas do atendimento
+          </p>
           <h3 className="mt-1 text-lg font-semibold text-white">{row.employee.employeeName}</h3>
           <p className="mt-2 text-sm text-[var(--text-soft)]">
             Cada linha mostra o estado da mesa, o peso do atendimento e a última leitura útil do turno.
@@ -327,7 +340,10 @@ function ExecutiveTablesPanel({ row }: Readonly<{ row: OperationGridRow }>) {
             .slice()
             .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
             .map((table) => (
-              <article className="rounded-[22px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-4 py-4" key={table.comandaId}>
+              <article
+                className="rounded-[22px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-4 py-4"
+                key={table.comandaId}
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -344,7 +360,9 @@ function ExecutiveTablesPanel({ row }: Readonly<{ row: OperationGridRow }>) {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">Total</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-soft)]">
+                      Total
+                    </p>
                     <p className="mt-1 text-lg font-semibold text-white">{formatMoney(table.totalAmount)}</p>
                   </div>
                 </div>
@@ -438,17 +456,23 @@ function ExecutiveActivityPanels({
                 className="flex items-start gap-3 rounded-[18px] border border-white/6 bg-[rgba(0,0,0,0.18)] px-3 py-3"
                 key={register.id}
               >
-                <div className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border ${register.badgeClassName}`}>
+                <div
+                  className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border ${register.badgeClassName}`}
+                >
                   <register.icon className="size-3.5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">{register.title}</p>
-                    <span className="text-[11px] text-[var(--text-soft)]">{formatLongDateTime(register.happenedAt)}</span>
+                    <span className="text-[11px] text-[var(--text-soft)]">
+                      {formatLongDateTime(register.happenedAt)}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs leading-6 text-[var(--text-soft)]">{register.subtitle}</p>
                 </div>
-                {register.amount ? <span className="text-xs font-semibold text-white">{formatMoney(register.amount)}</span> : null}
+                {register.amount ? (
+                  <span className="text-xs font-semibold text-white">{formatMoney(register.amount)}</span>
+                ) : null}
               </div>
             ))
           ) : (
@@ -487,7 +511,7 @@ export function OperationsExecutiveGrid({
       {rows.length ? (
         <div className="mt-6 space-y-4">
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_360px]">
-            <ExecutiveRadarPanel onSelectEmployee={setSelectedEmployeeId} summaryRows={summaryRows} />
+            <ExecutiveRadarPanel summaryRows={summaryRows} onSelectEmployee={setSelectedEmployeeId} />
             <SelectedEmployeePanel insights={selectedInsights} row={selectedRow} />
           </section>
 
@@ -541,12 +565,7 @@ function SummaryCard({
   hint: string
   highlight?: 'neutral' | 'positive' | 'negative'
 }>) {
-  const borderTone =
-    highlight === 'positive'
-      ? 'border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)]'
-      : highlight === 'negative'
-        ? 'border-[rgba(248,113,113,0.14)] bg-[rgba(248,113,113,0.04)]'
-        : 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+  const borderTone = resolveSummaryCardTone(highlight)
 
   return (
     <div className={`rounded-[24px] border px-4 py-4 ${borderTone}`}>
@@ -575,8 +594,7 @@ function SessionReadoutRow({
   value: string
   emphasis?: 'neutral' | 'positive' | 'negative'
 }>) {
-  const valueClassName =
-    emphasis === 'positive' ? 'text-[#8fffb9]' : emphasis === 'negative' ? 'text-[#fca5a5]' : 'text-white'
+  const valueClassName = resolveSessionReadoutTone(emphasis)
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-[16px] border border-white/6 bg-[rgba(255,255,255,0.02)] px-3 py-3">
@@ -596,18 +614,18 @@ function EmptyPanelState({ title, body }: Readonly<{ title: string; body: string
 }
 
 function formatRole(role: OperationRole) {
-  if (role === 'OWNER') return 'Dono'
-  if (role === 'MANAGER') return 'Gerência'
-  if (role === 'CASHIER') return 'Caixa'
+  if (role === 'OWNER') {return 'Dono'}
+  if (role === 'MANAGER') {return 'Gerência'}
+  if (role === 'CASHIER') {return 'Caixa'}
   return 'Atendimento'
 }
 
 function formatMovementTypeLabel(type: OperationGridRow['movements'][number]['type']) {
-  if (type === 'opening') return 'Abertura de caixa'
-  if (type === 'supply') return 'Suprimento de caixa'
-  if (type === 'withdrawal') return 'Sangria / retirada'
-  if (type === 'sale') return 'Venda registrada'
-  if (type === 'refund') return 'Estorno operacional'
+  if (type === 'opening') {return 'Abertura de caixa'}
+  if (type === 'supply') {return 'Suprimento de caixa'}
+  if (type === 'withdrawal') {return 'Sangria / retirada'}
+  if (type === 'sale') {return 'Venda registrada'}
+  if (type === 'refund') {return 'Estorno operacional'}
   return 'Ajuste manual'
 }
 
@@ -622,22 +640,66 @@ function buildSelectedRegisters(row: OperationGridRow) {
     amount: table.totalAmount,
   }))
 
-  const movementRegisters = row.movements.map((movement) => ({
-    id: `movement-${movement.id}`,
-    happenedAt: movement.createdAt,
-    title: formatMovementTypeLabel(movement.type),
-    subtitle: movement.reason,
-    badgeClassName:
-      movement.type === 'withdrawal'
-        ? 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[#fca5a5]'
-        : movement.type === 'supply'
-          ? 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
-          : 'border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]',
-    icon: movement.type === 'withdrawal' ? ArrowUpRight : Banknote,
-    amount: movement.amount,
-  }))
+  const movementRegisters = row.movements.map((movement) => {
+    const visuals = resolveMovementVisuals(movement.type)
+
+    return {
+      id: `movement-${movement.id}`,
+      happenedAt: movement.createdAt,
+      title: formatMovementTypeLabel(movement.type),
+      subtitle: movement.reason,
+      badgeClassName: visuals.badgeClassName,
+      icon: visuals.icon,
+      amount: movement.amount,
+    }
+  })
 
   return [...tableRegisters, ...movementRegisters].sort(
     (left, right) => new Date(right.happenedAt).getTime() - new Date(left.happenedAt).getTime(),
   )
+}
+
+function resolveSummaryCardTone(highlight: 'neutral' | 'positive' | 'negative') {
+  if (highlight === 'positive') {
+    return 'border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)]'
+  }
+
+  if (highlight === 'negative') {
+    return 'border-[rgba(248,113,113,0.14)] bg-[rgba(248,113,113,0.04)]'
+  }
+
+  return 'border-white/6 bg-[rgba(255,255,255,0.02)]'
+}
+
+function resolveSessionReadoutTone(emphasis: 'neutral' | 'positive' | 'negative') {
+  if (emphasis === 'positive') {
+    return 'text-[#8fffb9]'
+  }
+
+  if (emphasis === 'negative') {
+    return 'text-[#fca5a5]'
+  }
+
+  return 'text-white'
+}
+
+function resolveMovementVisuals(type: OperationGridRow['movements'][number]['type']) {
+  if (type === 'withdrawal') {
+    return {
+      badgeClassName: 'border-[rgba(248,113,113,0.18)] bg-[rgba(248,113,113,0.08)] text-[#fca5a5]',
+      icon: ArrowUpRight,
+    }
+  }
+
+  if (type === 'supply') {
+    return {
+      badgeClassName: 'border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]',
+      icon: Banknote,
+    }
+  }
+
+  return {
+    badgeClassName: 'border-[rgba(96,165,250,0.18)] bg-[rgba(96,165,250,0.08)] text-[#93c5fd]',
+    icon: Banknote,
+  }
 }

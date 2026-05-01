@@ -3,8 +3,9 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react'
-import { ApiError, type ActivityFeedEntry } from '@/lib/api'
-import { removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
+import { type ActivityFeedEntry, ApiError } from '@/lib/api'
+import { fetchAdminPinStatus, removeAdminPin, setupAdminPin } from '@/lib/admin-pin'
+import { getLastDigit, parseRetryAfterSeconds } from '@/lib/pin-input'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/shared/button'
 
@@ -43,8 +44,8 @@ function RecentAccessSummary({
   }
 
   return (
-    <div className="mt-3 rounded-[14px] border border-white/8 bg-white/[0.02] px-4 py-4">
-      <p className="text-sm font-semibold text-white">{formatActivityTitle(latest)}</p>
+    <div className="mt-3 border-l-2 border-[var(--border)] pl-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)]">{formatActivityTitle(latest)}</p>
       <p className="mt-1 text-xs text-[var(--text-soft)]">
         {new Intl.DateTimeFormat('pt-BR', {
           day: '2-digit',
@@ -113,6 +114,88 @@ function formatActivityDescription(entry: ActivityFeedEntry) {
   return entry.resource ? `${entry.resource} · ${entry.event}` : entry.event
 }
 
+function PinSetupForm({
+  pinDigits,
+  setPinDigits,
+  pinSaving,
+  pinSaveError,
+  setPinSaveError,
+  pinSaved,
+  onSave,
+}: Readonly<{
+  pinDigits: string[]
+  setPinDigits: (v: string[]) => void
+  pinSaving: boolean
+  pinSaveError: string
+  setPinSaveError: (v: string) => void
+  pinSaved: boolean
+  onSave: () => void
+}>) {
+  return (
+    <div className="mt-5 space-y-3">
+      <fieldset>
+        <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+          Defina o PIN
+        </legend>
+        <div className="mt-3 flex gap-2">
+          {pinDigits.map((digit, index) => (
+            <input
+              aria-label={`Digito ${index + 1} do PIN`}
+              className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(0,140,255,0.45)] [appearance:textfield]"
+              disabled={pinSaving}
+              inputMode="numeric"
+              key={index}
+              maxLength={1}
+              type="password"
+              value={digit}
+              onChange={(event) => {
+                const value = getLastDigit(event.target.value)
+                const next = [...pinDigits]
+                next[index] = value
+                setPinDigits(next)
+                setPinSaveError('')
+              }}
+            />
+          ))}
+        </div>
+      </fieldset>
+      {pinSaveError ? <p className="text-xs text-[#fca5a5]">{pinSaveError}</p> : null}
+      <Button disabled={pinDigits.join('').length !== 4} loading={pinSaving} type="button" onClick={onSave}>
+        {pinSaved ? 'PIN ativado' : 'Ativar PIN'}
+      </Button>
+    </div>
+  )
+}
+
+async function savePinAction(
+  pinDigits: string[],
+  setPinSaving: (v: boolean) => void,
+  setPinSaveError: (v: string) => void,
+  setPinSaved: (v: boolean) => void,
+  setPinActive: (v: boolean) => void,
+  setPinDigits: (v: string[]) => void,
+) {
+  const pin = pinDigits.join('')
+  if (pin.length !== 4) {
+    return
+  }
+
+  setPinSaving(true)
+  setPinSaveError('')
+
+  try {
+    await setupAdminPin(pin)
+    setPinSaved(true)
+    setPinActive(true)
+    setPinDigits(['', '', '', ''])
+    globalThis.setTimeout(() => setPinSaved(false), 2600)
+  } catch (error) {
+    setPinSaveError(error instanceof ApiError ? error.message : 'Nao foi possivel ativar o PIN agora.')
+  } finally {
+    setPinSaving(false)
+  }
+}
+
 export function PinSetupCard({ activity, activityError, activityLoading }: PinSetupCardProps) {
   const [pinDigits, setPinDigits] = useState(['', '', '', ''])
   const [pinSaved, setPinSaved] = useState(false)
@@ -133,14 +216,34 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
   ]
 
   useEffect(() => {
+    let mounted = true
+
+    void fetchAdminPinStatus()
+      .then((response) => {
+        if (mounted) {
+          setPinActive(response.configured)
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setPinActive(false)
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
     if (!removeBlocked) {
       return
     }
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       setRemoveSecondsLeft((current) => {
         if (current <= 1) {
-          window.clearInterval(intervalId)
+          globalThis.clearInterval(intervalId)
           setRemoveBlocked(false)
           return 0
         }
@@ -148,28 +251,23 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
       })
     }, 1000)
 
-    return () => window.clearInterval(intervalId)
+    return () => globalThis.clearInterval(intervalId)
   }, [removeBlocked])
 
-  async function handleSavePin() {
-    const pin = pinDigits.join('')
-    if (pin.length !== 4) {
-      return
-    }
+  const handleSavePin = () =>
+    savePinAction(pinDigits, setPinSaving, setPinSaveError, setPinSaved, setPinActive, setPinDigits)
 
-    setPinSaving(true)
-    setPinSaveError('')
-
-    try {
-      await setupAdminPin(pin)
-      setPinSaved(true)
-      setPinActive(true)
-      setPinDigits(['', '', '', ''])
-      window.setTimeout(() => setPinSaved(false), 2600)
-    } catch (error) {
-      setPinSaveError(error instanceof ApiError ? error.message : 'Nao foi possivel ativar o PIN agora.')
-    } finally {
-      setPinSaving(false)
+  function handleRemoveError(error: unknown) {
+    if (error instanceof ApiError) {
+      if (error.status === 423) {
+        setRemoveBlocked(true)
+        setRemoveSecondsLeft(parseRetryAfterSeconds(error.message, 300))
+      } else {
+        setConfirmRemoveError(error.message || 'PIN incorreto. Tente novamente.')
+        globalThis.setTimeout(() => removeInputRefs[0].current?.focus(), 50)
+      }
+    } else {
+      setConfirmRemoveError('Erro inesperado ao remover o PIN.')
     }
   }
 
@@ -184,26 +282,14 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
       setConfirmRemoveError('')
     } catch (error) {
       setConfirmRemoveDigits(['', '', '', ''])
-
-      if (error instanceof ApiError) {
-        if (error.status === 423) {
-          const match = error.message.match(/(\d+)\s*s/i)
-          setRemoveBlocked(true)
-          setRemoveSecondsLeft(match ? Number(match[1]) : 300)
-        } else {
-          setConfirmRemoveError(error.message || 'PIN incorreto. Tente novamente.')
-          window.setTimeout(() => removeInputRefs[0].current?.focus(), 50)
-        }
-      } else {
-        setConfirmRemoveError('Erro inesperado ao remover o PIN.')
-      }
+      handleRemoveError(error)
     } finally {
       setRemoving(false)
     }
   }
 
   async function handleConfirmRemoveDigitChange(index: number, rawValue: string) {
-    const value = rawValue.replace(/\D/g, '').slice(-1)
+    const value = getLastDigit(rawValue)
     const next = [...confirmRemoveDigits]
     next[index] = value
     setConfirmRemoveDigits(next)
@@ -219,22 +305,23 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-      <article className="imperial-card p-7">
+    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
         <div className="flex items-center gap-3">
           <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
             <KeyRound className="size-5" />
           </span>
           <div>
-            <p className="text-sm text-[var(--text-soft)]">PIN administrativo</p>
-            <h3 className="text-xl font-semibold text-white">Controle fino das ações sensíveis</h3>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">PIN administrativo</p>
+            <h3 className="text-xl font-semibold text-[var(--text-primary)]">Controle fino das ações sensíveis</h3>
           </div>
         </div>
 
-        <div className="mt-6 rounded-[20px] border border-[rgba(52,242,127,0.14)] bg-[rgba(52,242,127,0.04)] p-5">
+        <div className="mt-6 border-t border-[var(--border)] pt-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-white">Estado atual</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Estado atual</p>
               <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
                 {pinActive
                   ? 'O fluxo sensível do PDV está protegido por confirmação administrativa.'
@@ -246,7 +333,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]',
                 pinActive
                   ? 'border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.08)] text-[#8fffb9]'
-                  : 'border border-white/8 bg-white/[0.03] text-[var(--text-soft)]',
+                  : 'border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-soft)]',
               )}
             >
               <ShieldCheck className="size-3" />
@@ -255,45 +342,15 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
           </div>
 
           {!pinActive ? (
-            <div className="mt-5 space-y-3">
-              <fieldset>
-                <legend className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                  Defina o PIN
-                </legend>
-                <div className="mt-3 flex gap-2">
-                  {pinDigits.map((digit, index) => (
-                    <input
-                      aria-label={`Digito ${index + 1} do PIN`}
-                      className="size-12 rounded-[12px] border border-white/10 bg-white/[0.04] text-center text-lg font-bold text-white outline-none focus:border-[rgba(52,242,127,0.35)] [appearance:textfield]"
-                      disabled={pinSaving}
-                      inputMode="numeric"
-                      key={index}
-                      maxLength={1}
-                      type="password"
-                      value={digit}
-                      onChange={(event) => {
-                        const value = event.target.value.replace(/\D/g, '').slice(-1)
-                        const next = [...pinDigits]
-                        next[index] = value
-                        setPinDigits(next)
-                        setPinSaveError('')
-                      }}
-                    />
-                  ))}
-                </div>
-              </fieldset>
-
-              {pinSaveError ? <p className="text-xs text-[#fca5a5]">{pinSaveError}</p> : null}
-
-              <Button
-                disabled={pinDigits.join('').length !== 4}
-                loading={pinSaving}
-                onClick={() => void handleSavePin()}
-                type="button"
-              >
-                {pinSaved ? 'PIN ativado' : 'Ativar PIN'}
-              </Button>
-            </div>
+            <PinSetupForm
+              pinDigits={pinDigits}
+              pinSaveError={pinSaveError}
+              pinSaved={pinSaved}
+              pinSaving={pinSaving}
+              setPinDigits={setPinDigits}
+              setPinSaveError={setPinSaveError}
+              onSave={() => void handleSavePin()}
+            />
           ) : (
             <div className="mt-5 space-y-3">
               {!showConfirmRemove ? (
@@ -316,13 +373,17 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                 </div>
               ) : (
                 <div className="rounded-[16px] border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.05)] p-4">
-                  <p className="text-sm font-semibold text-white">Confirme o PIN atual para desativar</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    Confirme o PIN atual para desativar
+                  </p>
 
                   {removeBlocked ? (
                     <div className="mt-4 rounded-[14px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.08)] px-4 py-4 text-center">
                       <ShieldAlert className="mx-auto mb-2 size-5 text-[#fca5a5]" />
                       <p className="text-sm font-semibold text-[#fca5a5]">Tentativas bloqueadas</p>
-                      <p className="mt-2 text-2xl font-bold text-white">{formatCountdown(removeSecondsLeft)}</p>
+                      <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                        {formatCountdown(removeSecondsLeft)}
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -332,7 +393,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                           {confirmRemoveDigits.map((digit, index) => (
                             <input
                               aria-label={`Confirmacao do digito ${index + 1}`}
-                              className="size-12 rounded-[12px] border border-white/10 bg-white/[0.03] text-center text-lg font-bold text-white outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
+                              className="size-12 rounded-[12px] border border-[var(--border)] bg-[var(--surface-muted)] text-center text-lg font-bold text-[var(--text-primary)] outline-none focus:border-[rgba(239,68,68,0.35)] [appearance:textfield]"
                               disabled={removing}
                               inputMode="numeric"
                               key={index}
@@ -350,7 +411,7 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
                   )}
 
                   <button
-                    className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-white"
+                    className="mt-4 text-xs text-[var(--text-soft)] underline transition hover:text-[var(--text-primary)]"
                     type="button"
                     onClick={() => {
                       setShowConfirmRemove(false)
@@ -365,29 +426,30 @@ export function PinSetupCard({ activity, activityError, activityLoading }: PinSe
             </div>
           )}
         </div>
-      </article>
+        </article>
 
-      <article className="imperial-card p-7">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Recuperação e revisão</p>
-        <h3 className="mt-3 text-2xl font-semibold text-white">Fluxo seguro da conta principal</h3>
-        <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-          A troca definitiva de senha continua via validação segura por email enquanto o painel administrativo interno é
-          endurecido.
-        </p>
+        <aside className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+            Recuperação e revisão
+          </p>
+          <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+            Recuperação de senha por email e leitura recente do acesso mais novo da conta.
+          </p>
 
-        <div className="mt-6">
-          <Link href="/recuperar-senha">
-            <Button fullWidth type="button" variant="secondary">
-              Abrir recuperação por email
-            </Button>
-          </Link>
-        </div>
+          <div className="mt-6">
+            <Link href="/recuperar-senha">
+              <Button fullWidth type="button" variant="secondary">
+                Abrir recuperação por email
+              </Button>
+            </Link>
+          </div>
 
-        <div className="mt-6 border-t border-white/[0.06] pt-6">
-          <p className="text-sm font-semibold text-white">Leitura recente</p>
-          <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
-        </div>
-      </article>
-    </div>
+          <div className="mt-6 border-t border-[var(--border)] pt-6">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">Leitura recente</p>
+            <RecentAccessSummary activity={activity} activityError={activityError} activityLoading={activityLoading} />
+          </div>
+        </aside>
+      </div>
+    </section>
   )
 }

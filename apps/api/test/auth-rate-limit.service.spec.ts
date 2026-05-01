@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common'
+import { HttpException, HttpStatus, ServiceUnavailableException } from '@nestjs/common'
 import type { ConfigService } from '@nestjs/config'
 import type { CacheService } from '../src/common/services/cache.service'
 import { AuthRateLimitService } from '../src/modules/auth/auth-rate-limit.service'
@@ -10,6 +10,7 @@ describe('AuthRateLimitService', () => {
   }
 
   const cache = {
+    isReady: jest.fn(() => true),
     get: jest.fn(),
     set: jest.fn(async () => {}),
     del: jest.fn(async () => {}),
@@ -23,6 +24,7 @@ describe('AuthRateLimitService', () => {
     Object.keys(configValues).forEach((key) => {
       configValues[key] = undefined
     })
+    cache.isReady.mockReturnValue(true)
     service = new AuthRateLimitService(configService as unknown as ConfigService, cache as unknown as CacheService)
     jest.spyOn(Date, 'now').mockImplementation(() => now)
   })
@@ -72,6 +74,16 @@ describe('AuthRateLimitService', () => {
     await service.assertLoginAllowed('k-3')
 
     expect(cache.del).toHaveBeenCalledWith('ratelimit:auth:k-3')
+  })
+
+  it('falha com 503 quando cache estiver indisponivel', async () => {
+    cache.isReady.mockReturnValue(false)
+
+    await expect(service.assertLoginAllowed('down-1')).rejects.toBeInstanceOf(ServiceUnavailableException)
+    await expect(service.recordFailure('down-1')).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(cache.get).not.toHaveBeenCalled()
+    expect(cache.set).not.toHaveBeenCalled()
   })
 
   it('cria entrada nova ao registrar falha sem historico', async () => {

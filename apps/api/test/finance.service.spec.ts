@@ -35,6 +35,9 @@ const mockPrisma = {
     findMany: jest.fn(),
     groupBy: jest.fn(),
   },
+  orderItem: {
+    groupBy: jest.fn(),
+  },
 }
 
 const mockCurrencyService = {
@@ -55,10 +58,15 @@ function makeProduct(overrides: object = {}) {
     id: 'product-1',
     userId: 'user-1',
     name: 'Produto Teste',
+    barcode: null,
     brand: null,
     packagingClass: 'Padrão',
     measurementUnit: 'UN',
     measurementValue: 1,
+    quantityLabel: null,
+    imageUrl: null,
+    catalogSource: null,
+    isCombo: false,
     unitsPerPackage: 1,
     description: null,
     category: 'Bebidas',
@@ -253,6 +261,7 @@ beforeEach(() => {
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
   mockCurrencyService.convert.mockImplementation((value: number) => value) // Pass-through para BRL
   mockCache.financeKey.mockReturnValue('finance:summary:user-1')
+  mockPrisma.orderItem.groupBy.mockResolvedValue([])
 })
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -463,7 +472,10 @@ describe('FinanceService', () => {
 
     it('deve retornar top products', async () => {
       // Arrange
-      const products = [makeProduct({ name: 'Produto 1', stock: 100 }), makeProduct({ name: 'Produto 2', stock: 50 })]
+      const products = [
+        makeProduct({ name: 'Brahma 350ml', measurementUnit: 'ML', measurementValue: 350, stock: 100 }),
+        makeProduct({ name: 'Produto 2', stock: 50 }),
+      ]
       mockPrisma.product.findMany.mockResolvedValue(products)
       mockPrisma.order.findMany.mockResolvedValue([])
       mockPrisma.order.groupBy.mockResolvedValue([])
@@ -474,6 +486,12 @@ describe('FinanceService', () => {
       // Assert
       expect(result.topProducts).toBeDefined()
       expect(Array.isArray(result.topProducts)).toBe(true)
+      expect(result.topProducts[0]).toMatchObject({
+        name: 'Brahma 350ml',
+        brand: 'Brahma',
+        quantityLabel: '350ml',
+        catalogSource: 'manual',
+      })
     })
 
     it('deve retornar recent orders (últimos 5)', async () => {
@@ -494,7 +512,9 @@ describe('FinanceService', () => {
 
       // Assert
       expect(result.recentOrders).toHaveLength(5)
-      expect(result.recentOrders[0].id).toBe('order-1')
+      const firstRecentOrder = result.recentOrders[0]
+      expect(firstRecentOrder).toBeDefined()
+      expect(firstRecentOrder?.id).toBe('order-1')
     })
 
     it('deve retornar revenue timeline (últimos 6 meses)', async () => {
@@ -681,8 +701,10 @@ describe('FinanceService', () => {
       // Assert
       expect(result.salesMap).toBeDefined()
       expect(result.salesMap.length).toBeGreaterThan(0)
-      expect(result.salesMap[0].latitude).toBeDefined()
-      expect(result.salesMap[0].longitude).toBeDefined()
+      const firstSalesMapEntry = result.salesMap[0]
+      expect(firstSalesMapEntry).toBeDefined()
+      expect(firstSalesMapEntry?.latitude).toBeDefined()
+      expect(firstSalesMapEntry?.longitude).toBeDefined()
     })
 
     it('deve retornar top regions', async () => {

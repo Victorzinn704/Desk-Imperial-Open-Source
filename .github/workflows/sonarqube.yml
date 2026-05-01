@@ -61,7 +61,7 @@ jobs:
       SESSION_TTL_HOURS: '24'
       PASSWORD_RESET_TTL_MINUTES: '30'
       CONSENT_VERSION: '2026.03'
-      ENABLE_SWAGGER: 'false'
+      ENABLE_API_DOCS: 'false'
 
     steps:
       - name: Checkout

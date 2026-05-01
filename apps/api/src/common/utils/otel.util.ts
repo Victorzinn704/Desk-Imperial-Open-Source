@@ -1,4 +1,4 @@
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api'
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node'
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
@@ -7,41 +7,62 @@ import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs'
 import { NodeSDK, type NodeSDKConfiguration } from '@opentelemetry/sdk-node'
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
-import { ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base'
+import { BatchSpanProcessor, ParentBasedSampler, TraceIdRatioBasedSampler, type SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import {
   SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions'
+import * as Sentry from '@sentry/nestjs'
+import { SentryPropagator, SentrySampler, SentrySpanProcessor } from '@sentry/opentelemetry'
 
 type InitializeApiOpenTelemetryOptions = {
-  endpoint?: string
-  tracesEndpoint?: string
-  metricsEndpoint?: string
-  logsEndpoint?: string
-  headers?: string
-  serviceName?: string
-  serviceVersion?: string
-  environment?: string
-  tracesSampleRate?: string | number
-  metricsExportIntervalMs?: string | number
-  diagnosticsEnabled?: boolean
+  endpoint?: string | undefined
+  tracesEndpoint?: string | undefined
+  metricsEndpoint?: string | undefined
+  logsEndpoint?: string | undefined
+  headers?: string | undefined
+  serviceName?: string | undefined
+  serviceVersion?: string | undefined
+  environment?: string | undefined
+  tracesSampleRate?: string | number | undefined
+  metricsExportIntervalMs?: string | number | undefined
+  diagnosticsEnabled?: boolean | undefined
+}
+
+export type InitializeApiOpenTelemetryResult = {
+  enabled: boolean
+  otlpTracesEnabled: boolean
+  otlpMetricsEnabled: boolean
+  otlpLogsEnabled: boolean
+  sentryBridgeEnabled: boolean
 }
 
 let apiOtelSdk: NodeSDK | null = null
 let apiOtelStarted = false
+let apiOtelStatus: InitializeApiOpenTelemetryResult = {
+  enabled: false,
+  otlpTracesEnabled: false,
+  otlpMetricsEnabled: false,
+  otlpLogsEnabled: false,
+  sentryBridgeEnabled: false,
+}
 
-export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelemetryOptions) {
+export async function initializeApiOpenTelemetry(
+  options: InitializeApiOpenTelemetryOptions,
+): Promise<InitializeApiOpenTelemetryResult> {
   if (apiOtelStarted) {
-    return true
+    return apiOtelStatus
   }
 
   const traceEndpoint = normalizeSignalEndpoint(options.tracesEndpoint ?? options.endpoint, 'traces')
   const metricsEndpoint = normalizeSignalEndpoint(options.metricsEndpoint ?? options.endpoint, 'metrics')
   const logsEndpoint = normalizeSignalEndpoint(options.logsEndpoint ?? options.endpoint, 'logs')
+  const sentryClient = getActiveSentryClient()
+  const sentryBridgeEnabled = Boolean(sentryClient)
 
-  if (!traceEndpoint && !metricsEndpoint && !logsEndpoint) {
-    return false
+  if (!traceEndpoint && !metricsEndpoint && !logsEndpoint && !sentryBridgeEnabled) {
+    return apiOtelStatus
   }
 
   if (options.diagnosticsEnabled) {
@@ -51,6 +72,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
   const parsedHeaders = parseOtlpHeaders(options.headers)
   const tracesSampleRate = parseSampleRate(options.tracesSampleRate, 0.03)
   const metricsExportIntervalMs = parsePositiveInteger(options.metricsExportIntervalMs, 15_000)
+  const spanProcessors: SpanProcessor[] = []
 
   const sdkConfiguration: Partial<NodeSDKConfiguration> = {
     resource: resourceFromAttributes({
@@ -70,24 +92,29 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
     ],
   }
 
-  if (traceEndpoint) {
-    sdkConfiguration.traceExporter = new OTLPTraceExporter({
-      url: traceEndpoint,
-      headers: parsedHeaders,
-      timeoutMillis: 3_000,
-    })
+  if (sentryClient) {
+    sdkConfiguration.contextManager = new Sentry.SentryContextManager()
+    sdkConfiguration.textMapPropagator = new SentryPropagator()
+    sdkConfiguration.sampler = new SentrySampler(sentryClient)
+    spanProcessors.push(new SentrySpanProcessor())
+  } else if (traceEndpoint) {
     sdkConfiguration.sampler = new ParentBasedSampler({
       root: new TraceIdRatioBasedSampler(tracesSampleRate),
     })
   }
 
+  if (traceEndpoint) {
+    const traceExporter = new OTLPTraceExporter(buildOtlpExporterConfig(traceEndpoint, parsedHeaders))
+    spanProcessors.push(new BatchSpanProcessor(traceExporter))
+  }
+
+  if (spanProcessors.length > 0) {
+    sdkConfiguration.spanProcessors = spanProcessors
+  }
+
   if (metricsEndpoint) {
     const metricReader = new PeriodicExportingMetricReader({
-      exporter: new OTLPMetricExporter({
-        url: metricsEndpoint,
-        headers: parsedHeaders,
-        timeoutMillis: 3_000,
-      }),
+      exporter: new OTLPMetricExporter(buildOtlpExporterConfig(metricsEndpoint, parsedHeaders)),
       exportIntervalMillis: metricsExportIntervalMs,
       exportTimeoutMillis: 3_000,
     })
@@ -97,11 +124,7 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   if (logsEndpoint) {
     const logRecordProcessor = new BatchLogRecordProcessor(
-      new OTLPLogExporter({
-        url: logsEndpoint,
-        headers: parsedHeaders,
-        timeoutMillis: 3_000,
-      }),
+      new OTLPLogExporter(buildOtlpExporterConfig(logsEndpoint, parsedHeaders)),
     )
 
     sdkConfiguration.logRecordProcessors = [logRecordProcessor]
@@ -111,7 +134,19 @@ export async function initializeApiOpenTelemetry(options: InitializeApiOpenTelem
 
   apiOtelSdk.start()
   apiOtelStarted = true
-  return true
+  apiOtelStatus = {
+    enabled: true,
+    otlpTracesEnabled: Boolean(traceEndpoint),
+    otlpMetricsEnabled: Boolean(metricsEndpoint),
+    otlpLogsEnabled: Boolean(logsEndpoint),
+    sentryBridgeEnabled,
+  }
+
+  if (sentryBridgeEnabled) {
+    Sentry.validateOpenTelemetrySetup()
+  }
+
+  return apiOtelStatus
 }
 
 export async function shutdownApiOpenTelemetry() {
@@ -124,7 +159,35 @@ export async function shutdownApiOpenTelemetry() {
   } finally {
     apiOtelSdk = null
     apiOtelStarted = false
+    apiOtelStatus = {
+      enabled: false,
+      otlpTracesEnabled: false,
+      otlpMetricsEnabled: false,
+      otlpLogsEnabled: false,
+      sentryBridgeEnabled: false,
+    }
   }
+}
+
+function getActiveSentryClient() {
+  const client = Sentry.getClient()
+  if (!client) {
+    return null
+  }
+
+  const options = client.getOptions()
+  const dsn =
+    typeof options.dsn === 'string'
+      ? options.dsn.trim()
+      : options.dsn && typeof options.dsn === 'object'
+        ? String(options.dsn).trim()
+        : ''
+
+  if (!dsn || options.enabled === false) {
+    return null
+  }
+
+  return client
 }
 
 function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' | 'metrics' | 'logs') {
@@ -133,7 +196,7 @@ function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' 
     return ''
   }
 
-  const trimmed = raw.replace(/\/+$/, '')
+  const trimmed = trimTrailingSlashes(raw)
   const suffix = `/v1/${signal}`
 
   if (trimmed.endsWith(suffix)) {
@@ -141,6 +204,15 @@ function normalizeSignalEndpoint(endpoint: string | undefined, signal: 'traces' 
   }
 
   return `${trimmed}${suffix}`
+}
+
+function trimTrailingSlashes(value: string) {
+  let end = value.length
+  while (end > 0 && value[end - 1] === '/') {
+    end -= 1
+  }
+
+  return end === value.length ? value : value.slice(0, end)
 }
 
 function parseOtlpHeaders(headers: string | undefined) {
@@ -173,6 +245,14 @@ function parseOtlpHeaders(headers: string | undefined) {
   }
 
   return Object.fromEntries(entries)
+}
+
+function buildOtlpExporterConfig(url: string, headers: Record<string, string> | undefined) {
+  return {
+    url,
+    timeoutMillis: 3_000,
+    ...(headers ? { headers } : {}),
+  }
 }
 
 function parseSampleRate(value: string | number | undefined, fallback: number) {

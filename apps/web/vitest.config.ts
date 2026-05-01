@@ -20,6 +20,16 @@ if (!sonarCoverageMode) {
   coverageExclude.splice(4, 0, 'components/staff-mobile/**')
 }
 
+const sonarCoverageMode = process.env.SONAR_COVERAGE === 'true'
+const coverageExclude = [
+  '**/*.d.ts',
+  '**/test/**',
+  '**/e2e/**',
+  'components/shared/**',
+  'lib/operations/index.ts',
+  'lib/operations/operations-types.ts',
+]
+
 export default defineConfig({
   resolve: {
     alias: {

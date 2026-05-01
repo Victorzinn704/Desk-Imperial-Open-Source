@@ -141,6 +141,52 @@ export function setOptimisticComandaStatus(
   }))
 }
 
+export function appendOptimisticComandaPayment(
+  queryClient: QueryClient,
+  queryKey: readonly unknown[],
+  comandaId: string,
+  input: {
+    amount: number
+    method: NonNullable<ComandaRecord['payments']>[number]['method']
+  },
+) {
+  return patchOptimisticComanda(queryClient, queryKey, comandaId, (comanda) => {
+    const paidAmount = Math.min(comanda.totalAmount, (comanda.paidAmount ?? 0) + input.amount)
+    const remainingAmount = Math.max(0, comanda.totalAmount - paidAmount)
+    const paymentStatus: ComandaRecord['paymentStatus'] = resolveOptimisticPaymentStatus(remainingAmount, paidAmount)
+
+    return {
+      ...comanda,
+      paidAmount,
+      remainingAmount,
+      paymentStatus,
+      payments: [
+        ...(comanda.payments ?? []),
+        {
+          id: generateOptimisticId('opt-pay'),
+          amount: input.amount,
+          method: input.method,
+          status: 'CONFIRMED',
+          paidAt: new Date().toISOString(),
+          note: null,
+        },
+      ],
+    }
+  })
+}
+
+function resolveOptimisticPaymentStatus(remainingAmount: number, paidAmount: number): ComandaRecord['paymentStatus'] {
+  if (remainingAmount <= 0.009) {
+    return 'PAID'
+  }
+
+  if (paidAmount > 0) {
+    return 'PARTIAL'
+  }
+
+  return 'UNPAID'
+}
+
 export async function patchOptimisticComandaMutation(
   queryClient: QueryClient,
   queryKey: readonly unknown[],
@@ -163,11 +209,15 @@ export function rollbackOperationsSnapshot(
   queryClient.setQueryData(queryKey, snapshot)
 }
 
+let optimisticIdCounter = 0
+
 function generateOptimisticId(prefix: string) {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return `${prefix}-${crypto.randomUUID()}`
   }
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+
+  optimisticIdCounter += 1
+  return `${prefix}-${Date.now().toString(36)}-${optimisticIdCounter.toString(36).padStart(4, '0')}`
 }
 
 export function buildOptimisticComandaRecord(input: {

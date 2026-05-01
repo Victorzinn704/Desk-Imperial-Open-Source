@@ -1,16 +1,16 @@
 import { BadRequestException } from '@nestjs/common'
 import {
   BuyerType,
+  type CashClosure,
   CashClosureStatus,
   CashMovementType,
   CashSessionStatus,
   ComandaStatus,
-  type CashClosure,
 } from '@prisma/client'
 import { CacheService } from '../../common/services/cache.service'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
 import type { OperationsLiveResponse } from './operations.types'
+import type { OperationsResponseOptionsDto } from './operations.schemas'
 
 type OperationsSnapshotBuilder = {
   buildLiveSnapshot(
@@ -88,7 +88,7 @@ export async function buildOptionalOperationsSnapshot(
   }
 }
 
-export function toNumber(value: { toNumber(): number } | number | null | undefined): number {
+export function toNumberOrZero(value: { toNumber(): number } | number | null | undefined): number {
   if (value == null) {
     return 0
   }
@@ -129,23 +129,23 @@ export function buildCashUpdatedPayload(session: {
   const inflowAmount = roundCurrency(
     session.movements
       .filter((movement) => movement.type === CashMovementType.SUPPLY || movement.type === CashMovementType.ADJUSTMENT)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0),
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0),
   )
   const outflowAmount = roundCurrency(
     session.movements
       .filter((movement) => movement.type === CashMovementType.WITHDRAWAL)
-      .reduce((sum, movement) => sum + toNumber(movement.amount), 0),
+      .reduce((sum, movement) => sum + toNumberOrZero(movement.amount), 0),
   )
 
   return {
     cashSessionId: session.id,
     status: session.status === CashSessionStatus.OPEN ? 'OPEN' : 'CLOSED',
-    openingAmount: toNumber(session.openingCashAmount),
+    openingAmount: toNumberOrZero(session.openingCashAmount),
     inflowAmount,
     outflowAmount,
-    expectedAmount: toNumber(session.expectedCashAmount),
-    countedAmount: session.countedCashAmount == null ? null : toNumber(session.countedCashAmount),
-    differenceAmount: session.differenceAmount == null ? null : toNumber(session.differenceAmount),
+    expectedAmount: toNumberOrZero(session.expectedCashAmount),
+    countedAmount: session.countedCashAmount == null ? null : toNumberOrZero(session.countedCashAmount),
+    differenceAmount: session.differenceAmount == null ? null : toNumberOrZero(session.differenceAmount),
     movementCount: session.movements.length,
   } as const
 }
@@ -163,18 +163,11 @@ export function buildComandaUpdatedPayload(comanda: {
   return {
     comandaId: comanda.id,
     mesaLabel: comanda.tableLabel,
-    status:
-      comanda.status === ComandaStatus.OPEN
-        ? 'ABERTA'
-        : comanda.status === ComandaStatus.IN_PREPARATION
-          ? 'EM_PREPARO'
-          : comanda.status === ComandaStatus.READY
-            ? 'PRONTA'
-            : 'FECHADA',
+    status: resolveRealtimeComandaStatus(comanda.status),
     employeeId: comanda.currentEmployeeId,
-    subtotal: toNumber(comanda.subtotalAmount),
-    discountAmount: toNumber(comanda.discountAmount),
-    totalAmount: toNumber(comanda.totalAmount),
+    subtotal: toNumberOrZero(comanda.subtotalAmount),
+    discountAmount: toNumberOrZero(comanda.discountAmount),
+    totalAmount: toNumberOrZero(comanda.totalAmount),
     totalItems: comanda.items ? comanda.items.reduce((sum, item) => sum + item.quantity, 0) : 0,
   } as const
 }
@@ -182,20 +175,43 @@ export function buildComandaUpdatedPayload(comanda: {
 export function buildCashClosurePayload(closure: CashClosure) {
   return {
     closureId: closure.id,
-    status:
-      closure.status === CashClosureStatus.CLOSED || closure.status === CashClosureStatus.FORCE_CLOSED
-        ? 'CLOSED'
-        : closure.status === CashClosureStatus.PENDING_EMPLOYEE_CLOSE
-          ? 'PENDING'
-          : 'OPEN',
+    status: resolveRealtimeCashClosureStatus(closure.status),
     openedAt: closure.createdAt.toISOString(),
     closedAt: closure.closedAt?.toISOString() ?? null,
-    expectedAmount: toNumber(closure.expectedCashAmount),
-    grossRevenueAmount: toNumber(closure.grossRevenueAmount),
-    realizedProfitAmount: toNumber(closure.realizedProfitAmount),
-    countedAmount: closure.countedCashAmount == null ? null : toNumber(closure.countedCashAmount),
-    differenceAmount: closure.differenceAmount == null ? null : toNumber(closure.differenceAmount),
+    expectedAmount: toNumberOrZero(closure.expectedCashAmount),
+    grossRevenueAmount: toNumberOrZero(closure.grossRevenueAmount),
+    realizedProfitAmount: toNumberOrZero(closure.realizedProfitAmount),
+    countedAmount: closure.countedCashAmount == null ? null : toNumberOrZero(closure.countedCashAmount),
+    differenceAmount: closure.differenceAmount == null ? null : toNumberOrZero(closure.differenceAmount),
     openComandasCount: closure.openComandasCount,
     pendingCashSessions: closure.openSessionsCount,
   } as const
+}
+
+function resolveRealtimeComandaStatus(status: ComandaStatus) {
+  if (status === ComandaStatus.OPEN) {
+    return 'OPEN' as const
+  }
+
+  if (status === ComandaStatus.IN_PREPARATION) {
+    return 'IN_PREPARATION' as const
+  }
+
+  if (status === ComandaStatus.READY) {
+    return 'READY' as const
+  }
+
+  return 'CLOSED' as const
+}
+
+function resolveRealtimeCashClosureStatus(status: CashClosureStatus) {
+  if (status === CashClosureStatus.CLOSED || status === CashClosureStatus.FORCE_CLOSED) {
+    return 'CLOSED' as const
+  }
+
+  if (status === CashClosureStatus.PENDING_EMPLOYEE_CLOSE) {
+    return 'PENDING' as const
+  }
+
+  return 'OPEN' as const
 }

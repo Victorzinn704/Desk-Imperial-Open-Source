@@ -30,6 +30,7 @@ describe('ComandaService - openComanda realtime', () => {
 
   const helpers = {
     resolveComandaDraftItems: jest.fn(),
+    assertDraftSelectionsStockAvailability: jest.fn(async () => {}),
     assertBusinessDayOpen: jest.fn(async () => {}),
     assertOpenTableAvailability: jest.fn(async () => {}),
     resolveEmployeeForStaff: jest.fn(async () => null),
@@ -87,8 +88,12 @@ describe('ComandaService - openComanda realtime', () => {
         }),
         findMany: jest.fn(async ({ where }: any) => {
           return queuedItems.filter((item) => {
-            if (where?.comandaId && item.comandaId !== where.comandaId) return false
-            if (where?.kitchenStatus?.not !== undefined && item.kitchenStatus === null) return false
+            if (where?.comandaId && item.comandaId !== where.comandaId) {
+              return false
+            }
+            if (where?.kitchenStatus?.not !== undefined && item.kitchenStatus === null) {
+              return false
+            }
             return true
           })
         }),
@@ -219,6 +224,7 @@ describe('ComandaService - openComanda realtime', () => {
         kitchenReadyAt: null,
         businessDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       }),
+      undefined,
     )
   })
 })

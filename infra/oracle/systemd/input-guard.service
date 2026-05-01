@@ -1,0 +1,14 @@
+[Unit]
+Description=Desk Imperial host input guard
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/desk-imperial
+EnvironmentFile=-/opt/desk-imperial/infra/oracle/host-guard.env
+ExecStart=/bin/bash /opt/desk-imperial/infra/scripts/oracle-host-input-guard.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

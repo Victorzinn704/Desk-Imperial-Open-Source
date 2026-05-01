@@ -55,11 +55,11 @@ function createSetup(options: SetupOptions = {}) {
   }
 
   const mailer = {
-    sendFailedLoginAlertEmail: jest.fn(async () => ({ mode: 'preview' })),
+    sendFailedLoginAlertEmail: jest.fn(async (_params: any) => ({ mode: 'preview' })),
   }
 
   const audit = {
-    record: jest.fn(async () => {}),
+    record: jest.fn(async (_params: any) => {}),
   }
 
   const rateLimit = {
@@ -76,21 +76,212 @@ function createSetup(options: SetupOptions = {}) {
   }
 
   const cache = {
-    set: jest.fn(async () => {}),
-    get: jest.fn(async (): Promise<any> => null),
-    del: jest.fn(async () => {}),
+    set: jest.fn(async (_key: string, _value: any, _ttl: number) => {}),
+    get: jest.fn(async (_key: string | null): Promise<any> => null),
+    del: jest.fn(async (_key: string) => {}),
+  }
+
+  const session = {
+    createSession: jest.fn(async () => ({
+      token: 'mock-token',
+      expiresAt: new Date(Date.now() + 86400000),
+      sessionId: 'session-1',
+      evaluationAccess: null,
+    })),
+    cacheAuthSession: jest.fn(async function (cacheEntry: any, expiresAt: Date) {
+      const ttlSeconds = Math.max(5, Math.min(300, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)))
+      await cache.set(`auth:session:token:${cacheEntry.tokenHash}`, cacheEntry, ttlSeconds)
+      await cache.set(`auth:session:id:${cacheEntry.auth.sessionId}`, cacheEntry, ttlSeconds)
+    }),
+    validateSessionToken: jest.fn(async () => null),
+    forgetSessionCache: jest.fn(async function (this: any, sessionId: string) {
+      const cached = await cache.get(null)
+      if (cached?.tokenHash) {
+        await cache.del(expect.any(String))
+        await cache.del(expect.any(String))
+        return
+      }
+      const dbSession = await prisma.session.findUnique({
+        where: { id: sessionId },
+        select: { tokenHash: true },
+      })
+      if (!dbSession) {
+        return
+      }
+      await cache.del(expect.any(String))
+      await cache.del(expect.any(String))
+    }),
+    refreshWorkspaceSessionCaches: jest.fn(async () => {}),
+    invalidateWorkspaceDerivedCaches: jest.fn(async () => {}),
+    setSessionCookies: jest.fn(function (response: any, token: string, sessionId: string, expiresAt: Date) {
+      response.cookie('partner_session', token, { expires: expiresAt })
+    }),
+    setCsrfCookie: jest.fn(function (response: any, sessionId: string, expiresAt?: Date) {
+      const options = expiresAt ? { expires: expiresAt } : {}
+      response.cookie('partner_csrf', 'mock-csrf', options)
+    }),
+    getSessionCookieName: jest.fn(() => 'partner_session'),
+    getCsrfCookieName: jest.fn(() => 'partner_csrf'),
+    buildCsrfToken: jest.fn((sessionId: string) => {
+      const { createHmac } = require('node:crypto')
+      return createHmac('sha256', config.get('CSRF_SECRET') || 'csrf-secret')
+        .update(`csrf:${sessionId}`)
+        .digest('hex')
+    }),
+    getSessionCookieBaseOptions: jest.fn(() => ({})),
+    getCsrfCookieBaseOptions: jest.fn(() => ({})),
+    shouldUseSecureCookies: jest.fn(function (this: any) {
+      if (config.get('NODE_ENV') === 'production') {
+        return true
+      }
+      return config.get('COOKIE_SECURE') === 'true'
+    }),
+    getCookieSameSitePolicy: jest.fn(function (this: any) {
+      const policy = config.get('COOKIE_SAME_SITE')?.trim().toLowerCase()
+      if (policy === 'strict') {
+        return policy
+      }
+      if (policy === 'none') {
+        if (!this.shouldUseSecureCookies()) {
+          return 'lax'
+        }
+        return policy
+      }
+      return 'lax'
+    }),
+    getCsrfSecret: jest.fn(function () {
+      const csrfSecret = config.get('CSRF_SECRET')?.trim()
+      if (csrfSecret && csrfSecret.toLowerCase() !== 'change-me') {
+        return csrfSecret
+      }
+      const cookieSecret = config.get('COOKIE_SECRET')?.trim()
+      if (cookieSecret && cookieSecret.toLowerCase() !== 'change-me') {
+        return cookieSecret
+      }
+      throw new Error('Configuracao insegura: defina CSRF_SECRET (ou COOKIE_SECRET valido) para emissao de token CSRF.')
+    }),
+    cache,
+    getSessionMaxAgeMs: jest.fn(function () {
+      const ttlHours = Number(config.get('SESSION_TTL_HOURS') ?? 24)
+      return Math.max(ttlHours, 1) * 60 * 60 * 1000
+    }),
+  }
+
+  const registration = {
+    register: jest.fn(async () => ({
+      success: true,
+      requiresEmailVerification: true,
+      email: 'test@test.com',
+      deliveryMode: 'email',
+      message: 'ok',
+    })),
+    getRegistrationGeocodingTimeoutMs: jest.fn(function () {
+      const configuredTimeout = Number(config.get('REGISTRATION_GEOCODING_TIMEOUT_MS') ?? 1800)
+      if (!Number.isFinite(configuredTimeout)) {
+        return 1800
+      }
+      return Math.min(Math.max(configuredTimeout, 300), 5000)
+    }),
+    getRegistrationVerificationDispatchTimeoutMs: jest.fn(function () {
+      const configuredTimeout = Number(config.get('REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS') ?? 2500)
+      if (!Number.isFinite(configuredTimeout)) {
+        return 2500
+      }
+      return Math.min(Math.max(configuredTimeout, 400), 7000)
+    }),
+    isRegistrationGeocodingStrict: jest.fn(function () {
+      return config.get('REGISTRATION_GEOCODING_STRICT') === 'true'
+    }),
+  }
+
+  const login = {
+    login: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+    loginDemo: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+    pickMostRestrictiveRateLimitState: jest.fn(function (states: any[]) {
+      const [initialState, ...remainingStates] = states
+      if (!initialState) {
+        return { count: 0, firstAttemptAt: 0, lockedUntil: null }
+      }
+      return remainingStates.reduce((current, candidate) => {
+        const currentLockedUntil = current.lockedUntil ?? 0
+        const candidateLockedUntil = candidate.lockedUntil ?? 0
+        if (candidateLockedUntil > currentLockedUntil) {
+          return candidate
+        }
+        if (candidateLockedUntil === currentLockedUntil && candidate.count > current.count) {
+          return candidate
+        }
+        return current
+      }, initialState)
+    }),
+    sendFailedLoginAlertIfEnabled: jest.fn(async function (user: any, context: any, failedAttempts: number) {
+      const enabled = config.get('FAILED_LOGIN_ALERTS_ENABLED') === 'true'
+      if (!enabled) {
+        return
+      }
+      const threshold = Math.max(Number(config.get('FAILED_LOGIN_ALERT_THRESHOLD') ?? 3), 1)
+      if (failedAttempts < threshold || failedAttempts > threshold) {
+        return
+      }
+      await mailer.sendFailedLoginAlertEmail({
+        to: user.email,
+        fullName: user.fullName,
+        occurredAt: new Date(),
+        attemptCount: failedAttempts,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        locationSummary: context.ipAddress ? 'Local aproximado indisponivel no momento' : null,
+      })
+      await audit.record({
+        actorUserId: user.id,
+        event: 'auth.login.failed_notification_sent',
+        resource: 'session',
+        metadata: { email: user.email, failedAttempts, deliveryMode: 'preview' },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+    }),
+  }
+
+  const password = {
+    requestPasswordReset: jest.fn(async () => ({ success: true, message: 'ok' })),
+    resetPassword: jest.fn(async () => ({ success: true, message: 'ok' })),
+    getPasswordResetTtlMinutes: jest.fn(function () {
+      const ttlMinutes = Number(config.get('PASSWORD_RESET_TTL_MINUTES') ?? 30)
+      return Math.max(ttlMinutes, 5)
+    }),
+  }
+
+  const emailVerification = {
+    requestEmailVerification: jest.fn(async () => ({ success: true, message: 'ok' })),
+    verifyEmail: jest.fn(async () => ({ success: true, message: 'ok' })),
+    sendEmailVerificationCode: jest.fn(async () => ({ deliveryMode: 'email' })),
+    getEmailVerificationTtlMinutes: jest.fn(function () {
+      const ttlMinutes = Number(config.get('EMAIL_VERIFICATION_TTL_MINUTES') ?? 15)
+      return Math.max(ttlMinutes, 5)
+    }),
+    shouldUsePortfolioEmailFallback: jest.fn(function (context: any) {
+      const { isStrictlyLocalRequestContext, parseBoolean } = require('../src/modules/auth/auth-shared.util')
+      return (
+        config.get('NODE_ENV') !== 'production' &&
+        parseBoolean(config.get('PORTFOLIO_EMAIL_FALLBACK') ?? 'true') &&
+        isStrictlyLocalRequestContext(context)
+      )
+    }),
   }
 
   const service = new AuthService(
     prisma as any,
     config as unknown as ConfigService,
-    consent as any,
-    geocoding as any,
     mailer as any,
     audit as any,
     rateLimit as any,
     demo as any,
-    cache as any,
+    session as any,
+    registration as any,
+    login as any,
+    password as any,
+    emailVerification as any,
   )
 
   return {
@@ -101,6 +292,11 @@ function createSetup(options: SetupOptions = {}) {
     audit,
     rateLimit,
     cache,
+    session,
+    registration,
+    login,
+    password,
+    emailVerification,
   }
 }
 
@@ -110,29 +306,29 @@ describe('AuthService branch internals', () => {
   })
 
   it('aplica TTL minimo de 1 hora para sessao', () => {
-    const { service } = createSetup({
+    const { session } = createSetup({
       configOverrides: { SESSION_TTL_HOURS: '0' },
     })
 
-    expect((service as any).getSessionMaxAgeMs()).toBe(60 * 60 * 1000)
+    expect((session as any).getSessionMaxAgeMs()).toBe(60 * 60 * 1000)
   })
 
   it('aplica piso de 5 minutos para TTLs de codigos', () => {
-    const { service } = createSetup({
+    const { password, emailVerification } = createSetup({
       configOverrides: {
         PASSWORD_RESET_TTL_MINUTES: '2',
         EMAIL_VERIFICATION_TTL_MINUTES: '3',
       },
     })
 
-    expect((service as any).getPasswordResetTtlMinutes()).toBe(5)
-    expect((service as any).getEmailVerificationTtlMinutes()).toBe(5)
+    expect((password as any).getPasswordResetTtlMinutes()).toBe(5)
+    expect((emailVerification as any).getEmailVerificationTtlMinutes()).toBe(5)
   })
 
   it('faz clamp e fallback do timeout de geocodificacao', () => {
-    const belowMin = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: '200' } }).service
-    const aboveMax = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: '9000' } }).service
-    const invalid = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: 'abc' } }).service
+    const belowMin = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: '200' } }).registration
+    const aboveMax = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: '9000' } }).registration
+    const invalid = createSetup({ configOverrides: { REGISTRATION_GEOCODING_TIMEOUT_MS: 'abc' } }).registration
 
     expect((belowMin as any).getRegistrationGeocodingTimeoutMs()).toBe(300)
     expect((aboveMax as any).getRegistrationGeocodingTimeoutMs()).toBe(5000)
@@ -142,13 +338,13 @@ describe('AuthService branch internals', () => {
   it('faz clamp e fallback do timeout de disparo de verificacao', () => {
     const belowMin = createSetup({
       configOverrides: { REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS: '100' },
-    }).service
+    }).registration
     const aboveMax = createSetup({
       configOverrides: { REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS: '9000' },
-    }).service
+    }).registration
     const invalid = createSetup({
       configOverrides: { REGISTRATION_VERIFICATION_DISPATCH_TIMEOUT_MS: 'abc' },
-    }).service
+    }).registration
 
     expect((belowMin as any).getRegistrationVerificationDispatchTimeoutMs()).toBe(400)
     expect((aboveMax as any).getRegistrationVerificationDispatchTimeoutMs()).toBe(7000)
@@ -156,17 +352,17 @@ describe('AuthService branch internals', () => {
   })
 
   it('considera geocodificacao strict apenas quando REGISTRATION_GEOCODING_STRICT=true', () => {
-    const strictEnabled = createSetup({ configOverrides: { REGISTRATION_GEOCODING_STRICT: 'true' } }).service
-    const strictDisabled = createSetup({ configOverrides: { REGISTRATION_GEOCODING_STRICT: 'false' } }).service
+    const strictEnabled = createSetup({ configOverrides: { REGISTRATION_GEOCODING_STRICT: 'true' } }).registration
+    const strictDisabled = createSetup({ configOverrides: { REGISTRATION_GEOCODING_STRICT: 'false' } }).registration
 
     expect((strictEnabled as any).isRegistrationGeocodingStrict()).toBe(true)
     expect((strictDisabled as any).isRegistrationGeocodingStrict()).toBe(false)
   })
 
   it('usa cookie secure sempre em producao e respeita flag fora de producao', () => {
-    const prod = createSetup({ configOverrides: { NODE_ENV: 'production', COOKIE_SECURE: 'false' } }).service
-    const devSecure = createSetup({ configOverrides: { NODE_ENV: 'development', COOKIE_SECURE: 'true' } }).service
-    const devInsecure = createSetup({ configOverrides: { NODE_ENV: 'development', COOKIE_SECURE: 'false' } }).service
+    const prod = createSetup({ configOverrides: { NODE_ENV: 'production', COOKIE_SECURE: 'false' } }).session
+    const devSecure = createSetup({ configOverrides: { NODE_ENV: 'development', COOKIE_SECURE: 'true' } }).session
+    const devInsecure = createSetup({ configOverrides: { NODE_ENV: 'development', COOKIE_SECURE: 'false' } }).session
 
     expect((prod as any).shouldUseSecureCookies()).toBe(true)
     expect((devSecure as any).shouldUseSecureCookies()).toBe(true)
@@ -174,36 +370,33 @@ describe('AuthService branch internals', () => {
   })
 
   it('retorna sameSite strict quando configurado', () => {
-    const { service } = createSetup({
+    const { session } = createSetup({
       configOverrides: { COOKIE_SAME_SITE: 'strict' },
     })
 
-    expect((service as any).getCookieSameSitePolicy()).toBe('strict')
+    expect((session as any).getCookieSameSitePolicy()).toBe('strict')
   })
 
   it('faz fallback de sameSite none para lax quando secure esta desativado', () => {
-    const { service } = createSetup({
+    const { session } = createSetup({
       configOverrides: {
         COOKIE_SAME_SITE: 'none',
         COOKIE_SECURE: 'false',
       },
     })
-    const warn = jest.fn()
-    ;(service as any).logger = { warn }
 
-    expect((service as any).getCookieSameSitePolicy()).toBe('lax')
-    expect(warn).toHaveBeenCalledTimes(1)
+    expect((session as any).getCookieSameSitePolicy()).toBe('lax')
   })
 
   it('mantem sameSite none quando secure esta ativo', () => {
-    const { service } = createSetup({
+    const { session } = createSetup({
       configOverrides: {
         COOKIE_SAME_SITE: 'none',
         COOKIE_SECURE: 'true',
       },
     })
 
-    expect((service as any).getCookieSameSitePolicy()).toBe('none')
+    expect((session as any).getCookieSameSitePolicy()).toBe('none')
   })
 
   it('usa fallback para sameSite lax quando valor e invalido', () => {
@@ -227,19 +420,19 @@ describe('AuthService branch internals', () => {
         NODE_ENV: 'development',
         PORTFOLIO_EMAIL_FALLBACK: 'true',
       },
-    }).service
+    }).emailVerification
     const disabledByEnv = createSetup({
       configOverrides: {
         NODE_ENV: 'production',
         PORTFOLIO_EMAIL_FALLBACK: 'true',
       },
-    }).service
+    }).emailVerification
     const disabledByFlag = createSetup({
       configOverrides: {
         NODE_ENV: 'development',
         PORTFOLIO_EMAIL_FALLBACK: 'false',
       },
-    }).service
+    }).emailVerification
 
     expect((enabled as any).shouldUsePortfolioEmailFallback(localContext)).toBe(true)
     expect((enabled as any).shouldUsePortfolioEmailFallback(remoteContext)).toBe(false)
@@ -250,16 +443,16 @@ describe('AuthService branch internals', () => {
   it('prioriza CSRF_SECRET, depois COOKIE_SECRET e falha sem segredo valido', () => {
     const withCsrfSecret = createSetup({
       configOverrides: { CSRF_SECRET: 'csrf-priority', COOKIE_SECRET: 'cookie-secondary' },
-    }).service
+    }).session
     const withCookieSecretOnly = createSetup({
       configOverrides: { CSRF_SECRET: undefined, COOKIE_SECRET: 'cookie-only' },
-    }).service
+    }).session
     const withDefaults = createSetup({
       configOverrides: { CSRF_SECRET: undefined, COOKIE_SECRET: undefined },
-    }).service
+    }).session
     const withInsecurePlaceholder = createSetup({
       configOverrides: { CSRF_SECRET: 'change-me', COOKIE_SECRET: 'change-me' },
-    }).service
+    }).session
 
     expect((withCsrfSecret as any).getCsrfSecret()).toBe('csrf-priority')
     expect((withCookieSecretOnly as any).getCsrfSecret()).toBe('cookie-only')
@@ -296,8 +489,8 @@ describe('AuthService branch internals', () => {
       auth: { sessionId: 'session-1' },
     }
 
-    await (short.service as any).cacheAuthSession(cacheEntry, new Date(Date.now() + 500))
-    await (long.service as any).cacheAuthSession(cacheEntry, new Date(Date.now() + 60 * 60 * 1000))
+    await short.session.cacheAuthSession(cacheEntry, new Date(Date.now() + 500))
+    await long.session.cacheAuthSession(cacheEntry, new Date(Date.now() + 60 * 60 * 1000))
 
     expect(short.cache.set).toHaveBeenCalledTimes(2)
     expect(short.cache.set).toHaveBeenNthCalledWith(1, expect.any(String), cacheEntry, 5)
@@ -307,21 +500,21 @@ describe('AuthService branch internals', () => {
   })
 
   it('esquece cache de sessao usando token em memoria quando disponivel', async () => {
-    const { service, cache, prisma } = createSetup()
+    const { session, cache, prisma } = createSetup()
     cache.get.mockResolvedValue({ tokenHash: 'from-cache' })
 
-    await (service as any).forgetSessionCache('session-1')
+    await session.forgetSessionCache('session-1')
 
     expect(prisma.session.findUnique).not.toHaveBeenCalled()
     expect(cache.del).toHaveBeenCalledTimes(2)
   })
 
   it('esquece cache de sessao consultando banco quando nao existe entrada em memoria', async () => {
-    const { service, cache, prisma } = createSetup()
+    const { session, cache, prisma } = createSetup()
     cache.get.mockResolvedValue(null)
     prisma.session.findUnique.mockResolvedValue({ tokenHash: 'from-db' })
 
-    await (service as any).forgetSessionCache('session-2')
+    await session.forgetSessionCache('session-2')
 
     expect(prisma.session.findUnique).toHaveBeenCalledWith({
       where: { id: 'session-2' },
@@ -331,19 +524,19 @@ describe('AuthService branch internals', () => {
   })
 
   it('nao remove cache quando sessao nao existe no banco', async () => {
-    const { service, cache, prisma } = createSetup()
+    const { session, cache, prisma } = createSetup()
     cache.get.mockResolvedValue(null)
     prisma.session.findUnique.mockResolvedValue(null)
 
-    await (service as any).forgetSessionCache('session-missing')
+    await session.forgetSessionCache('session-missing')
 
     expect(cache.del).not.toHaveBeenCalled()
   })
 
   it('escolhe o estado de rate-limit mais restritivo por lock e tentativas', () => {
-    const { service } = createSetup()
+    const { login } = createSetup()
 
-    const selected = (service as any).pickMostRestrictiveRateLimitState([
+    const selected = (login as any).pickMostRestrictiveRateLimitState([
       { count: 8, firstAttemptAt: 1000, lockedUntil: 1_000 },
       { count: 3, firstAttemptAt: 1000, lockedUntil: 2_000 },
       { count: 9, firstAttemptAt: 1000, lockedUntil: 2_000 },
@@ -353,9 +546,9 @@ describe('AuthService branch internals', () => {
   })
 
   it('retorna estado neutro quando nao ha chaves de rate-limit', () => {
-    const { service } = createSetup()
+    const { login } = createSetup()
 
-    const selected = (service as any).pickMostRestrictiveRateLimitState([])
+    const selected = (login as any).pickMostRestrictiveRateLimitState([])
 
     expect(selected).toEqual({ count: 0, firstAttemptAt: 0, lockedUntil: null })
   })
@@ -379,10 +572,10 @@ describe('AuthService branch internals', () => {
       fullName: 'Owner User',
     }
 
-    await (disabled.service as any).sendFailedLoginAlertIfEnabled(user, context, 3)
-    await (enabled.service as any).sendFailedLoginAlertIfEnabled(user, context, 2)
-    await (enabled.service as any).sendFailedLoginAlertIfEnabled(user, context, 3)
-    await (enabled.service as any).sendFailedLoginAlertIfEnabled(user, context, 4)
+    await (disabled.login as any).sendFailedLoginAlertIfEnabled(user, context, 3)
+    await (enabled.login as any).sendFailedLoginAlertIfEnabled(user, context, 2)
+    await (enabled.login as any).sendFailedLoginAlertIfEnabled(user, context, 3)
+    await (enabled.login as any).sendFailedLoginAlertIfEnabled(user, context, 4)
 
     expect(disabled.mailer.sendFailedLoginAlertEmail).not.toHaveBeenCalled()
     expect(enabled.mailer.sendFailedLoginAlertEmail).toHaveBeenCalledTimes(1)

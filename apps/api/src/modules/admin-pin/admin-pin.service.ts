@@ -12,8 +12,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import * as argon2 from 'argon2'
 import { createHash, randomBytes } from 'node:crypto'
-import type { Request } from 'express'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import { CacheService } from '../../common/services/cache.service'
 import { resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
@@ -283,7 +282,9 @@ export class AdminPinService {
   private async assertPinAllowed(key: string): Promise<void> {
     const redisKey = CacheService.ratelimitKey('admin-pin', key)
     const entry = await this.cache.get<PinAttemptEntry>(redisKey)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     const now = Date.now()
 

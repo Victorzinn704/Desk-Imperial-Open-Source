@@ -1,8 +1,15 @@
-# DESK IMPERIAL - AUDITORIA TECNICA E DOCUMENTACAO CONSOLIDADA
+# DESK IMPERIAL - SNAPSHOT HISTORICO CONSOLIDADO
 
-Versao: 5.0  
-Data de consolidacao: 2026-04-01  
-Base: comportamento real do monorepo (API, Web, testes, CI e docs)
+Versao: 5.1  
+Data de consolidacao original: 2026-04-01  
+Reclassificacao editorial: 2026-05-01  
+Base: snapshot tecnico de uma rodada anterior de auditoria do monorepo (API, Web, testes, CI e docs)
+
+> Status editorial atual:
+>
+> - este arquivo continua util como consolidado historico;
+> - ele **nao** e mais a fonte primaria do estado atual;
+> - para comportamento corrente, use primeiro `README.md`, `docs/INDEX.md` e os documentos canonicos de `docs/architecture`, `docs/product`, `docs/operations`, `docs/security`, `docs/testing` e `docs/waves`.
 
 ---
 
@@ -12,29 +19,28 @@ Base: comportamento real do monorepo (API, Web, testes, CI e docs)
 
 O projeto possui uma base documental ampla. Nesta rodada, os documentos de arquitetura, autenticacao, testes e troubleshooting foram revisados para alinhamento com o codigo atual.
 
-### 1.2 Matriz de confiabilidade documental
+### 1.2 Matriz de confiabilidade documental deste snapshot
 
-- Alta confiabilidade (alinhada ao codigo atual):
-  - README.md (recriado nesta rodada)
-  - DOCS_DESK_IMPERIAL.md (este documento)
-  - docs/release/\* (diagnosticos, plano de lapidacao, parecer final)
+- Historicamente alinhado ao momento em que foi produzido:
+  - este documento
+  - docs/release/\* daquela rodada
   - docs/architecture/overview.md
   - docs/architecture/authentication-flow.md
   - docs/testing/testing-guide.md
-  - docs/troubleshooting.md
-- Confiabilidade parcial (requer leitura critica):
+- Leitura critica necessaria hoje:
+  - qualquer referencia de runtime, release, realtime, modulos contados por numero fixo ou governanca documental neste snapshot
   - docs/security/security-baseline.md
   - docs/operations/kpi-realtime-mapping.md
 
 ### 1.3 Diretriz canonica
 
-Para decisoes de produto, arquitetura, release e contribuicao, considerar como fonte primaria:
+Para decisoes atuais de produto, arquitetura, release e contribuicao, considerar como fonte primaria:
 
 1. README.md
-2. DOCS_DESK_IMPERIAL.md
-3. docs/release/\*
+2. docs/INDEX.md
+3. documentos canonicos correntes em `docs/architecture/`, `docs/product/`, `docs/operations/`, `docs/security/`, `docs/testing/` e `docs/waves/`
 
-Demais arquivos devem ser interpretados como historico tecnico ate passarem por revisao formal.
+Este arquivo e `docs/release/*` devem ser interpretados como historico tecnico ate passarem por revisao formal.
 
 ---
 
@@ -350,8 +356,8 @@ Notas:
 
 ### 12.1 Governanca documental imediata
 
-1. manter README.md e DOCS_DESK_IMPERIAL.md como fonte canonica
-2. manter docs/README.md como indice de confiabilidade
+1. manter README.md e docs/INDEX.md como porta canonica de entrada
+2. manter DOCS_DESK_IMPERIAL.md como snapshot historico consolidado
 3. revisar documentos parciais em ciclos curtos
 
 ### 12.2 Evolucao tecnica de curto prazo

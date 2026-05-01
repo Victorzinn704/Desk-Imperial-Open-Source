@@ -47,7 +47,7 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('Origem nao autorizada.')
     }
 
-    if (!origin && referer && !allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin))) {
+    if (!origin && referer && !isAllowedReferer(referer, allowedOrigins)) {
       throw new ForbiddenException('Referer nao autorizado.')
     }
   }
@@ -67,4 +67,13 @@ function safeEqual(left: string, right: string) {
   }
 
   return timingSafeEqual(leftBuffer, rightBuffer)
+}
+
+function isAllowedReferer(referer: string, allowedOrigins: string[]) {
+  try {
+    const refererOrigin = new URL(referer).origin
+    return allowedOrigins.includes(refererOrigin)
+  } catch {
+    return false
+  }
 }

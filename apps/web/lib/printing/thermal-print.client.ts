@@ -2,7 +2,7 @@
 
 import { buildThermalComandaTicket } from './comanda-thermal'
 import { listQzTrayPrinters, printRawQzTrayJob } from './qz-tray.client'
-import type { PrintableComanda, ThermalPrintProvider, ThermalPrinter } from './thermal-print.types'
+import type { PrintableComanda, ThermalPrinter, ThermalPrintProvider } from './thermal-print.types'
 
 export const DEFAULT_THERMAL_PROVIDER: ThermalPrintProvider = 'QZ_TRAY'
 
@@ -19,19 +19,34 @@ export async function listThermalPrinters(provider: ThermalPrintProvider) {
 
 export async function printThermalComanda(input: {
   provider: ThermalPrintProvider
-  printerName: string
+  printerId: string
   comanda: PrintableComanda
 }) {
   const rawDocument = buildThermalComandaTicket(input.comanda)
 
   switch (input.provider) {
     case 'QZ_TRAY':
-      await printRawQzTrayJob(input.printerName, rawDocument)
+      await printRawQzTrayJob(input.printerId, rawDocument)
       return
     case 'PRINTNODE':
       throw new Error('PrintNode ainda nao foi configurado nesta etapa. QZ Tray e o fluxo principal.')
     default:
       exhaustiveProvider(input.provider)
+  }
+}
+
+export async function resolveThermalPrinterSelection(provider: ThermalPrintProvider) {
+  const printers = await listThermalPrinters(provider)
+  const printerId = resolvePreferredPrinterId(provider, printers)
+
+  if (printerId) {
+    setPreferredThermalPrinter(provider, printerId)
+  }
+
+  return {
+    printer: printers.find((printer) => printer.id === printerId),
+    printerId,
+    printers,
   }
 }
 
@@ -49,25 +64,38 @@ export function getPreferredThermalPrinter(provider: ThermalPrintProvider) {
     return null
   }
 
-  return window.localStorage.getItem(`desk-imperial.thermal-printer.${provider}`)
+  return globalThis.localStorage.getItem(`desk-imperial.thermal-printer.${provider}`)
 }
 
-export function setPreferredThermalPrinter(provider: ThermalPrintProvider, printerName: string) {
+export function setPreferredThermalPrinter(provider: ThermalPrintProvider, printerId: string) {
   if (typeof window === 'undefined') {
     return
   }
 
-  window.localStorage.setItem(`desk-imperial.thermal-printer.${provider}`, printerName)
+  window.localStorage.setItem(`desk-imperial.thermal-printer.${provider}`, printerId)
 }
 
-export function resolvePreferredPrinterName(provider: ThermalPrintProvider, printers: ThermalPrinter[]) {
+export function resolvePreferredPrinterId(provider: ThermalPrintProvider, printers: ThermalPrinter[]) {
   const storedPrinter = getPreferredThermalPrinter(provider)
-  const storedMatch = printers.find((printer) => printer.name === storedPrinter)
-  if (storedMatch) {
-    return storedMatch.name
+  const storedMatch = printers.find(
+    (printer) => printer.id === storedPrinter || printer.name === storedPrinter || printer.target === storedPrinter,
+  )
+  const serialPrinter = printers.find((printer) => printer.transport === 'serial' && printer.isDefault)
+  const firstSerialPrinter = printers.find((printer) => printer.transport === 'serial')
+
+  if (storedMatch?.transport === 'serial') {
+    return storedMatch.id
   }
 
-  return printers.find((printer) => printer.isDefault)?.name ?? printers[0]?.name ?? ''
+  if (firstSerialPrinter) {
+    return serialPrinter?.id ?? firstSerialPrinter.id
+  }
+
+  if (storedMatch) {
+    return storedMatch.id
+  }
+
+  return printers.find((printer) => printer.isDefault)?.id ?? printers[0]?.id ?? ''
 }
 
 function exhaustiveProvider(provider: never): never {

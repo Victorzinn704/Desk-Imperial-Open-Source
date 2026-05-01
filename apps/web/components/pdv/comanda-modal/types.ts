@@ -1,13 +1,19 @@
-import type { ComandaItem, Comanda } from '../pdv-types'
+import type { Comanda, ComandaItem } from '../pdv-types'
 
 export type SimpleProduct = {
   id: string
   name: string
+  brand?: string | null
   category: string
+  barcode?: string | null
+  packagingClass?: string | null
+  quantityLabel?: string | null
   unitPrice: number
   currency: string
   stock: number
   isLowStock: boolean
+  imageUrl?: string | null
+  catalogSource?: string | null
   isCombo?: boolean
   comboDescription?: string | null
   comboItems?: Array<{
@@ -20,6 +26,7 @@ export type SaveComandaPayload = {
   mesa: string
   clienteNome: string
   clienteDocumento: string
+  notes: string
   itens: ComandaItem[]
   desconto: number
   acrescimo: number
@@ -35,5 +42,6 @@ export const STATUS_OPTIONS: StatusOption[] = [
   { value: 'aberta', label: 'Aberta', color: '#60a5fa' },
   { value: 'em_preparo', label: 'Em Preparo', color: '#fb923c' },
   { value: 'pronta', label: 'Pronta', color: '#36f57c' },
+  { value: 'cancelada', label: 'Cancelar Comanda', color: '#ef4444' },
   { value: 'fechada', label: 'Fechar Comanda', color: '#7a8896' },
 ]

@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { Bell, Clock } from 'lucide-react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -7,13 +6,22 @@ const routerReplace = vi.fn()
 const queryClientClear = vi.fn()
 const navigateToSection = vi.fn()
 const navigateToSettings = vi.fn()
+const navigateToTab = vi.fn()
 const scrollIntoView = vi.fn()
 const logout = vi.fn()
 const useQueryMock = vi.fn()
+let viewportWidth = 1600
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: routerReplace,
+  }),
+}))
+
+vi.mock('next-themes', () => ({
+  useTheme: () => ({
+    resolvedTheme: 'light',
+    setTheme: vi.fn(),
   }),
 }))
 
@@ -35,29 +43,36 @@ vi.mock('@/components/dashboard/hooks', () => ({
 }))
 
 vi.mock('@/components/dashboard/hooks/useMobileDetection', () => ({
-  useMobileDetection: () => ({ isMobile: false }),
+  COMPACT_DESKTOP_BREAKPOINT: 1366,
+  useMobileDetection: (breakpoint = 1024) => ({ isMobile: viewportWidth < breakpoint }),
 }))
 
 vi.mock('@/components/dashboard/hooks/useDashboardNavigation', () => ({
   useDashboardNavigation: () => ({
     activeSection: 'overview',
+    activeDisplaySection: 'overview',
     activeSettingsSection: 'account',
+    activeTab: 'principal',
     navigationGroups: [
       {
-        items: [{ id: 'overview', label: 'Visão geral', description: 'Resumo do workspace', icon: Clock }],
+        id: 'sections',
+        label: 'Seções',
+        items: [
+          { id: 'overview', label: 'Overview', description: 'Resumo do workspace', icon: Clock },
+          { id: 'pdv', label: 'PDV · Comandas', description: 'Comandas', icon: Bell },
+        ],
       },
     ],
-    quickActions: [
-      {
-        id: 'sales',
-        label: 'Ir para vendas',
-        description: 'Abrir ambiente comercial',
-        icon: Bell,
-        target: 'sales',
-      },
+    sectionTabs: [
+      { id: 'principal', code: 'B1', label: 'Principal Desk Imperial', description: 'Visão principal' },
+      { id: 'layout', code: 'B2', label: 'Layout padrão refinado', description: 'KPIs' },
+      { id: 'meta', code: 'B3', label: 'KPI hero com meta', description: 'Meta' },
+      { id: 'operacional', code: 'B4', label: 'Denso operacional', description: 'Operação' },
+      { id: 'editorial', code: 'B5', label: 'Editorial diário', description: 'Agenda' },
     ],
     navigateToSection,
     navigateToSettings,
+    navigateToTab,
   }),
 }))
 
@@ -119,19 +134,12 @@ vi.mock('@/components/dashboard/dashboard-sidebar', () => ({
   DashboardSidebar: ({ companyName }: { companyName: string }) => <aside>Sidebar {companyName}</aside>,
 }))
 
-vi.mock('@/components/dashboard/activity-timeline', () => ({
-  ActivityTimeline: ({ onClose }: { onClose: () => void }) => (
-    <button type="button" onClick={onClose}>
-      Timeline stub
-    </button>
-  ),
-}))
-
 import { DashboardShell } from './dashboard-shell'
 
 describe('DashboardShell render path', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    viewportWidth = 1600
     useQueryMock.mockReturnValue({
       isLoading: false,
       error: null,
@@ -151,23 +159,32 @@ describe('DashboardShell render path', () => {
     })
   })
 
-  it('renderiza o layout desktop com header, sidebar e timeline', async () => {
-    const user = userEvent.setup()
+  it('renderiza o layout desktop com navegação superior e sem sidebar', () => {
+    const { container } = render(<DashboardShell />)
 
+    expect(screen.queryByText(/sidebar desk imperial/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: /seções principais/i })).toBeInTheDocument()
+    expect(screen.getAllByText(/overview/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/principal desk imperial/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
+    expect(container.querySelector('aside')).not.toBeInTheDocument()
+  })
+
+  it('expõe hrefs explícitos para seção e subseção ativa', () => {
     render(<DashboardShell />)
 
-    expect(screen.getByText(/sidebar desk imperial/i)).toBeInTheDocument()
-    expect(screen.getByText(/visão consolidada da empresa/i)).toBeInTheDocument()
-    expect(screen.getByText(/r\$ 12.500,00/i)).toBeInTheDocument()
-    expect(screen.getByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /overview/i })).toHaveAttribute('href', '/dashboard?view=overview&tab=principal')
+    expect(screen.getByRole('link', { name: /principal desk imperial/i })).toHaveAttribute('href', '/dashboard?view=overview&tab=principal')
+    expect(screen.getByRole('link', { name: /pdv · comandas/i })).toHaveAttribute('href', '/dashboard?view=pdv&tab=grid')
+  })
 
-    await user.click(screen.getByRole('button', { name: /ir para vendas/i }))
-    expect(navigateToSection).toHaveBeenCalledWith('sales')
+  it('mantém top navigation em notebooks compactos sem entrar no modo mobile', () => {
+    viewportWidth = 1365
 
-    await user.click(screen.getByRole('button', { name: /atividades/i }))
-    expect(screen.getByRole('button', { name: /timeline stub/i })).toBeInTheDocument()
+    const { container } = render(<DashboardShell />)
 
-    await user.click(screen.getByRole('button', { name: /timeline stub/i }))
-    expect(screen.queryByRole('button', { name: /timeline stub/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/sidebar desk imperial/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/ambiente ativo do dashboard/i)).toBeInTheDocument()
+    expect(container.querySelector('.wireframe-header__bar--compact')).toBeInTheDocument()
   })
 })

@@ -1,239 +1,161 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
-import type { Comanda } from '@/components/pdv/pdv-types'
-import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
-import { OperationEmptyState } from '@/components/operations/operation-empty-state'
-import { toPdvComanda } from '@/components/pdv/pdv-operations'
-import { formatBRL as formatCurrency } from '@/lib/currency'
-import { fetchComandaDetails } from '@/lib/api'
+import { OwnerComandaCard } from './owner-comanda-card'
+import {
+  OwnerComandasEmptyState,
+  OwnerComandasFilterBar,
+  OwnerComandasHero,
+  OwnerComandasList,
+  OwnerComandasResponsibleFilters,
+  OwnerComandasStatusBanner,
+} from './owner-comandas-view-sections'
+import { type OwnerComandasViewProps, useOwnerComandasController } from './owner-comandas-view-model'
 
-function formatDateTime(date: Date): string {
-  return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
-type Filtro = 'tudo' | 'abertas' | 'fechadas'
-
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Aberta', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
-  pronta: { label: 'Pronta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  fechada: { label: 'Paga', color: '#36f57c', bg: 'rgba(54,245,124,0.12)' },
-}
-
-interface Props {
-  comandas: Comanda[]
-}
-
-export function OwnerComandasView({ comandas }: Props) {
-  const [filtro, setFiltro] = useState<Filtro>('tudo')
-
-  const filtered = useMemo(
-    () =>
-      comandas.filter((c) => {
-        if (filtro === 'abertas') return c.status !== 'fechada'
-        if (filtro === 'fechadas') return c.status === 'fechada'
-        return true
-      }),
-    [comandas, filtro],
-  )
-
-  const sorted = useMemo(() => [...filtered].sort((a, b) => b.abertaEm.getTime() - a.abertaEm.getTime()), [filtered])
-
-  const countAbertas = useMemo(() => comandas.filter((c) => c.status !== 'fechada').length, [comandas])
-  const countFechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada').length, [comandas])
+export function OwnerComandasView({
+  comandas,
+  errorMessage = null,
+  focusedId,
+  isBusy = false,
+  isLoading = false,
+  isOffline = false,
+  onAddItems,
+  onCloseComanda,
+  onCreatePayment,
+}: OwnerComandasViewProps) {
+  const controller = useOwnerComandasController(comandas, focusedId)
 
   return (
-    <div className="p-4">
-      {/* Filtros */}
-      <div className="mb-4 flex gap-2">
-        {(
-          [
-            { id: 'tudo', label: `Tudo (${comandas.length})` },
-            { id: 'abertas', label: `Abertas (${countAbertas})` },
-            { id: 'fechadas', label: `Fechadas (${countFechadas})` },
-          ] as const
-        ).map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setFiltro(id)}
-            className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
-            style={{
-              background: filtro === id ? 'rgba(155,132,96,0.2)' : 'rgba(255,255,255,0.04)',
-              color: filtro === id ? '#9b8460' : '#7a8896',
-              border: `1px solid ${filtro === id ? 'rgba(155,132,96,0.4)' : 'rgba(255,255,255,0.06)'}`,
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <OwnerComandasViewLayout
+      controller={controller}
+      errorMessage={errorMessage}
+      focusedId={focusedId}
+      isBusy={isBusy}
+      isLoading={isLoading}
+      isOffline={isOffline}
+      onAddItems={onAddItems}
+      onCloseComanda={onCloseComanda}
+      onCreatePayment={onCreatePayment}
+    />
+  )
+}
 
-      {sorted.length === 0 ? (
-        <OperationEmptyState
-          title={`Nenhuma comanda ${filtro === 'abertas' ? 'aberta' : filtro === 'fechadas' ? 'fechada' : 'disponível'}`}
-          description="Nenhum registro encontrado para este filtro."
-          Icon={ClipboardList}
-        />
-      ) : (
-        <ul className="space-y-2">
-          {sorted.map((comanda) => (
-            <ComandaCard key={comanda.id} comanda={comanda} />
-          ))}
-        </ul>
-      )}
+function OwnerComandasViewLayout({
+  controller,
+  errorMessage,
+  focusedId,
+  isBusy,
+  isLoading,
+  isOffline,
+  onAddItems,
+  onCloseComanda,
+  onCreatePayment,
+}: {
+  controller: ReturnType<typeof useOwnerComandasController>
+  errorMessage: string | null
+  focusedId: string | null | undefined
+  isBusy: boolean
+  isLoading: boolean
+  isOffline: boolean
+  onAddItems: OwnerComandasViewProps['onAddItems']
+  onCloseComanda: OwnerComandasViewProps['onCloseComanda']
+  onCreatePayment: OwnerComandasViewProps['onCreatePayment']
+}) {
+  return (
+    <div className="p-3 sm:p-4">
+      <OwnerComandasViewHeader controller={controller} errorMessage={errorMessage} isOffline={isOffline} />
+      <OwnerComandasViewContent
+        controller={controller}
+        errorMessage={errorMessage}
+        focusedId={focusedId}
+        isBusy={isBusy}
+        isLoading={isLoading}
+        isOffline={isOffline}
+        onAddItems={onAddItems}
+        onCloseComanda={onCloseComanda}
+        onCreatePayment={onCreatePayment}
+      />
     </div>
   )
 }
 
-function ComandaCard({ comanda }: { comanda: Comanda }) {
-  const [open, setOpen] = useState(false)
-  const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
-    queryKey: ['comanda-details', comanda.id],
-    queryFn: async () => {
-      const response = await fetchComandaDetails(comanda.id)
-      return toPdvComanda(response.comanda)
-    },
-    enabled: open,
-    staleTime: 5_000,
-  })
-
-  const activeComanda = detailsData ?? comanda
-  const total = calcTotal(activeComanda)
-  const subtotal = calcSubtotal(activeComanda)
-  const descontoVal = subtotal * (activeComanda.desconto / 100)
-  const acrescimoVal = subtotal * (activeComanda.acrescimo / 100)
-  const badge = STATUS_MAP[activeComanda.status] ?? STATUS_MAP.aberta
-  const itemCount = activeComanda.itens.reduce((sum, item) => sum + item.quantidade, 0)
-  const detailHint =
-    itemCount > 0
-      ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`
-      : open
-        ? isLoadingDetails
-          ? 'Carregando extrato...'
-          : 'Extrato pronto'
-        : 'Extrato sob demanda'
-
+function OwnerComandasViewHeader({
+  controller,
+  errorMessage,
+  isOffline,
+}: {
+  controller: ReturnType<typeof useOwnerComandasController>
+  errorMessage: string | null
+  isOffline: boolean
+}) {
   return (
-    <li
-      className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.07)] bg-[rgba(7,9,13,0.82)] shadow-[0_16px_34px_rgba(0,0,0,0.18)] backdrop-blur-xl"
-      data-testid={`owner-comanda-card-${comanda.id}`}
-    >
-      <button
-        type="button"
-        className="flex w-full items-start justify-between gap-3 px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div className="min-w-0 flex-1 text-left">
-          <div className="mb-1 flex items-center gap-2">
-            <p className="text-sm font-semibold text-white">Mesa {activeComanda.mesa ?? '—'}</p>
-            <span
-              className="shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: badge.color, background: badge.bg }}
-            >
-              {badge.label}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {activeComanda.garcomNome && (
-              <span className="rounded-full bg-[rgba(167,139,250,0.14)] px-2 py-0.5 text-[10px] font-semibold text-[#c4b5fd]">
-                {activeComanda.garcomNome}
-              </span>
-            )}
-            <span className="text-[11px] text-[#7a8896]">Aberta em {formatDateTime(activeComanda.abertaEm)}</span>
-            <span className="text-[11px] text-[#7a8896]">
-              {detailHint} · há {formatElapsed(activeComanda.abertaEm)}
-            </span>
-          </div>
-        </div>
+    <>
+      <OwnerComandasStatusBanner errorMessage={errorMessage} isOffline={isOffline} />
+      <OwnerComandasHero
+        countAbertas={controller.countAbertas}
+        countFechadas={controller.countFechadas}
+        countProntas={controller.countProntas}
+        selectedResponsibleLabel={controller.selectedResponsibleLabel}
+        ultimaComanda={controller.ultimaComanda}
+        valorEmAberto={controller.valorEmAberto}
+      />
+      <OwnerComandasFilterBar
+        countAbertas={controller.countAbertas}
+        countFechadas={controller.countFechadas}
+        filtro={controller.filtro}
+        scopedCount={controller.scopedByResponsible.length}
+        setFiltro={controller.setFiltro}
+      />
+      <OwnerComandasResponsibleFilters
+        responsibleFilter={controller.responsibleFilter}
+        responsibleOptions={controller.responsibleOptions}
+        setResponsibleFilter={controller.setResponsibleFilter}
+      />
+    </>
+  )
+}
 
-        <div className="ml-2 flex shrink-0 items-center gap-2 pt-0.5">
-          <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Total final</p>
-            <span className="text-sm font-bold" style={{ color: badge.color }}>
-              {formatCurrency(total)}
-            </span>
-          </div>
-          {open ? (
-            <ChevronDown className="size-4 text-[#7a8896]" />
-          ) : (
-            <ChevronRight className="size-4 text-[#7a8896]" />
-          )}
-        </div>
-      </button>
-
-      {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Responsável</p>
-              <p className="mt-1 text-sm font-semibold text-white">{activeComanda.garcomNome ?? 'Operação geral'}</p>
-            </div>
-            <div className="rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-3 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a8896]">Itens</p>
-              <p className="mt-1 text-sm font-semibold text-white">{itemCount}</p>
-            </div>
-          </div>
-
-          {isLoadingDetails ? (
-            <div className="mb-4 flex items-center justify-center rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-6 text-xs text-[#7a8896]">
-              Carregando extrato detalhado...
-            </div>
-          ) : activeComanda.itens.length === 0 ? (
-            <div className="mb-4 rounded-[14px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-5 text-center text-xs text-[#7a8896]">
-              Nenhum item detalhado para esta comanda.
-            </div>
-          ) : (
-            <ul className="mb-4 space-y-2" data-testid={`owner-comanda-items-${comanda.id}`}>
-              {activeComanda.itens.map((item, idx) => (
-                <li
-                  key={`${item.produtoId}-${idx}`}
-                  className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-white">
-                      {item.quantidade}× {item.nome}
-                    </p>
-                    {item.observacao && (
-                      <p className="mt-1 text-[10px] italic text-[#7a8896]">{`"${item.observacao}"`}</p>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-xs font-semibold text-white">
-                    {formatCurrency(item.quantidade * item.precoUnitario)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.03)] p-4 text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-            <div className="flex justify-between text-[#94a3b8]">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {activeComanda.desconto > 0 && (
-              <div className="mt-2 flex justify-between text-[#fca5a5]">
-                <span>Desconto ({activeComanda.desconto}%)</span>
-                <span>– {formatCurrency(descontoVal)}</span>
-              </div>
-            )}
-            {activeComanda.acrescimo > 0 && (
-              <div className="mt-2 flex justify-between text-[#fdba74]">
-                <span>Serviço ({activeComanda.acrescimo}%)</span>
-                <span>+ {formatCurrency(acrescimoVal)}</span>
-              </div>
-            )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
-              <span>Total final</span>
-              <span style={{ color: badge.color }}>{formatCurrency(total)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </li>
+function OwnerComandasViewContent({
+  controller,
+  errorMessage,
+  focusedId,
+  isBusy,
+  isLoading,
+  isOffline,
+  onAddItems,
+  onCloseComanda,
+  onCreatePayment,
+}: {
+  controller: ReturnType<typeof useOwnerComandasController>
+  errorMessage: string | null
+  focusedId: string | null | undefined
+  isBusy: boolean
+  isLoading: boolean
+  isOffline: boolean
+  onAddItems: OwnerComandasViewProps['onAddItems']
+  onCloseComanda: OwnerComandasViewProps['onCloseComanda']
+  onCreatePayment: OwnerComandasViewProps['onCreatePayment']
+}) {
+  return (
+    <OwnerComandasList
+      cards={controller.sorted.map((comanda) => (
+        <OwnerComandaCard
+          comanda={comanda}
+          defaultOpen={comanda.id === focusedId}
+          isBusy={isBusy}
+          key={`${comanda.id}-${comanda.id === focusedId ? 'focused' : 'idle'}`}
+          onAddItems={onAddItems}
+          onCloseComanda={onCloseComanda}
+          onCreatePayment={onCreatePayment}
+        />
+      ))}
+      emptyState={
+        <OwnerComandasEmptyState
+          errorMessage={errorMessage}
+          filtro={controller.filtro}
+          isLoading={isLoading}
+          isOffline={isOffline}
+        />
+      }
+    />
   )
 }

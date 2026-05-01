@@ -20,16 +20,19 @@ export function useEvaluationCountdown(evaluationAccess: EvaluationAccess, onExp
   })
 
   useEffect(() => {
-    if (!evaluationAccess) return
+    if (!evaluationAccess) {return}
 
     const expirationTime = new Date(evaluationAccess.sessionExpiresAt).getTime()
 
-    const intervalId = window.setInterval(() => setCountdownNow(Date.now()), 1000)
-    const timeoutId = window.setTimeout(() => onExpireRef.current?.(), Math.max(0, expirationTime - Date.now()) + 150)
+    const intervalId = globalThis.setInterval(() => setCountdownNow(Date.now()), 1000)
+    const timeoutId = globalThis.setTimeout(
+      () => onExpireRef.current?.(),
+      Math.max(0, expirationTime - Date.now()) + 150,
+    )
 
     return () => {
-      window.clearInterval(intervalId)
-      window.clearTimeout(timeoutId)
+      globalThis.clearInterval(intervalId)
+      globalThis.clearTimeout(timeoutId)
     }
   }, [evaluationAccess])
 

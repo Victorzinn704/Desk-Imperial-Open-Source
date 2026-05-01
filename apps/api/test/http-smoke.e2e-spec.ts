@@ -1,6 +1,5 @@
-import { ValidationPipe } from '@nestjs/common'
+import { type INestApplication, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { AppController } from '../src/app.controller'
 import { AppService } from '../src/app.service'
@@ -56,7 +55,7 @@ describe('HTTP smoke (e2e)', () => {
     }).compile()
 
     app = moduleRef.createNestApplication()
-    app.setGlobalPrefix('api')
+    app.setGlobalPrefix('api/v1')
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -72,12 +71,12 @@ describe('HTTP smoke (e2e)', () => {
     await app.close()
   })
 
-  describe('GET /api/health', () => {
+  describe('GET /api/v1/health', () => {
     it('returns ok when db and redis are healthy', async () => {
       mockPrisma.isHealthy.mockResolvedValue(true)
       mockCache.ping.mockResolvedValue(true)
 
-      const response = await request(app.getHttpServer()).get('/api/health').expect(200)
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(200)
 
       expect(response.body.status).toBe('ok')
       expect(response.body.service).toBe('desk-imperial-api')
@@ -89,17 +88,28 @@ describe('HTTP smoke (e2e)', () => {
       mockPrisma.isHealthy.mockResolvedValue(false)
       mockCache.ping.mockResolvedValue(true)
 
-      const response = await request(app.getHttpServer()).get('/api/health').expect(200)
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(503)
 
       expect(response.body.status).toBe('error')
       expect(response.body.dbHealthy).toBe(false)
       expect(response.body.redisHealthy).toBe(true)
     })
+
+    it('returns error when redis is unhealthy', async () => {
+      mockPrisma.isHealthy.mockResolvedValue(true)
+      mockCache.ping.mockResolvedValue(false)
+
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(503)
+
+      expect(response.body.status).toBe('error')
+      expect(response.body.dbHealthy).toBe(true)
+      expect(response.body.redisHealthy).toBe(false)
+    })
   })
 
-  describe('POST /api/auth/login', () => {
+  describe('POST /api/v1/auth/login', () => {
     it('rejects invalid payload with validation error', async () => {
-      const response = await request(app.getHttpServer()).post('/api/auth/login').send({}).expect(400)
+      const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({}).expect(400)
 
       expect(response.body.message).toBeDefined()
     })
@@ -126,7 +136,7 @@ describe('HTTP smoke (e2e)', () => {
       )
 
       const response = await request(app.getHttpServer())
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           email: 'ceo@empresa.com',
           loginMode: 'OWNER',
@@ -162,7 +172,7 @@ describe('HTTP smoke (e2e)', () => {
       )
 
       await request(app.getHttpServer())
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           loginMode: 'STAFF',
           companyEmail: 'ceo@empresa.com',
@@ -176,7 +186,7 @@ describe('HTTP smoke (e2e)', () => {
 
     it('rejects owner login payload shorter than 8 characters', async () => {
       const response = await request(app.getHttpServer())
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           email: 'ceo@empresa.com',
           loginMode: 'OWNER',

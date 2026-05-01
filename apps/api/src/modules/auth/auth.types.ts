@@ -2,6 +2,7 @@ import type { Request } from 'express'
 
 export type AuthContext = {
   userId: string
+  actorUserId: string
   sessionId: string
   role: 'OWNER' | 'STAFF'
   workspaceOwnerUserId: string

@@ -3,6 +3,7 @@ import {
   buildCategoryCollections,
   buildRecentOrders,
   buildSalesByChannel,
+  buildTopProducts,
   buildTopCustomers,
   calculateGrowthPercent,
 } from '../src/modules/finance/finance-analytics.util'
@@ -85,7 +86,14 @@ describe('finance-analytics.util', () => {
       {
         id: 'p1',
         name: 'Produto 1',
+        brand: null,
         category: 'Bebidas',
+        barcode: null,
+        packagingClass: 'Lata',
+        quantityLabel: '350ml',
+        imageUrl: null,
+        catalogSource: 'manual',
+        isCombo: false,
         stock: 10,
         currency: CurrencyCode.BRL,
         displayCurrency: CurrencyCode.BRL,
@@ -99,7 +107,14 @@ describe('finance-analytics.util', () => {
       {
         id: 'p2',
         name: 'Produto 2',
+        brand: null,
         category: 'Bebidas',
+        barcode: null,
+        packagingClass: 'Lata',
+        quantityLabel: '350ml',
+        imageUrl: null,
+        catalogSource: 'manual',
+        isCombo: false,
         stock: 5,
         currency: CurrencyCode.BRL,
         displayCurrency: CurrencyCode.BRL,
@@ -122,7 +137,43 @@ describe('finance-analytics.util', () => {
         potentialProfit: 180,
       },
     ])
-    expect(result.categoryTopProducts.Bebidas[0].name).toBe('Produto 1')
+    const bebidasTopProducts = result.categoryTopProducts.Bebidas
+    expect(bebidasTopProducts).toBeDefined()
+    expect(bebidasTopProducts?.[0]?.name).toBe('Produto 1')
+  })
+
+  it('propaga metadata de produto nos top products financeiros', () => {
+    const result = buildTopProducts([
+      {
+        id: 'p1',
+        name: 'Brahma 350ml',
+        brand: 'Brahma',
+        category: 'Bebidas',
+        barcode: '7891149105069',
+        packagingClass: 'Lata',
+        quantityLabel: '350ml',
+        imageUrl: null,
+        catalogSource: 'manual',
+        isCombo: false,
+        stock: 10,
+        currency: CurrencyCode.BRL,
+        displayCurrency: CurrencyCode.BRL,
+        originalInventorySalesValue: 200,
+        originalPotentialProfit: 100,
+        inventoryCostValue: 100,
+        inventorySalesValue: 200,
+        potentialProfit: 100,
+        marginPercent: 50,
+      },
+    ])
+
+    expect(result[0]).toMatchObject({
+      brand: 'Brahma',
+      barcode: '7891149105069',
+      packagingClass: 'Lata',
+      quantityLabel: '350ml',
+      catalogSource: 'manual',
+    })
   })
 
   it('mapeia recent orders mantendo valores originais e convertidos', () => {

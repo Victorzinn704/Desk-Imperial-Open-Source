@@ -1,9 +1,9 @@
 # Plano Mestre de Documentação — Desk Imperial
 
-**Versão:** 1.0  
-**Data:** 2026-04-01  
+**Versão:** 1.1  
+**Data:** 2026-05-01  
 **Autor:** João Victor de Moraes da Cruz  
-**Status:** Em execução
+**Status:** Histórico de planejamento
 
 ---
 
@@ -13,6 +13,19 @@ Transformar a documentação do Desk Imperial em referência de projeto open sou
 acessível para comerciante, útil para desenvolvedor, confiável para recrutador, honesta para a comunidade.
 
 Nenhum documento inventa funcionalidade. Tudo é baseado no repositório real.
+
+## Leitura correta deste arquivo
+
+Este documento registra a intencao editorial original da trilha de documentacao.
+
+Ele **nao** e a fonte canonica do estado atual do projeto.
+
+Hoje, as referencias prioritarias sao:
+
+1. `../README.md`
+2. `./README.md`
+3. `./INDEX.md`
+4. docs canonicos em `architecture/`, `product/`, `operations/`, `security/` e `testing/`
 
 ---
 
@@ -53,7 +66,7 @@ Nenhum documento inventa funcionalidade. Tudo é baseado no repositório real.
 | Arquivo                                    | Status    | Propósito                                             |
 | ------------------------------------------ | --------- | ----------------------------------------------------- |
 | `docs/architecture/overview.md`            | Existe    | Visão geral da arquitetura — revisar                  |
-| `docs/architecture/modules.md`             | ✅ Criado | Responsabilidade de cada um dos 16 módulos de domínio |
+| `docs/architecture/modules.md`             | ✅ Criado | Responsabilidade dos módulos de domínio ativos |
 | `docs/architecture/database.md`            | ✅ Criado | Schema completo documentado por entidade              |
 | `docs/architecture/realtime.md`            | ✅ Criado | Fluxo Socket.IO — namespace, eventos, ciclo de vida   |
 | `docs/architecture/authentication-flow.md` | Existe    | Fluxo de autenticação — não alterar                   |
@@ -107,3 +120,5 @@ Este plano deve ser atualizado quando:
 - Comportamento de um módulo existente muda significativamente
 - Uma limitação conhecida é resolvida
 - Nova integração é adicionada
+
+Quando a governanca editorial driftar de novo, atualizar primeiro `docs/README.md` e `docs/INDEX.md`, nao este plano historico.

@@ -1,34 +1,44 @@
-import { Inject, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CashSessionService } from './cash-session.service'
 import { ComandaService } from './comanda.service'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { AssignComandaDto } from './dto/assign-comanda.dto'
-import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
-import type { CloseCashClosureDto } from './dto/close-cash-closure.dto'
-import type { CloseCashSessionDto } from './dto/close-cash-session.dto'
-import type { CloseComandaDto } from './dto/close-comanda.dto'
-import type { CreateCashMovementDto } from './dto/create-cash-movement.dto'
-import type { GetOperationsLiveQueryDto } from './dto/get-operations-live.query'
-import type { OpenCashSessionDto } from './dto/open-cash-session.dto'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
-import { toMesaRecord, type MesaRecord } from './operations.types'
-import type { CreateMesaDto } from './dto/create-mesa.dto'
-import type { UpdateMesaDto } from './dto/update-mesa.dto'
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
+import { type MesaRecord, toMesaRecord } from './operations.types'
 import { resolveBusinessDate } from './operations-domain.utils'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { OperationsKitchenResponse, OperationsSummaryResponse } from '@contracts/contracts'
+import type {
+  AddComandaItemDto,
+  AddComandaItemsBatchDto,
+  AssignComandaDto,
+  CloseCashClosureDto,
+  CloseCashSessionDto,
+  CloseComandaDto,
+  CreateComandaPaymentDto,
+  CreateCashMovementDto,
+  CreateMesaDto,
+  GetOperationsLiveQueryDto,
+  OpenCashSessionDto,
+  OpenComandaDto,
+  OperationsResponseOptionsDto,
+  ReplaceComandaDto,
+  UpdateComandaStatusDto,
+  UpdateKitchenItemStatusDto,
+  UpdateMesaDto,
+} from './operations.schemas'
 
 @Injectable()
 export class OperationsService {
@@ -46,20 +56,36 @@ export class OperationsService {
   async getLiveSnapshot(auth: AuthContext, query: GetOperationsLiveQueryDto) {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
-    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
+    const snapshotOptions = {
+      ...(query.includeCashMovements !== undefined ? { includeCashMovements: query.includeCashMovements } : {}),
+      ...(query.compactMode !== undefined ? { compactMode: query.compactMode } : {}),
+    }
 
-    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, scopedEmployeeId, {
-      includeCashMovements: query.includeCashMovements,
-      compactMode: query.compactMode,
-    })
+    if (auth.role === 'STAFF') {
+      if (!auth.employeeId) {
+        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
+      }
+
+      return this.helpers.buildStaffOperationalSnapshot(
+        workspaceOwnerUserId,
+        businessDate,
+        auth.employeeId,
+        query.compactMode !== undefined ? { compactMode: query.compactMode } : undefined,
+      )
+    }
+
+    return this.helpers.buildLiveSnapshot(workspaceOwnerUserId, businessDate, null, snapshotOptions)
   }
 
   async getKitchenView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsKitchenResponse> {
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const businessDate = resolveBusinessDate(query.businessDate)
-    const scopedEmployeeId = auth.role === 'STAFF' ? (auth.employeeId ?? null) : null
 
-    return this.helpers.buildKitchenView(workspaceOwnerUserId, businessDate, scopedEmployeeId)
+    if (auth.role === 'STAFF' && !auth.employeeId) {
+      throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
+    }
+
+    return this.helpers.buildKitchenView(workspaceOwnerUserId, businessDate, null)
   }
 
   async getSummaryView(auth: AuthContext, query: GetOperationsLiveQueryDto): Promise<OperationsSummaryResponse> {
@@ -170,6 +196,16 @@ export class OperationsService {
     return this.comanda.getComandaDetails(auth, comandaId)
   }
 
+  createComandaPayment(
+    auth: AuthContext,
+    comandaId: string,
+    dto: CreateComandaPaymentDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    return this.comanda.createComandaPayment(auth, comandaId, dto, context, options)
+  }
+
   closeComanda(
     auth: AuthContext,
     comandaId: string,
@@ -213,7 +249,9 @@ export class OperationsService {
     const existing = await this.prisma.mesa.findUnique({
       where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label } },
     })
-    if (existing) throw new ConflictException(`Já existe uma mesa com o label "${label}".`)
+    if (existing) {
+      throw new ConflictException(`Já existe uma mesa com o label "${label}".`)
+    }
     const mesa = await this.prisma.mesa.create({
       data: {
         companyOwnerId: workspaceOwnerUserId,
@@ -225,7 +263,7 @@ export class OperationsService {
       },
     })
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.mesa.created',
       resource: 'mesa',
       resourceId: mesa.id,
@@ -252,26 +290,11 @@ export class OperationsService {
     assertOwnerRole(auth, 'Somente o dono pode editar mesas.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const mesa = await this.prisma.mesa.findUnique({ where: { id: mesaId } })
-    if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId) throw new NotFoundException('Mesa não encontrada.')
-    if (dto.label && dto.label !== mesa.label) {
-      const conflict = await this.prisma.mesa.findUnique({
-        where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: dto.label } },
-      })
-      if (conflict) throw new ConflictException(`Já existe uma mesa com o label "${dto.label}".`)
+    if (mesa?.companyOwnerId !== workspaceOwnerUserId) {
+      throw new NotFoundException('Mesa não encontrada.')
     }
-
-    let reservedUntil: Date | null | undefined
-    if (dto.reservedUntil !== undefined) {
-      if (!dto.reservedUntil) {
-        reservedUntil = null
-      } else {
-        const parsedReservedUntil = new Date(dto.reservedUntil)
-        if (Number.isNaN(parsedReservedUntil.getTime())) {
-          throw new BadRequestException('Data de reserva inválida.')
-        }
-        reservedUntil = parsedReservedUntil
-      }
-    }
+    await this.assertMesaLabelAvailable(workspaceOwnerUserId, mesa.label, dto.label)
+    const reservedUntil = this.parseReservedUntil(dto.reservedUntil)
 
     const updated = await this.prisma.mesa.update({
       where: { id: mesaId },
@@ -302,7 +325,7 @@ export class OperationsService {
       },
     })
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.mesa.updated',
       resource: 'mesa',
       resourceId: mesaId,
@@ -318,5 +341,33 @@ export class OperationsService {
       mesa: mesaRecord,
     })
     return mesaRecord
+  }
+
+  private async assertMesaLabelAvailable(workspaceOwnerUserId: string, currentLabel: string, newLabel?: string) {
+    if (!newLabel || newLabel === currentLabel) {
+      return
+    }
+
+    const conflict = await this.prisma.mesa.findUnique({
+      where: { companyOwnerId_label: { companyOwnerId: workspaceOwnerUserId, label: newLabel } },
+    })
+    if (conflict) {
+      throw new ConflictException(`Já existe uma mesa com o label "${newLabel}".`)
+    }
+  }
+
+  private parseReservedUntil(value: string | null | undefined): Date | null | undefined {
+    if (value === undefined) {
+      return undefined
+    }
+    if (!value) {
+      return null
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException('Data de reserva inválida.')
+    }
+    return parsed
   }
 }

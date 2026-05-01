@@ -8,20 +8,23 @@ import { PrismaService } from '../../database/prisma.service'
 import type { AuthContext } from '../auth/auth.types'
 import { CurrencyService } from '../currency/currency.service'
 import { CacheService } from '../../common/services/cache.service'
+import { PillarsService } from './pillars.service'
 import { roundCurrency, roundPercent } from '../../common/utils/number-rounding.util'
+import { resolveProductCatalogMetadata } from '../products/products-catalog.util'
 import {
-  type FinanceProductAnalyticsRecord,
   buildCategoryCollections,
   buildRecentOrders,
   buildRevenueTimeline,
+  buildSalesCategoryBreakdown,
   buildSalesByChannel,
   buildSalesMap,
-  buildTopProducts,
   buildTopCustomers,
   buildTopEmployees,
+  buildTopProducts,
   buildTopRegions,
   calculateGrowthPercent,
 } from './finance-analytics.util'
+import type { FinanceProductAnalyticsRecord } from './finance-analytics.types'
 
 const FINANCE_SUMMARY_FRESH_TTL_SECONDS = 120
 const FINANCE_SUMMARY_STALE_TTL_SECONDS = 300
@@ -30,7 +33,16 @@ const FINANCE_SUMMARY_REFRESH_AHEAD_MS = 90_000
 const financeProductSelect = {
   id: true,
   name: true,
+  brand: true,
   category: true,
+  barcode: true,
+  packagingClass: true,
+  measurementUnit: true,
+  measurementValue: true,
+  quantityLabel: true,
+  imageUrl: true,
+  catalogSource: true,
+  isCombo: true,
   unitCost: true,
   unitPrice: true,
   currency: true,
@@ -107,7 +119,10 @@ export class FinanceService {
   }
 
   async invalidateSummaryCache(userId: string): Promise<void> {
-    await this.cache.del(CacheService.financeKey(userId))
+    await Promise.all([
+      this.cache.del(CacheService.financeKey(userId)),
+      this.cache.del(PillarsService.pillarsKey(userId)),
+    ])
   }
 
   async invalidateAndWarmSummary(workspaceUserId: string): Promise<void> {
@@ -182,6 +197,7 @@ export class FinanceService {
       customerOrders,
       employeeOrders,
       geographyOrders,
+      categorySalesOrders,
     ] = await Promise.all([
       this.prisma.product.findMany({
         where: { userId: params.workspaceUserId, active: true },
@@ -249,6 +265,22 @@ export class FinanceService {
         where: { userId: params.workspaceUserId, status: OrderStatus.COMPLETED, buyerLatitude: { not: null } },
         _count: { _all: true },
         _sum: { totalRevenue: true, totalProfit: true },
+      }),
+      this.prisma.orderItem.groupBy({
+        by: ['category', 'currency'],
+        where: {
+          order: {
+            userId: params.workspaceUserId,
+            status: OrderStatus.COMPLETED,
+          },
+        },
+        _count: { _all: true },
+        _sum: {
+          quantity: true,
+          lineRevenue: true,
+          lineCost: true,
+          lineProfit: true,
+        },
       }),
     ])
 
@@ -362,6 +394,11 @@ export class FinanceService {
       totals.inventoryCostValue > 0 ? roundPercent((totals.potentialProfit / totals.inventoryCostValue) * 100) : 0
 
     const { categoryBreakdown, categoryTopProducts } = buildCategoryCollections(records)
+    const salesCategoryBreakdown = buildSalesCategoryBreakdown(categorySalesOrders, {
+      currencyService: this.currencyService,
+      displayCurrency,
+      snapshot,
+    })
 
     const result: FinanceSummaryResponse = {
       displayCurrency,
@@ -370,6 +407,7 @@ export class FinanceService {
       ratesNotice: snapshot.notice,
       totals,
       categoryBreakdown,
+      salesCategoryBreakdown,
       categoryTopProducts,
       topProducts: buildTopProducts(records),
       recentOrders: buildRecentOrders(recentOrders, {
@@ -448,7 +486,9 @@ type FinanceSummaryCacheEntry = {
 function unwrapFinanceSummaryCache(
   entry: FinanceSummaryCacheEntry | FinanceSummaryResponse | null,
 ): FinanceSummaryResponse | null {
-  if (!entry) return null
+  if (!entry) {
+    return null
+  }
 
   if (isFinanceSummaryCacheEntry(entry)) {
     return entry.payload
@@ -485,7 +525,16 @@ function toFinanceProductAnalyticsRecord(
   product: {
     id: string
     name: string
+    brand: string | null
     category: string
+    barcode: string | null
+    packagingClass: string
+    measurementUnit: string
+    measurementValue: { toNumber(): number } | number
+    quantityLabel: string | null
+    imageUrl: string | null
+    catalogSource: string | null
+    isCombo: boolean
     unitCost: { toNumber(): number } | number
     unitPrice: { toNumber(): number } | number
     currency: FinanceProductAnalyticsRecord['currency']
@@ -497,6 +546,15 @@ function toFinanceProductAnalyticsRecord(
     snapshot: Awaited<ReturnType<CurrencyService['getSnapshot']>>
   },
 ): FinanceProductAnalyticsRecord {
+  const catalogMetadata = resolveProductCatalogMetadata({
+    name: product.name,
+    brand: product.brand,
+    measurementUnit: product.measurementUnit,
+    measurementValue: product.measurementValue,
+    quantityLabel: product.quantityLabel,
+    imageUrl: product.imageUrl,
+    catalogSource: product.catalogSource,
+  })
   const originalUnitCost = toNumber(product.unitCost)
   const originalUnitPrice = toNumber(product.unitPrice)
   const originalInventoryCostValue = roundCurrency(originalUnitCost * product.stock)
@@ -518,7 +576,14 @@ function toFinanceProductAnalyticsRecord(
   return {
     id: product.id,
     name: product.name,
+    brand: catalogMetadata.brand,
     category: product.category,
+    barcode: product.barcode,
+    packagingClass: product.packagingClass,
+    quantityLabel: catalogMetadata.quantityLabel,
+    imageUrl: catalogMetadata.imageUrl,
+    catalogSource: catalogMetadata.catalogSource,
+    isCombo: product.isCombo,
     stock: product.stock,
     currency: product.currency,
     displayCurrency: options.displayCurrency,

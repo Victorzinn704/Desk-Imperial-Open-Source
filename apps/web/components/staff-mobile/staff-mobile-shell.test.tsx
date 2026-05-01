@@ -15,18 +15,25 @@ import * as api from '@/lib/api'
 import { buildMesaRecord, buildOperationsSnapshot } from '@/test/operations-fixtures'
 import { StaffMobileShell } from './staff-mobile-shell'
 
+const { useOperationsRealtimeMock } = vi.hoisted(() => ({
+  useOperationsRealtimeMock: vi.fn(() => ({ status: 'connected' })),
+}))
+
 const enqueueMock = vi.fn()
 const drainQueueMock = vi.fn()
 
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
   fetchOperationsKitchen: vi.fn(),
+  fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
+  replaceComanda: vi.fn(),
   addComandaItem: vi.fn(),
   addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
+  createComandaPayment: vi.fn(),
   cancelComanda: vi.fn(),
   updateComandaStatus: vi.fn(),
   openCashSession: vi.fn(),
@@ -41,7 +48,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('../operations/use-operations-realtime', () => ({
-  useOperationsRealtime: vi.fn(() => ({ status: 'connected' })),
+  useOperationsRealtime: useOperationsRealtimeMock,
 }))
 
 vi.mock('@/components/shared/use-offline-queue', () => ({
@@ -71,6 +78,7 @@ describe('StaffMobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useOperationsRealtimeMock.mockReturnValue({ status: 'connected' })
     enqueueMock.mockResolvedValue('offline-1')
     drainQueueMock.mockResolvedValue({
       expiredCount: 0,
@@ -80,6 +88,7 @@ describe('StaffMobileShell', () => {
     testQueryClient = createTestQueryClient()
     const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
     const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
+    const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
 
     const snapshot = buildOperationsSnapshot({
@@ -178,6 +187,68 @@ describe('StaffMobileShell', () => {
       },
     }
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
+    mockFetchOrders.mockResolvedValue({
+      items: [
+        {
+          id: 'ord-1',
+          comandaId: 'c-1',
+          customerName: null,
+          buyerType: null,
+          buyerDocument: null,
+          buyerDistrict: null,
+          buyerCity: null,
+          buyerState: null,
+          buyerCountry: null,
+          buyerLatitude: null,
+          buyerLongitude: null,
+          employeeId: 'emp-1',
+          sellerCode: 'E01',
+          sellerName: 'Marina',
+          channel: 'Mesa 1',
+          notes: null,
+          currency: 'BRL',
+          displayCurrency: 'BRL',
+          status: 'COMPLETED',
+          totalRevenue: 120,
+          totalCost: 60,
+          totalProfit: 60,
+          originalTotalRevenue: 120,
+          originalTotalCost: 60,
+          originalTotalProfit: 60,
+          totalItems: 2,
+          createdAt: '2026-03-28T10:00:00.000Z',
+          updatedAt: '2026-03-28T10:30:00.000Z',
+          cancelledAt: null,
+          items: [
+            {
+              id: 'oi-1',
+              productId: 'p-1',
+              productName: 'Pão de queijo',
+              category: 'Comida',
+              quantity: 2,
+              currency: 'BRL',
+              unitPrice: 60,
+              unitCost: 30,
+              lineRevenue: 120,
+              lineCost: 60,
+              lineProfit: 60,
+              originalUnitPrice: 60,
+              originalUnitCost: 30,
+              originalLineRevenue: 120,
+              originalLineCost: 60,
+              originalLineProfit: 60,
+            },
+          ],
+        },
+      ],
+      totals: {
+        completedOrders: 1,
+        cancelledOrders: 0,
+        realizedRevenue: 120,
+        realizedProfit: 60,
+        soldUnits: 2,
+      },
+    })
 
     testQueryClient.setQueryData(['operations', 'live', 'compact'], snapshot)
     testQueryClient.setQueryData(['operations', 'kitchen'], {
@@ -230,6 +301,24 @@ describe('StaffMobileShell', () => {
     })
   })
 
+  it('não reexecuta o drain offline apenas por rerender do shell conectado', async () => {
+    const { rerender } = renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await waitFor(() => {
+      expect(drainQueueMock).toHaveBeenCalledTimes(1)
+    })
+
+    rerender(
+      <QueryClientProvider client={testQueryClient}>
+        <StaffMobileShell currentUser={mockUser} />
+      </QueryClientProvider>,
+    )
+
+    await waitFor(() => {
+      expect(drainQueueMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('mostra o resumo individual do funcionário na aba de histórico', async () => {
     const user = userEvent.setup()
 
@@ -238,9 +327,241 @@ describe('StaffMobileShell', () => {
     await user.click(screen.getByTestId('nav-historico'))
 
     await waitFor(() => {
+      expect(screen.getByText(/Histórico próprio/i)).toBeInTheDocument()
       expect(screen.getByTestId('summary-card-receita-realizada')).toHaveTextContent('120,00')
       expect(screen.getByTestId('summary-card-receita-esperada')).toHaveTextContent('200,00')
-      expect(screen.getByText(/1 comanda em aberto no seu atendimento/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-posi-o')).toHaveTextContent('1º')
+      expect(screen.getByText(/Você está liderando o turno/i)).toBeInTheDocument()
+      expect(screen.getByText(/Mesa 1/i)).toBeInTheDocument()
+      expect(screen.queryByText(/Mesa 2/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('mostra comandas abertas do salão e identifica a responsabilidade principal', async () => {
+    const user = userEvent.setup()
+    const scopedSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [
+            {
+              id: 'c-1',
+              status: 'OPEN',
+              tableLabel: '1',
+              totalAmount: 120,
+              openedAt: '2026-03-28T10:00:00.000Z',
+              items: [{ id: 'i-1', productName: 'Pão de queijo', quantity: 2, unitPrice: 20, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+        {
+          employeeId: 'emp-2',
+          employeeCode: 'E02',
+          displayName: 'Paulo',
+          comandas: [
+            {
+              id: 'c-9',
+              status: 'READY',
+              tableLabel: '9',
+              totalAmount: 95,
+              openedAt: '2026-03-28T12:00:00.000Z',
+              items: [{ id: 'i-9', productName: 'Suco', quantity: 1, unitPrice: 15, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+      ],
+      unassigned: {
+        comandas: [],
+      },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-1',
+          currentEmployeeId: 'emp-1',
+        }),
+        buildMesaRecord({
+          id: 'mesa-9',
+          label: 'Mesa 9',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-9',
+          currentEmployeeId: 'emp-2',
+        }),
+      ],
+    })
+
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(scopedSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], scopedSnapshot)
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-pedidos'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('2')
+      expect(screen.getByLabelText(/Abrir detalhes da 1/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Abrir detalhes da 9/i)).toBeInTheDocument()
+      expect(screen.getByText(/Sua mesa/i)).toBeInTheDocument()
+      expect(screen.getByText(/Responsável Paulo/i)).toBeInTheDocument()
+    })
+  })
+
+  it('mostra a cozinha compartilhada do salão com responsável visível', async () => {
+    const user = userEvent.setup()
+
+    vi.mocked(api.fetchOperationsKitchen).mockResolvedValue({
+      businessDate: '2026-04-21T00:00:00.000Z',
+      companyOwnerId: 'owner-1',
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:20:00.000Z',
+          kitchenReadyAt: null,
+        },
+        {
+          itemId: 'i-3',
+          comandaId: 'c-3',
+          mesaLabel: '9',
+          employeeId: 'emp-2',
+          employeeName: 'Paulo',
+          productName: 'Suco',
+          quantity: 2,
+          notes: 'sem gelo',
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:24:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 2,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+    testQueryClient.setQueryData(['operations', 'kitchen'], {
+      businessDate: '2026-04-21T00:00:00.000Z',
+      companyOwnerId: 'owner-1',
+      items: [
+        {
+          itemId: 'i-2',
+          comandaId: 'c-2',
+          mesaLabel: '2',
+          employeeId: 'emp-1',
+          employeeName: 'Marina',
+          productName: 'Café',
+          quantity: 1,
+          notes: null,
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:20:00.000Z',
+          kitchenReadyAt: null,
+        },
+        {
+          itemId: 'i-3',
+          comandaId: 'c-3',
+          mesaLabel: '9',
+          employeeId: 'emp-2',
+          employeeName: 'Paulo',
+          productName: 'Suco',
+          quantity: 2,
+          notes: 'sem gelo',
+          kitchenStatus: 'QUEUED',
+          kitchenQueuedAt: '2026-04-21T18:24:00.000Z',
+          kitchenReadyAt: null,
+        },
+      ],
+      statusCounts: {
+        queued: 2,
+        inPreparation: 0,
+        ready: 0,
+      },
+    })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-cozinha'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Fila compartilhada do salão/i)).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+      expect(screen.getByText(/Responsável Paulo/i)).toBeInTheDocument()
+    })
+  })
+
+  it('mostra o mapa compartilhado do salão com responsabilidade visível na aba de mesas', async () => {
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Mapa compartilhado do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('mesa-summary-livres')).toBeInTheDocument()
+      expect(screen.getByTestId('mesa-summary-suas')).toHaveTextContent('1')
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+    })
+  })
+
+  it('abre a comanda ao tocar em uma mesa ocupada e só depois edita itens', async () => {
+    const user = userEvent.setup()
+    const scopedSnapshot = buildOperationsSnapshot({
+      employees: [
+        {
+          employeeId: 'emp-1',
+          employeeCode: 'E01',
+          displayName: 'Marina',
+          comandas: [
+            {
+              id: 'c-1',
+              status: 'OPEN',
+              tableLabel: '1',
+              totalAmount: 120,
+              openedAt: '2026-03-28T10:00:00.000Z',
+              items: [{ id: 'i-1', productName: 'Pão de queijo', quantity: 2, unitPrice: 20, kitchenStatus: 'READY' }],
+            },
+          ],
+        },
+      ],
+      unassigned: { comandas: [] },
+      mesas: [
+        buildMesaRecord({
+          id: 'mesa-1',
+          label: 'Mesa 1',
+          capacity: 4,
+          status: 'ocupada',
+          comandaId: 'c-1',
+          currentEmployeeId: 'emp-1',
+        }),
+      ],
+    })
+    vi.mocked(api.fetchOperationsLive).mockResolvedValue(scopedSnapshot)
+    testQueryClient.setQueryData(['operations', 'live', 'compact'], scopedSnapshot)
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
+    })
+
+    await user.click(await screen.findByRole('button', { name: /itens/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/Editar comanda/i)).toBeInTheDocument()
+      expect(screen.getByText('Responsável')).toBeInTheDocument()
+      expect(screen.getByText('Sua mesa')).toBeInTheDocument()
     })
   })
 
@@ -385,12 +706,15 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
-    expect(await screen.findByText(/Escolha uma categoria/i)).toBeInTheDocument()
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-3'))
+    expect(await screen.findByText(/Nova comanda/i)).toBeInTheDocument()
+    expect(screen.getByText('Situação')).toBeInTheDocument()
+    expect(screen.getByText('Mesa livre')).toBeInTheDocument()
+    expect(screen.getByText('Na cozinha')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /^Bebidas$/i }))
     await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
-    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+    await user.click(screen.getByRole('button', { name: /Abrir comanda/i }))
 
     await waitFor(() => {
       expect(api.openComanda).toHaveBeenCalledWith(
@@ -410,7 +734,8 @@ describe('StaffMobileShell', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/Comandas ativas/i)).toBeInTheDocument()
+      expect(screen.getByText(/Comandas do salão/i)).toBeInTheDocument()
+      expect(screen.getByTestId('summary-card-ativas')).toHaveTextContent('2')
     })
   })
 
@@ -504,15 +829,23 @@ describe('StaffMobileShell', () => {
 
     renderWithClient(<StaffMobileShell currentUser={mockUser} />)
 
-    await user.click(screen.getByRole('button', { name: /3.*novo pdv/i }))
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-3'))
     await user.click(await screen.findByRole('button', { name: /^Bebidas$/i }))
     await user.click(screen.getByRole('button', { name: /Adicionar Café especial/i }))
-    await user.click(screen.getByRole('button', { name: /Enviar pedido/i }))
+    await user.click(screen.getByRole('button', { name: /Abrir comanda/i }))
 
     await waitFor(() => {
       expect(api.openCashSession).not.toHaveBeenCalled()
       expect(screen.getByText(/Essa mesa ja possui uma comanda aberta/i)).toBeInTheDocument()
     })
+  })
+
+  it('expõe aviso offline na aba de mesas quando a conexão cai', async () => {
+    useOperationsRealtimeMock.mockReturnValue({ status: 'disconnected' })
+
+    renderWithClient(<StaffMobileShell currentUser={mockUser} />)
+
+    expect(await screen.findByText(/As mesas podem estar desatualizadas até a reconexão/i)).toBeInTheDocument()
   })
 })
 

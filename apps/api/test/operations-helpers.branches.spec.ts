@@ -10,8 +10,8 @@ import {
 import type { CacheService } from '../src/common/services/cache.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { AuthContext } from '../src/modules/auth/auth.types'
-import type { ComandaDraftItemDto } from '../src/modules/operations/dto/comanda-draft-item.dto'
 import { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import type { ComandaDraftItemDto } from '../src/modules/operations/operations.schemas'
 import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
 describe('OperationsHelpersService - branches', () => {
@@ -98,9 +98,13 @@ describe('OperationsHelpersService - branches', () => {
             { type: CashMovementType.WITHDRAWAL, amount: 10 },
             { type: CashMovementType.ADJUSTMENT, amount: 5 },
           ],
+          payments: [],
           comandas: [
             {
+              id: 'comanda-1',
+              status: ComandaStatus.CLOSED,
               totalAmount: 150,
+              payments: [],
               items: [
                 {
                   quantity: 2,
@@ -109,7 +113,10 @@ describe('OperationsHelpersService - branches', () => {
               ],
             },
             {
+              id: 'comanda-2',
+              status: ComandaStatus.CLOSED,
               totalAmount: 50,
+              payments: [],
               items: [
                 {
                   quantity: 1,
@@ -346,7 +353,7 @@ describe('OperationsHelpersService - branches', () => {
     )
   })
 
-  it('requireAuthorizedComanda permite OWNER e bloqueia STAFF sem vinculo', async () => {
+  it('requireAuthorizedComanda permite OWNER e STAFF ativo mesmo quando a comanda e de outro atendimento', async () => {
     const ownerAuth = makeOwnerAuthContext()
     const staffAuth = makeStaffAuthContext({ employeeId: 'emp-1' })
     const comanda = { id: 'comanda-1', currentEmployeeId: 'emp-2' }
@@ -355,6 +362,16 @@ describe('OperationsHelpersService - branches', () => {
     jest.spyOn(service as any, 'resolveEmployeeForStaff').mockResolvedValue({ id: 'emp-1' })
 
     await expect(service.requireAuthorizedComanda({} as any, 'owner-1', ownerAuth, 'comanda-1')).resolves.toBe(comanda)
+    await expect(service.requireAuthorizedComanda({} as any, 'owner-1', staffAuth, 'comanda-1')).resolves.toBe(comanda)
+  })
+
+  it('requireAuthorizedComanda bloqueia STAFF sem funcionario ativo vinculado', async () => {
+    const staffAuth = makeStaffAuthContext({ employeeId: 'emp-1' })
+    const comanda = { id: 'comanda-1', currentEmployeeId: 'emp-2' }
+
+    jest.spyOn(service as any, 'requireOwnedComanda').mockResolvedValue(comanda)
+    jest.spyOn(service as any, 'resolveEmployeeForStaff').mockResolvedValue(null)
+
     await expect(service.requireAuthorizedComanda({} as any, 'owner-1', staffAuth, 'comanda-1')).rejects.toThrow(
       ForbiddenException,
     )
@@ -553,6 +570,56 @@ describe('OperationsHelpersService - branches', () => {
     ).rejects.toThrow(BadRequestException)
   })
 
+  it('assertDraftSelectionsStockAvailability bloqueia produto sem estoque no fluxo da comanda', async () => {
+    const transaction = {
+      product: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'prod-1',
+            name: 'Cerveja',
+            stock: 0,
+            isCombo: false,
+            comboComponents: [],
+          },
+        ]),
+      },
+    }
+
+    await expect(
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'prod-1', quantity: 1 }]),
+    ).rejects.toThrow('Estoque insuficiente para Cerveja')
+  })
+
+  it('assertDraftSelectionsStockAvailability considera consumo de componentes em combo', async () => {
+    const transaction = {
+      product: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'combo-1',
+            name: 'Combo Petisco',
+            stock: 99,
+            isCombo: true,
+            comboComponents: [
+              {
+                componentProductId: 'beer-1',
+                totalUnits: 2,
+                componentProduct: {
+                  id: 'beer-1',
+                  name: 'Cerveja Long Neck',
+                  stock: 1,
+                },
+              },
+            ],
+          },
+        ]),
+      },
+    }
+
+    await expect(
+      service.assertDraftSelectionsStockAvailability(transaction as any, 'owner-1', [{ productId: 'combo-1', quantity: 1 }]),
+    ).rejects.toThrow('Estoque insuficiente para Cerveja Long Neck')
+  })
+
   it('assertOpenTableAvailability bloqueia mesa ocupada e permite mesa livre', async () => {
     const transaction = {
       comanda: {
@@ -673,11 +740,61 @@ describe('OperationsHelpersService - branches', () => {
     )
 
     const createPayload = transaction.order.create.mock.calls[0][0]
-    expect(transaction.product.updateMany).toHaveBeenCalledTimes(2)
+    expect(transaction.product.updateMany).toHaveBeenCalledTimes(1)
     expect(createPayload.data.items.create).toEqual([
       expect.objectContaining({ category: 'Alimentos', lineCost: 20, lineRevenue: 30, lineProfit: 10 }),
       expect.objectContaining({ category: 'Comanda manual', lineCost: 0, lineRevenue: 20, lineProfit: 20 }),
     ])
+  })
+
+  it('ensureOrderForClosedComanda falha quando a baixa de estoque nao consegue reservar o item', async () => {
+    const transaction = {
+      product: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+      order: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
+      comanda: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'comanda-estoque',
+          customerName: 'Cliente XPTO',
+          customerDocument: null,
+          currentEmployeeId: null,
+          currentEmployee: null,
+          notes: null,
+          totalAmount: 30,
+          items: [
+            {
+              productId: 'prod-1',
+              productName: 'Pizza',
+              quantity: 2,
+              unitPrice: 15,
+              totalAmount: 30,
+              product: {
+                id: 'prod-1',
+                name: 'Pizza',
+                stock: 1,
+                unitCost: 10,
+                currency: CurrencyCode.BRL,
+                category: 'Alimentos',
+                isCombo: false,
+                comboComponents: [],
+              },
+            },
+          ],
+        }),
+      },
+    }
+
+    await expect(service.ensureOrderForClosedComanda(transaction as any, 'owner-1', 'comanda-estoque')).rejects.toThrow(
+      BadRequestException,
+    )
+    await expect(service.ensureOrderForClosedComanda(transaction as any, 'owner-1', 'comanda-estoque')).rejects.toThrow(
+      'Estoque insuficiente para Pizza',
+    )
+    expect(transaction.order.create).not.toHaveBeenCalled()
   })
 
   it('ensureOrderForClosedComanda consome componentes quando a comanda fecha combo', async () => {

@@ -8,9 +8,9 @@ export function SettingsInfoCard({
   value: string
 }>) {
   return (
-    <div className="imperial-card-soft p-4">
+    <div className="border-l-2 border-[var(--border)] pl-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{label}</p>
-      <p className="mt-3 text-xl font-semibold text-white">{value}</p>
+      <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">{value}</p>
       <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">{hint}</p>
     </div>
   )

@@ -1,7 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ProductRecord } from '@contracts/contracts'
+import type * as ApiModule from '@/lib/api'
 import { ApiError } from '@/lib/api'
 import { PortfolioEnvironment } from './portfolio-environment'
 
@@ -15,6 +17,14 @@ vi.mock('@/components/dashboard/hooks/useDashboardQueries', () => ({
 vi.mock('@/components/dashboard/hooks/useDashboardMutations', () => ({
   useDashboardMutations: () => mockUseDashboardMutations(),
 }))
+
+vi.mock('@/lib/api', async () => {
+  const actual = await vi.importActual<typeof ApiModule>('@/lib/api')
+  return {
+    ...actual,
+    searchCatalogImages: vi.fn().mockResolvedValue([]),
+  }
+})
 
 function makeProduct(overrides: Partial<ProductRecord> = {}): ProductRecord {
   return {
@@ -57,6 +67,28 @@ function makeProduct(overrides: Partial<ProductRecord> = {}): ProductRecord {
   }
 }
 
+function buildSessionQuery(role: 'OWNER' | 'STAFF' = 'OWNER') {
+  return {
+    data: {
+      user: {
+        role,
+        preferredCurrency: 'BRL',
+      },
+    },
+  }
+}
+
+function buildEmployeesQuery() {
+  return {
+    data: {
+      items: [],
+      totals: {
+        activeEmployees: 0,
+      },
+    },
+  }
+}
+
 describe('PortfolioEnvironment', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -69,6 +101,7 @@ describe('PortfolioEnvironment', () => {
     })
 
     mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
       financeQuery: {
         data: {
           displayCurrency: 'BRL',
@@ -107,21 +140,25 @@ describe('PortfolioEnvironment', () => {
         },
         error: null,
       },
+      employeesQuery: buildEmployeesQuery(),
     })
 
     mockUseDashboardMutations.mockReturnValue({
       createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: updateMutate },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     await user.click(screen.getByRole('button', { name: /editar/i }))
 
-    expect(screen.getByText(/editar produto/i)).toBeInTheDocument()
+    const editDialog = screen.getByRole('dialog')
+    expect(within(editDialog).getAllByText(/editar produto/i).length).toBeGreaterThan(0)
 
     const nameInput = screen.getByLabelText(/^nome$/i)
     expect(nameInput).toHaveValue('Pizza Imperial')
@@ -143,7 +180,7 @@ describe('PortfolioEnvironment', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+      expect(screen.queryByText(/editar produto/i)).not.toBeInTheDocument()
     })
   })
 
@@ -152,6 +189,7 @@ describe('PortfolioEnvironment', () => {
     const createMutate = vi.fn()
 
     mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
       financeQuery: {
         data: {
           displayCurrency: 'BRL',
@@ -188,17 +226,23 @@ describe('PortfolioEnvironment', () => {
         },
         error: null,
       },
+      employeesQuery: buildEmployeesQuery(),
     })
 
     mockUseDashboardMutations.mockReturnValue({
       createProductMutation: { isPending: false, error: null, mutate: createMutate },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
+
+    await user.click(screen.getByRole('button', { name: /cadastrar produto/i }))
+    const createDialog = screen.getByRole('dialog')
 
     await user.type(screen.getByLabelText(/^nome$/i), 'Combo Almoço Imperial')
     await user.type(screen.getByLabelText(/^categoria$/i), 'Combos')
@@ -219,7 +263,7 @@ describe('PortfolioEnvironment', () => {
     await user.clear(comboUnitsInput)
     await user.type(comboUnitsInput, '2')
 
-    await user.click(screen.getByRole('button', { name: /cadastrar produto/i }))
+    await user.click(within(createDialog).getByRole('button', { name: /^cadastrar produto$/i }))
 
     await waitFor(() => {
       expect(createMutate).toHaveBeenCalledWith(
@@ -237,7 +281,100 @@ describe('PortfolioEnvironment', () => {
             }),
           ],
         }),
+        expect.any(Object),
       )
+    })
+  })
+
+  it('abre a venda encapsulada e registra o pedido com contexto de delivery', async () => {
+    const user = userEvent.setup()
+    const createOrderMutate = vi.fn((_payload, options?: { onSuccess?: () => void }) => {
+      options?.onSuccess?.()
+    })
+
+    mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
+      financeQuery: {
+        data: {
+          displayCurrency: 'BRL',
+          totals: {
+            lowStockItems: 0,
+          },
+          categoryBreakdown: [],
+        },
+      },
+      productsQuery: {
+        data: {
+          items: [makeProduct()],
+          totals: {
+            totalProducts: 1,
+            activeProducts: 1,
+            inactiveProducts: 0,
+            stockUnits: 15,
+            stockPackages: 0,
+            stockLooseUnits: 15,
+            stockBaseUnits: 15,
+            inventoryCostValue: 300,
+            inventorySalesValue: 600,
+            potentialProfit: 300,
+            averageMarginPercent: 50,
+            categories: ['Pizzas'],
+          },
+        },
+        error: null,
+      },
+      employeesQuery: buildEmployeesQuery(),
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
+      restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: createOrderMutate },
+    })
+
+    renderWithQueryClient(<PortfolioEnvironment />)
+
+    await user.click(screen.getByRole('button', { name: /^vender$/i }))
+
+    const saleDialog = screen.getByRole('dialog')
+    expect(within(saleDialog).getAllByText(/vender pizza imperial/i).length).toBeGreaterThan(0)
+    expect(screen.getByLabelText(/^canal$/i)).toHaveValue('Delivery')
+
+    await user.type(screen.getByLabelText(/^comprador$/i), 'Cliente Imperial')
+    await user.type(screen.getByLabelText(/^cpf do comprador$/i), '52998224725')
+    await user.type(screen.getByLabelText(/^bairro \/ regiao$/i), 'Centro')
+    await user.type(screen.getByLabelText(/^cidade da venda$/i), 'São Paulo')
+    await user.type(screen.getByLabelText(/^estado$/i), 'SP')
+
+    await user.click(within(saleDialog).getByRole('button', { name: /registrar venda/i }))
+
+    await waitFor(() => {
+      expect(createOrderMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          values: expect.objectContaining({
+            customerName: 'Cliente Imperial',
+            buyerDistrict: 'Centro',
+            buyerCity: 'São Paulo',
+            buyerState: 'SP',
+            channel: 'Delivery',
+            items: [
+              expect.objectContaining({
+                productId: 'product-1',
+                quantity: 1,
+              }),
+            ],
+          }),
+        }),
+        expect.any(Object),
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
   })
 
@@ -245,6 +382,7 @@ describe('PortfolioEnvironment', () => {
     const user = userEvent.setup()
 
     mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
       financeQuery: {
         data: {
           displayCurrency: 'BRL',
@@ -267,7 +405,13 @@ describe('PortfolioEnvironment', () => {
         data: {
           items: [
             makeProduct({ id: 'product-1', name: 'Pizza Imperial', brand: 'Casa', category: 'Pizzas' }),
-            makeProduct({ id: 'product-2', name: 'Combo Executivo', brand: 'Desk', category: 'Combos', packagingClass: 'Combo promocional' }),
+            makeProduct({
+              id: 'product-2',
+              name: 'Combo Executivo',
+              brand: 'Desk',
+              category: 'Combos',
+              packagingClass: 'Combo promocional',
+            }),
           ],
           totals: {
             totalProducts: 2,
@@ -286,17 +430,20 @@ describe('PortfolioEnvironment', () => {
         },
         error: new ApiError('Falha ao sincronizar produtos', 500),
       },
+      employeesQuery: buildEmployeesQuery(),
     })
 
     mockUseDashboardMutations.mockReturnValue({
       createProductMutation: { isPending: false, error: new ApiError('Produto inválido', 400), mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     expect(screen.getByText(/SKUs ativos/i)).toBeInTheDocument()
     expect(screen.getAllByText('2').length).toBeGreaterThan(0)
@@ -326,6 +473,7 @@ describe('PortfolioEnvironment', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
 
     mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
       financeQuery: {
         data: {
           displayCurrency: 'BRL',
@@ -339,7 +487,13 @@ describe('PortfolioEnvironment', () => {
         data: {
           items: [
             makeProduct({ id: 'active-1', name: 'Lasanha', active: true }),
-            makeProduct({ id: 'archived-1', name: 'Combo Arquivado', active: false, isCombo: true, comboDescription: 'combo antigo' }),
+            makeProduct({
+              id: 'archived-1',
+              name: 'Combo Arquivado',
+              active: false,
+              isCombo: true,
+              comboDescription: 'combo antigo',
+            }),
           ],
           totals: {
             totalProducts: 2,
@@ -358,33 +512,38 @@ describe('PortfolioEnvironment', () => {
         },
         error: null,
       },
+      employeesQuery: buildEmployeesQuery(),
     })
 
     mockUseDashboardMutations.mockReturnValue({
       createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
       archiveProductMutation: { isPending: false, error: null, mutate: archiveMutate },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: vi.fn() },
       restoreProductMutation: { isPending: false, error: null, mutate: restoreMutate },
       deleteProductMutation: { isPending: false, error: null, mutate: deleteMutate },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
     })
 
-    render(<PortfolioEnvironment />)
+    renderWithQueryClient(<PortfolioEnvironment />)
 
     const editButtons = screen.getAllByRole('button', { name: /editar/i })
     await user.click(editButtons[0])
-    expect(screen.getByText(/editar produto/i)).toBeInTheDocument()
+    let editDialog = screen.getByRole('dialog')
+    expect(within(editDialog).getAllByText(/editar produto/i).length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole('button', { name: /^cancelar$/i }))
-    expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+    expect(screen.queryByText(/editar produto/i)).not.toBeInTheDocument()
 
     await user.click(screen.getAllByRole('button', { name: /editar/i })[0])
-    expect(screen.getByText(/editar produto/i)).toBeInTheDocument()
+    editDialog = screen.getByRole('dialog')
+    expect(within(editDialog).getAllByText(/editar produto/i).length).toBeGreaterThan(0)
 
     await user.click(screen.getByRole('button', { name: /arquivar/i }))
 
     expect(archiveMutate).toHaveBeenCalledWith('active-1', expect.any(Object))
     await waitFor(() => {
-      expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+      expect(screen.queryByText(/editar produto/i)).not.toBeInTheDocument()
     })
 
     await user.click(screen.getByRole('button', { name: /reativar/i }))
@@ -398,9 +557,76 @@ describe('PortfolioEnvironment', () => {
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('Combo Arquivado'))
     expect(deleteMutate).toHaveBeenCalledWith('archived-1', expect.any(Object))
     await waitFor(() => {
-      expect(screen.getByText(/novo produto/i)).toBeInTheDocument()
+      expect(screen.queryByText(/editar produto/i)).not.toBeInTheDocument()
     })
 
     confirmSpy.mockRestore()
   })
+
+  it('aciona o reabastecimento em massa pelo painel do portfólio', async () => {
+    const user = userEvent.setup()
+    const bulkRestockMutate = vi.fn()
+
+    mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: buildSessionQuery(),
+      financeQuery: {
+        data: {
+          displayCurrency: 'BRL',
+          totals: {
+            lowStockItems: 1,
+          },
+          categoryBreakdown: [],
+        },
+      },
+      productsQuery: {
+        data: {
+          items: [makeProduct({ id: 'product-low', stock: 2, stockBaseUnits: 2, isLowStock: true })],
+          totals: {
+            totalProducts: 1,
+            activeProducts: 1,
+            inactiveProducts: 0,
+            stockUnits: 2,
+            stockPackages: 0,
+            stockLooseUnits: 2,
+            stockBaseUnits: 2,
+            inventoryCostValue: 40,
+            inventorySalesValue: 80,
+            potentialProfit: 40,
+            averageMarginPercent: 50,
+            categories: ['Pizzas'],
+          },
+        },
+        error: null,
+      },
+      employeesQuery: buildEmployeesQuery(),
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      createProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      updateProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      archiveProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      bulkRestockProductsMutation: { isPending: false, error: null, mutate: bulkRestockMutate },
+      restoreProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      deleteProductMutation: { isPending: false, error: null, mutate: vi.fn() },
+      createOrderMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+
+    renderWithQueryClient(<PortfolioEnvironment />)
+
+    await user.click(screen.getByRole('button', { name: /reabastecer em massa/i }))
+
+    expect(bulkRestockMutate).toHaveBeenCalled()
+  })
 })
+
+function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
+
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}

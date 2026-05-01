@@ -4,12 +4,12 @@
 
 | Arquivo | Função |
 |--------|--------|
-| `app/desk-theme.css` | **Fonte única** de tokens Tailwind v4 (`@theme`): cores `desk-*`, aliases `background`/`foreground`/`accent`, sombras e raios. |
-| `app/globals.css` | Importa Leaflet + `desk-theme.css` + Tailwind; **ponte `:root`** (`--bg`, `--accent`…) para código legado; `@layer base` e `@layer components` (cards, sidebar, mapa). |
+| `app/globals.css` | **Fonte ativa** dos imports globais e da ponte `:root` (`--bg`, `--accent`, `--text-*`) usada pelo código legado; também carrega Leaflet e Tailwind. |
+| snapshot externo `Desk-Imperial-Antigo/dead-code-snapshot-2026-04-30` | Guarda artefatos arquivados fora do monorepo quando um token source ou CSS legado sai de linha. |
 
 ## Como usar
 
-- **Novo código (preferido):** utilitários Tailwind gerados pelo `@theme`, por exemplo `bg-background`, `text-foreground`, `border-border`, `bg-accent`, `rounded-(--radius-desk-card)` (ajuste conforme sua versão do Tailwind).
+- **Novo código (preferido):** utilitários Tailwind e tokens expostos pelo CSS global ativo, por exemplo `bg-background`, `text-foreground`, `border-border`, `bg-accent`.
 - **Código existente:** continue usando `var(--bg)`, `var(--accent)`, `var(--text-primary)` — mapeados em `:root` para os tokens `desk-*`.
 
 ## Hierarquia de cor (mental model)
@@ -20,4 +20,4 @@
 4. **Texto** — `fg` → `fg-muted` → `fg-soft`.
 5. **Marca** — dourado só em acento e estados de destaque (`desk-accent`).
 
-Alterar a identidade visual no futuro = principalmente **editar `desk-theme.css`**, não espalhar hex em componentes.
+Alterar a identidade visual no futuro = editar a fonte ativa de tokens globais antes de espalhar hex em componentes.

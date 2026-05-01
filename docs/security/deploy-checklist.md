@@ -1,134 +1,273 @@
 # Checklist de Deploy Seguro
 
-Use esta lista antes de publicar o projeto em ambiente público.
+**Versao:** 1.1  
+**Ultima atualizacao:** 2026-05-01
 
-## 1. Rotacione todos os segredos expostos
+Use esta lista antes de publicar uma nova passada do Desk Imperial em ambiente publico.
 
-- gere uma nova senha do banco no Neon
-- gere ou rotacione a `API key` da Brevo
-- revogue as credenciais antigas
-- atualize os segredos no provedor de deploy
+O runtime canonico atual e:
 
-Observação:
+- Oracle `vm-free-01`: `web`, `api`, `redis`, `nginx`, `certbot`
+- Oracle `vm-free-02`: observabilidade, SonarQube, Metabase, builder
+- Ampere da Lohana: PostgreSQL 17 + PgBouncer + backup
+- malha privada por WireGuard entre esses hosts
 
-- qualquer segredo compartilhado fora do sistema deve ser tratado como comprometido
+---
 
-## 2. Proteja a conta e o projeto no Neon
+## 1. Rotacione segredos expostos
 
-- ative `2FA` na conta Neon
-- use somente `DATABASE_URL` e `DIRECT_URL` no servidor
-- mantenha `sslmode=require` nas connection strings
-- nao use a Data API do Neon no frontend
-- se o plano permitir, ative `IP Allow`
-- se o plano permitir, use branch protegida para producao
+Trate como comprometido qualquer segredo que tenha aparecido fora do runtime seguro.
 
-## 3. Segredos e variáveis de ambiente
+Rotacione antes do proximo corte publico se tiver sido exposto:
 
-Somente no servidor:
-
-- `DATABASE_URL`
-- `DIRECT_URL`
+- `DATABASE_URL` / credenciais do app
+- `DIRECT_URL` / credenciais de migracao
+- `REDIS_PASSWORD`
 - `COOKIE_SECRET`
 - `CSRF_SECRET`
 - `ENCRYPTION_KEY`
-- `BREVO_API_URL`
 - `BREVO_API_KEY`
-- `EMAIL_FROM_NAME`
-- `EMAIL_FROM_EMAIL`
-- `EMAIL_REPLY_TO`
-- `EMAIL_SUPPORT_ADDRESS`
-- `LOGIN_ALERT_EMAILS_ENABLED`
 - `GEMINI_API_KEY`
-- `GEMINI_MODEL`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `SENTRY_AUTH_TOKEN`
+- qualquer `secret key` de projeto externo compartilhada fora do host seguro
 
-Observação:
+---
 
-- para email transacional funcionando em produção, configure `BREVO_API_KEY`
-- confirme no painel da Brevo que `EMAIL_FROM_EMAIL` existe como sender validado
-- `GEMINI_API_URL`
+## 2. Valide a borda Oracle e a malha privada
 
-Podem ser públicas:
+Antes de publicar:
+
+- confirmar que `app.deskimperial.online` e `api.deskimperial.online` apontam para a `vm-free-01`
+- confirmar que somente `80` e `443` estao publicos na borda web/app
+- confirmar que `5432`, `6432`, exporters, Metabase e SonarQube nao estao expostos na internet
+- confirmar que a malha WireGuard entre `vm-free-01`, `vm-free-02` e a Ampere esta ativa
+- confirmar que a API fala com o banco pelo endereco privado correto
+
+Referencias internas:
+
+- [infra/oracle/README.md](../../infra/oracle/README.md)
+- [infra/oracle/db/README.md](../../infra/oracle/db/README.md)
+- [infra/oracle/network/wireguard/README.md](../../infra/oracle/network/wireguard/README.md)
+
+---
+
+## 3. Segredos e variaveis por superficie
+
+### So no runtime da API
+
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `REDIS_PASSWORD`
+- `COOKIE_SECRET`
+- `CSRF_SECRET`
+- `ENCRYPTION_KEY`
+- `BREVO_API_KEY`
+- `GEMINI_API_KEY`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `SENTRY_DSN`
+
+### Publicas no web
 
 - `APP_URL`
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_MAP_STYLE_URL`
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `NEXT_PUBLIC_SENTRY_ENABLED`
+- `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
+- `NEXT_PUBLIC_SENTRY_RELEASE`
+
+### So no server/edge do web
+
+- `SENTRY_WEB_DSN`
+- `SENTRY_WEB_ENABLED`
+- `SENTRY_WEB_TRACES_SAMPLE_RATE`
+- `SENTRY_WEB_ENVIRONMENT`
+- `SENTRY_WEB_RELEASE`
+
+### So no build do web
+
+- `SENTRY_AUTH_TOKEN`
+- `SENTRY_ORG`
+- `SENTRY_PROJECT_WEB`
+- `SENTRY_RELEASE`
 
 Regras:
 
-- nunca usar `NEXT_PUBLIC_` para segredos
-- nunca commitar `.env`
-- configure os segredos diretamente no host de deploy
-- mantenha `.env.example` como referência canônica das variáveis compartilhadas do projeto
-- trate `apps/api/.env` e `apps/web/.env.local` apenas como arquivos locais de execução
+- nao usar `NEXT_PUBLIC_*` para segredo
+- nao commitar `.env`, `apps/api/.env` ou `apps/web/.env.local`
+- manter `.env.example` e `infra/oracle/.env.example` como referencias de contrato, nunca como cofre
 
-## 4. GitHub
+---
 
-- confirme que `.env` não está versionado
-- habilite `push protection` e `secret scanning`
-- revise `git status` antes de cada push
-- mantenha o repositorio privado ate terminar a limpeza final
+## 4. GitHub, CI e supply chain
 
-## 5. Auth e sessoes
+Antes do deploy:
 
-- valide login, logout e cadastro em producao
-- valide confirmacao de email antes do primeiro login
-- valide recuperacao e redefinicao de senha com email real
-- valide reenvio de codigo de confirmacao
-- valide o aviso de senha alterada
-- confirme que cookies estão `HttpOnly`, `SameSite` e `Secure` em produção
-- confirme que o modo demo continua limitado por IP e tempo
+- revisar `git status`
+- garantir que nenhum segredo entrou no diff
+- manter `push protection` e `secret scanning` ativos
+- manter `SENTRY_AUTH_TOKEN` apenas em `GitHub Secrets` quando usado no CI
+- revisar se `quality.yml` e `ci.yml` continuam verdes no branch que vai subir
 
-## 6. Banco e dados
+O baseline atual do repo depende de:
 
-- rode `prisma migrate deploy`
-- rode o seed apenas se quiser ambiente demo pronto
-- valide se a conta demo e os dados seedados fazem sentido para avaliacao
-- não use dados reais de clientes em ambiente público de portfolio
+- lint/typecheck
+- backend tests
+- backend e2e smoke
+- frontend unit
+- frontend e2e
+- security checks
+- performance latency gate
+- build
 
-## 7. Observabilidade
+Referencias:
 
-- mantenha logs do backend ativos
-- configure alerta para excesso de 401, 403 e 429
-- monitore falhas de login e abuso de `forgot-password`
-- mantenha `health check` exposto apenas para uso operacional
+- [.github/workflows/ci.yml](../../.github/workflows/ci.yml)
+- [.github/workflows/quality.yml](../../.github/workflows/quality.yml)
 
-## 8. Frontend e exposicao publica
+---
 
-- confirme que nenhum segredo aparece em `next.config`
-- confirme que o bundle do frontend usa apenas variáveis `NEXT_PUBLIC_*`
-- revise textos de demo, onboarding e branding antes do deploy
-- teste desktop e mobile
+## 5. Banco, migrations e BI
 
-## 9. Validacao final
+Antes do rollout:
 
-Fluxos minimos:
+- rodar `prisma migrate deploy`
+- validar conectividade do `DATABASE_URL` e do `DIRECT_URL`
+- confirmar que a API subiu no banco correto da Ampere
+- validar o refresh do schema `bi` quando a passada alterar analytics relevantes
+- nao usar dado real de cliente em ambiente publico de demostracao
 
-- abrir landing page
-- abrir cadastro
-- criar conta
+Comandos e trilhas:
+
+```bash
+npm --workspace @partner/api run prisma:migrate:deploy
+npm --workspace @partner/api run prisma:refresh:bi
+```
+
+No runtime Oracle, a API ja sobe aplicando migrations antes do processo principal. Ainda assim, o deploy nao deve assumir isso cegamente sem smoke.
+
+---
+
+## 6. Auth, sessao e Admin PIN
+
+Validar em producao:
+
+- cadastro
+- verificacao de email
+- login
+- `/api/v1/auth/me`
+- logout
+- forgot-password
+- reset-password
+- update profile
+- cookies `HttpOnly`, `SameSite`, `Secure`
+- negative cache e revogacao de sessao sem efeito colateral visivel
+- fluxo de Admin PIN (`GET/POST/DELETE /api/v1/admin/pin` e `POST /api/v1/admin/verify-pin`)
+
+Tambem confirmar:
+
+- sessao revogada derruba sockets realtime rastreados
+- conta demo continua limitada e isolada
+
+---
+
+## 7. Realtime, mobile e notificacoes
+
+Validar depois do deploy:
+
+- owner conecta no namespace `/operations`
+- staff conecta e nao recebe room financeira
+- reconnect apos foreground/resume mobile
+- `operations.error` tratado no cliente
+- sem dupla conexao mobile
+- Telegram webhook responde `200`
+- preferencia de notificacao do workspace e do usuario salvam corretamente
+
+Smoke minimo de notificacoes:
+
+- gerar link token
+- abrir bot com deeplink
+- vincular conta
+- alterar preferencia
+- disparar um evento operacional observavel
+
+---
+
+## 8. Observabilidade e Sentry
+
+Confirmar:
+
+- `SENTRY_DSN` presente no runtime da API quando observabilidade estiver habilitada
+- `NEXT_PUBLIC_SENTRY_DSN` presente no runtime do web quando observabilidade estiver habilitada
+- `SENTRY_AUTH_TOKEN` presente apenas no build do web, nao no runtime final
+- release/sourcemaps do web subiram com sucesso
+- health da API e do app respondem
+- alertas principais continuam operacionais
+
+Smoke minimo:
+
+```bash
+npm --workspace @partner/web run smoke:sentry
+curl -fsS https://api.deskimperial.online/api/v1/health
+curl -fsS https://app.deskimperial.online/
+```
+
+Se houver warning de token ou sourcemap, tratar como problema de release, nao como detalhe cosmetico.
+
+---
+
+## 9. Validacao funcional final
+
+Fluxos minimos antes do go live:
+
+- abrir `/login`
+- criar conta OWNER
 - confirmar email
 - fazer login
-- abrir dashboard
-- criar produto
-- criar pedido
-- ver mapa e graficos
-- testar recuperar senha
-- conferir se os emails chegam fora do spam com sender verificado
-- testar consultor com IA, se `GEMINI_API_KEY` estiver ativo
-- testar banner de cookies
+- abrir `/app/owner`
+- cadastrar produto
+- testar cadastro rapido com barcode
+- gerar smart draft
+- abrir caixa
+- criar comanda
+- adicionar item
+- alterar status de cozinha
+- registrar pagamento
+- fechar comanda
+- fechar caixa
+- testar tela `/ai` se `GEMINI_API_KEY` estiver ativa
+- testar integracao Telegram se `TELEGRAM_BOT_TOKEN` estiver ativo
 
-## 10. Go live
+---
 
-- publique primeiro em ambiente de teste
-- valide tudo com dominio real
-- só depois publique o link final no currículo e no GitHub
+## 10. Rollout e rollback
 
-## Fontes oficiais
+Sequencia segura:
 
-- Neon 2FA: https://neon.com/docs/changelog/2026-03-06
-- Neon IP Allow: https://neon.com/blog/restrict-access-to-your-neon-database-with-ip-allow
-- Neon API keys e endpoints: https://neon.com/docs/manage/endpoints/
-- Next.js variáveis de ambiente: https://nextjs.org/docs/pages/guides/environment-variables
-- GitHub push protection: https://docs.github.com/en/code-security/secret-scanning/introduction/about-push-protection
-- GitHub secret scanning: https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection
+1. branch verde em CI
+2. build local ou builder Oracle validado
+3. deploy controlado
+4. health checks publicos
+5. smoke de auth + operacao + realtime + notificacoes
+6. so depois divulgar o link final
+
+Se algo falhar:
+
+- parar o rollout
+- nao insistir em retry cego
+- identificar se o problema esta em env, migration, realtime, webhook ou build
+- voltar para o release anterior se a funcionalidade critica tiver quebrado
+
+---
+
+## Guardrails de evolucao
+
+1. Nao documentar Neon como banco atual do projeto.
+2. Nao tratar `SENTRY_AUTH_TOKEN` como segredo de runtime.
+3. Nao aceitar deploy sem validar realtime, mobile e Telegram quando essas superficies forem afetadas.
+4. Nao assumir que "health 200" basta; o deploy so fecha depois dos fluxos criticos passarem.

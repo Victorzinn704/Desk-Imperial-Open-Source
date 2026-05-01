@@ -1,5 +1,4 @@
-import { FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
-import type { Faro } from '@grafana/faro-web-sdk'
+import { type Faro, FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
 
 type ApiClientErrorTelemetryContext = {
   path: string
@@ -46,6 +45,7 @@ let slowApiSampleRate = DEFAULT_SLOW_API_SAMPLE_RATE
 let signalWindowStartedAt = 0
 let signalCountInWindow = 0
 const recentErrorFingerprints = new Map<string, number>()
+let fallbackSamplingCounter = 0
 
 export function initializeFrontendFaro() {
   if (faroInitializationAttempted) {
@@ -224,7 +224,7 @@ export function reportApiRequestMeasurementToFaro(context: ApiRequestMeasurement
 
   const isSlowRequest = durationMs >= slowApiThresholdMs
   const isServerError = status >= 500
-  const sampledHealthyRequest = !isSlowRequest && !isServerError && Math.random() <= slowApiSampleRate
+  const sampledHealthyRequest = !isSlowRequest && !isServerError && sampleUnit() <= slowApiSampleRate
 
   if (!isSlowRequest && !isServerError && !sampledHealthyRequest) {
     return
@@ -270,6 +270,17 @@ export function reportApiRequestMeasurementToFaro(context: ApiRequestMeasurement
       'desk-imperial-web',
     )
   }
+}
+
+function sampleUnit() {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const values = new Uint32Array(1)
+    crypto.getRandomValues(values)
+    return values[0] / 0xffffffff
+  }
+
+  fallbackSamplingCounter = (fallbackSamplingCounter + 1) % 10_000
+  return ((Date.now() + fallbackSamplingCounter) % 10_000) / 10_000
 }
 
 function parseSampleRate(value: string | undefined, fallback: number) {

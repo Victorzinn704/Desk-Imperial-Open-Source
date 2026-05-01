@@ -1,11 +1,22 @@
 import type { OperationsLiveResponse } from '@contracts/contracts'
 
+function collectOperationGroups(snapshot: OperationsLiveResponse | null | undefined) {
+  if (!snapshot) {
+    return []
+  }
+
+  const employeeGroups = Array.isArray(snapshot.employees) ? snapshot.employees : []
+  const unassignedGroups = snapshot.unassigned ? [snapshot.unassigned] : []
+
+  return [...employeeGroups, ...unassignedGroups]
+}
+
 function collectComandas(snapshot: OperationsLiveResponse | null | undefined) {
   if (!snapshot) {
     return []
   }
 
-  return [...snapshot.employees, snapshot.unassigned].flatMap((group) => group.comandas)
+  return collectOperationGroups(snapshot).flatMap((group) => group.comandas)
 }
 
 function collectOpenComandas(snapshot: OperationsLiveResponse | null | undefined) {
@@ -49,6 +60,15 @@ export type OperationPerformerKpis = {
   openComandasCount: number
 }
 
+export type OperationPerformerStanding = {
+  position: number | null
+  totalPerformers: number
+  leaderName: string | null
+  leaderValue: number
+  performerValue: number
+  deltaToLeader: number
+}
+
 export function buildOperationsExecutiveKpis(
   snapshot: OperationsLiveResponse | null | undefined,
 ): OperationsExecutiveKpis {
@@ -78,7 +98,7 @@ export function buildPerformerKpis(snapshot: OperationsLiveResponse | null | und
   }
 
   const group = performerId
-    ? (snapshot.employees.find((employee) => employee.employeeId === performerId) ?? null)
+    ? (collectOperationGroups(snapshot).find((employee) => employee.employeeId === performerId) ?? null)
     : snapshot.unassigned
 
   if (!group) {
@@ -98,15 +118,56 @@ export function buildPerformerKpis(snapshot: OperationsLiveResponse | null | und
   }
 }
 
+export function buildPerformerStanding(
+  snapshot: OperationsLiveResponse | null | undefined,
+  performerId?: string | null,
+): OperationPerformerStanding {
+  if (!snapshot || !performerId) {
+    return {
+      position: null,
+      totalPerformers: 0,
+      leaderName: null,
+      leaderValue: 0,
+      performerValue: 0,
+      deltaToLeader: 0,
+    }
+  }
+
+  const ranking = collectOperationGroups(snapshot)
+    .map((employee) => {
+      const performerValue = employee.comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0)
+      return {
+        employeeId: employee.employeeId,
+        nome: employee.displayName,
+        valor: performerValue,
+      }
+    })
+    .filter((employee) => employee.employeeId)
+    .sort((left, right) => right.valor - left.valor)
+
+  const currentIndex = ranking.findIndex((entry) => entry.employeeId === performerId)
+  const current = currentIndex >= 0 ? ranking[currentIndex] : null
+  const leader = ranking[0] ?? null
+
+  return {
+    position: currentIndex >= 0 ? currentIndex + 1 : null,
+    totalPerformers: ranking.length,
+    leaderName: leader?.nome ?? null,
+    leaderValue: leader?.valor ?? 0,
+    performerValue: current?.valor ?? 0,
+    deltaToLeader: current && leader ? Math.max(0, leader.valor - current.valor) : 0,
+  }
+}
+
 export function buildKitchenQueueCount(snapshot: OperationsLiveResponse | null | undefined) {
   if (!snapshot) {
     return 0
   }
 
   let count = 0
-  for (const group of [...snapshot.employees, snapshot.unassigned]) {
+  for (const group of collectOperationGroups(snapshot)) {
     for (const comanda of group.comandas) {
-      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') continue
+      if (comanda.status === 'CLOSED' || comanda.status === 'CANCELLED') {continue}
       for (const item of comanda.items) {
         if (item.kitchenStatus === 'QUEUED' || item.kitchenStatus === 'IN_PREPARATION') {
           count += 1
@@ -131,8 +192,8 @@ export function buildPerformerRanking(
   }
 
   const map = new Map<string, OperationsPerformerRankingEntry>()
-  for (const employee of snapshot.employees) {
-    if (!employee.employeeId) continue
+  for (const employee of collectOperationGroups(snapshot)) {
+    if (!employee.employeeId) {continue}
 
     let valor = 0
     let comandas = 0
@@ -146,8 +207,8 @@ export function buildPerformerRanking(
     }
   }
 
-  const ownerValor = snapshot.unassigned.comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0)
-  const ownerComandas = snapshot.unassigned.comandas.length
+  const ownerValor = snapshot.unassigned?.comandas.reduce((sum, comanda) => sum + comanda.totalAmount, 0) ?? 0
+  const ownerComandas = snapshot.unassigned?.comandas.length ?? 0
   if (ownerValor > 0 || ownerComandas > 0) {
     map.set('owner', { nome: ownerDisplayName, valor: ownerValor, comandas: ownerComandas })
   }
@@ -161,7 +222,7 @@ export function buildTopProducts(snapshot: OperationsLiveResponse | null | undef
   }
 
   const map = new Map<string, OperationsTopProductEntry>()
-  for (const group of [...snapshot.employees, snapshot.unassigned]) {
+  for (const group of collectOperationGroups(snapshot)) {
     for (const comanda of group.comandas) {
       for (const item of comanda.items) {
         const current = map.get(item.productName) ?? { nome: item.productName, qtd: 0, valor: 0 }

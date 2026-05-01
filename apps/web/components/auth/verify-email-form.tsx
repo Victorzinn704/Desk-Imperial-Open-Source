@@ -93,11 +93,15 @@ export function VerifyEmailForm({
         </div>
         <div className="space-y-2 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Verifique seu email</p>
-          <h2 className="text-2xl font-semibold text-white">Enviamos um código para você</h2>
+          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Enviamos um código para você</h2>
           <p className="text-sm leading-7 text-[var(--text-soft)]">
             Procure na caixa de entrada
-            {email ? <span className="font-semibold text-white"> de {email}</span> : ' do email usado no cadastro'}. Se
-            não encontrar, verifique spam e promoções.
+            {email ? (
+              <span className="font-semibold text-[var(--text-primary)]"> de {email}</span>
+            ) : (
+              ' do email usado no cadastro'
+            )}
+            . Se não encontrar, verifique spam e promoções.
           </p>
         </div>
         <div className="imperial-card-soft space-y-3 px-4 py-4 text-sm text-[var(--text-soft)]">
@@ -107,7 +111,7 @@ export function VerifyEmailForm({
           Já tenho o código →
         </Button>
         <div className="text-center">
-          <Link className="text-sm text-[var(--text-soft)] underline hover:text-white" href="/login">
+          <Link className="text-sm text-[var(--text-soft)] underline hover:text-[var(--text-primary)]" href="/login">
             Voltar para login
           </Link>
         </div>
@@ -119,7 +123,7 @@ export function VerifyEmailForm({
     <div>
       <div className="space-y-3">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Confirmacao de email</p>
-        <h2 className="text-3xl font-semibold text-white">Valide o codigo enviado para o seu email.</h2>
+        <h2 className="text-3xl font-semibold text-[var(--text-primary)]">Valide o codigo enviado para o seu email.</h2>
         <p className="text-sm leading-7 text-[var(--text-soft)]">
           A conta so e liberada depois da confirmacao. Se precisar, voce pode reenviar o codigo. Vale conferir spam,
           promocoes e atualizacoes.

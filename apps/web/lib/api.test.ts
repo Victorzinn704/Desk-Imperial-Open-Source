@@ -99,7 +99,7 @@ describe('api client', () => {
     const request = getLastRequest(fetchMock)
     const body = readJsonBody(request.init)
 
-    expect(request.url).toBe('http://localhost:4000/api/auth/login')
+    expect(request.url).toBe('http://localhost:4000/api/v1/auth/login')
     expect(request.init.method).toBe('POST')
     expect(body).toEqual({
       loginMode: 'OWNER',
@@ -177,14 +177,12 @@ describe('api client', () => {
   it('retries owner login on transient network error', async () => {
     vi.useFakeTimers()
 
-    fetchMock
-      .mockRejectedValueOnce(new Error('network unavailable'))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          user: { userId: 'u-3' },
-          session: { expiresAt: '2026-04-03T01:00:00.000Z' },
-        }),
-      )
+    fetchMock.mockRejectedValueOnce(new Error('network unavailable')).mockResolvedValueOnce(
+      jsonResponse({
+        user: { userId: 'u-3' },
+        session: { expiresAt: '2026-04-03T01:00:00.000Z' },
+      }),
+    )
 
     const promise = api.login(
       {
@@ -228,9 +226,9 @@ describe('api client', () => {
     )
 
     const request = api.fetchProducts()
-      const assertion = expect(request).rejects.toMatchObject({ status: 504 })
+    const assertion = expect(request).rejects.toMatchObject({ status: 504 })
     await vi.advanceTimersByTimeAsync(20_000)
-      await assertion
+    await assertion
   })
 
   it('throws fallback message for non-json backend errors', async () => {
@@ -281,6 +279,45 @@ describe('api client', () => {
 
     const request = getLastRequest(fetchMock)
     expect(request.headers.get('X-CSRF-Token')).toBe('storage-csrf-token')
+    expect(readJsonBody(request.init)).toEqual(
+      expect.objectContaining({
+        name: 'Cafe',
+      }),
+    )
+  })
+
+  it('sends barcode when creating product from quick register flow', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ product: { id: 'p-2' } }))
+
+    await api.createProduct({
+      name: 'Guarana Lata',
+      barcode: '7894900011517',
+      category: 'Bebidas',
+      packagingClass: 'Lata 350ml',
+      measurementUnit: 'UN',
+      measurementValue: 1,
+      unitsPerPackage: 1,
+      quantityLabel: '350ml',
+      servingSize: '269ml',
+      imageUrl: 'https://images.example/guarana.jpg',
+      catalogSource: 'open_food_facts',
+      unitCost: 3,
+      unitPrice: 5.5,
+      currency: 'BRL',
+      stock: 24,
+    })
+
+    const request = getLastRequest(fetchMock)
+    expect(readJsonBody(request.init)).toEqual(
+      expect.objectContaining({
+        barcode: '7894900011517',
+        name: 'Guarana Lata',
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/guarana.jpg',
+        catalogSource: 'open_food_facts',
+      }),
+    )
   })
 
   it('does not attach csrf token to GET requests', async () => {
@@ -351,13 +388,13 @@ describe('api client', () => {
 
     await api.importProducts(upload)
     let request = getLastRequest(fetchMock)
-    expect(request.url).toBe('http://localhost:4000/api/products/import')
+    expect(request.url).toBe('http://localhost:4000/api/v1/products/import')
     expect(request.init.method).toBe('POST')
     expect(request.init.body).toBeInstanceOf(FormData)
 
     await api.fetchOrders({ includeCancelled: true, includeItems: false, limit: 50 })
     request = getLastRequest(fetchMock)
-    expect(request.url).toContain('/api/orders?includeCancelled=true&includeItems=false&limit=50')
+    expect(request.url).toContain('/api/v1/orders?includeCancelled=true&includeItems=false&limit=50')
 
     await api.fetchOperationsKitchen({
       businessDate: ' 2026-04-03 ',
@@ -366,7 +403,7 @@ describe('api client', () => {
     })
     request = getLastRequest(fetchMock)
     expect(request.url).toContain(
-      '/api/operations/kitchen?businessDate=2026-04-03&includeCashMovements=true&compactMode=false',
+      '/api/v1/operations/kitchen?businessDate=2026-04-03&includeCashMovements=true&compactMode=false',
     )
 
     await api.openComanda(
@@ -377,11 +414,11 @@ describe('api client', () => {
       { includeSnapshot: true },
     )
     request = getLastRequest(fetchMock)
-    expect(request.url).toContain('/api/operations/comandas?includeSnapshot=true')
+    expect(request.url).toContain('/api/v1/operations/comandas?includeSnapshot=true')
 
     await api.addComandaItems('comanda-1', [{ productName: 'Pao', quantity: 2, unitPrice: 7 }])
     request = getLastRequest(fetchMock)
-    expect(request.url).toContain('/api/operations/comandas/comanda-1/items/batch?includeSnapshot=false')
+    expect(request.url).toContain('/api/v1/operations/comandas/comanda-1/items/batch?includeSnapshot=false')
     expect(readJsonBody(request.init)).toEqual({
       items: [{ productName: 'Pao', quantity: 2, unitPrice: 7 }],
     })
@@ -555,7 +592,7 @@ describe('api client', () => {
         expectedMethod: 'PATCH',
       },
       {
-        run: () => api.createEmployee({ employeeCode: 'E10', displayName: 'Maria', temporaryPassword: '123' }),
+        run: () => api.createEmployee({ displayName: 'Maria' }),
         expectedPath: '/employees',
         expectedMethod: 'POST',
       },
@@ -568,6 +605,11 @@ describe('api client', () => {
         run: () => api.archiveEmployee('emp-10'),
         expectedPath: '/employees/emp-10',
         expectedMethod: 'DELETE',
+      },
+      {
+        run: () => api.rotateEmployeePassword('emp-10'),
+        expectedPath: '/employees/emp-10/access/password',
+        expectedMethod: 'PATCH',
       },
       {
         run: () => api.restoreEmployee('emp-10'),
@@ -614,7 +656,7 @@ describe('api client', () => {
       await wrapper.run()
       const request = getLastRequest(fetchMock)
 
-      expect(request.url).toBe(`http://localhost:4000/api${wrapper.expectedPath}`)
+      expect(request.url).toBe(`http://localhost:4000/api/v1${wrapper.expectedPath}`)
       expect((request.init.method ?? 'GET').toUpperCase()).toBe(wrapper.expectedMethod)
     }
   })

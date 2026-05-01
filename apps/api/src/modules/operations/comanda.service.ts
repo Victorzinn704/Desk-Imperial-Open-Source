@@ -7,40 +7,70 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common'
-import { AuditSeverity, CashSessionStatus, ComandaStatus, KitchenItemStatus, Prisma } from '@prisma/client'
+import {
+  CashSessionStatus,
+  ComandaPaymentMethod,
+  ComandaPaymentStatus,
+  ComandaStatus,
+  KitchenItemStatus,
+  Prisma,
+} from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
+import { recordOperationsCloseComandaTelemetry } from '../../common/observability/business-telemetry.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import type { RequestContext } from '../../common/utils/request-context.util'
 import { CacheService } from '../../common/services/cache.service'
 import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../../common/utils/workspace-access.util'
 import { PrismaService } from '../../database/prisma.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import type { AuthContext } from '../auth/auth.types'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { OperationsRealtimeService } from '../operations-realtime/operations-realtime.service'
-import type { AddComandaItemDto } from './dto/add-comanda-item.dto'
-import type { AddComandaItemsBatchDto } from './dto/add-comanda-items-batch.dto'
-import type { AssignComandaDto } from './dto/assign-comanda.dto'
-import type { CloseComandaDto } from './dto/close-comanda.dto'
-import type { OpenComandaDto } from './dto/open-comanda.dto'
-import type { OperationsResponseOptionsDto } from './dto/operations-response-options.dto'
-import type { ReplaceComandaDto } from './dto/replace-comanda.dto'
-import type { UpdateComandaStatusDto } from './dto/update-comanda-status.dto'
-import type { UpdateKitchenItemStatusDto } from './dto/update-kitchen-item-status.dto'
+import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
 import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { FinanceService } from '../finance/finance.service'
+import { assertMonetaryAdjustmentsWithinSubtotal, calculateDraftItemsSubtotal } from './comanda-validation.utils'
 import {
-  buildOptionalOperationsSnapshot,
-  buildCashClosurePayload,
+  deriveComandaStatusFromKitchen,
+  propagateKitchenStatusToComanda,
+  takeMatchingKitchenState,
+} from './comanda-kitchen.utils'
+import { buildComandaResponse, checkLowStockAfterClose, invalidateLiveSnapshotCache } from './comanda-response.utils'
+import {
+  buildKitchenItemRealtimeDelta,
+  buildKitchenItemRealtimeDeltas,
+  publishComandaClosed,
+  publishComandaOpened,
+  publishComandaUpdated,
+  publishKitchenItemQueued,
+  publishKitchenItemUpdated,
+} from './comanda-realtime-publish.utils'
+import { toRealtimeStatus } from './comanda-realtime-status.utils'
+import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
+import { assertMesaAvailability, resolveMesaSelection } from './comanda-mesa.utils'
+import {
   buildCashUpdatedPayload,
+  buildCashClosurePayload,
   formatBusinessDateKey,
-  invalidateOperationsLiveCache,
-  OPEN_COMANDA_STATUSES,
   isOpenComandaStatus,
   resolveBusinessDate,
-  toNumber,
+  toNumberOrZero,
 } from './operations-domain.utils'
+import { prepareComandaDraftFields } from './comanda-draft-fields.utils'
+import type {
+  AddComandaItemDto,
+  AddComandaItemsBatchDto,
+  AssignComandaDto,
+  CloseComandaDto,
+  CreateComandaPaymentDto,
+  OpenComandaDto,
+  OperationsResponseOptionsDto,
+  ReplaceComandaDto,
+  UpdateComandaStatusDto,
+  UpdateKitchenItemStatusDto,
+} from './operations.schemas'
 
 const COMANDA_WRITE_ISOLATION_LEVEL = Prisma.TransactionIsolationLevel.Serializable
 
@@ -55,6 +85,91 @@ export class ComandaService {
     @Optional() private readonly financeService?: FinanceService,
   ) {}
 
+  private resolveMesaSelection(
+    workspaceOwnerUserId: string,
+    tableLabel: string,
+    mesaId?: string | null,
+    currentComandaId?: string,
+  ) {
+    return resolveMesaSelection(
+      this.prisma,
+      this.helpers,
+      workspaceOwnerUserId,
+      tableLabel,
+      mesaId,
+      currentComandaId,
+      (resolvedMesaId, resolvedCurrentComandaId) =>
+        this.assertMesaAvailability(resolvedMesaId, resolvedCurrentComandaId),
+    )
+  }
+
+  private assertMesaAvailability(mesaId: string, currentComandaId?: string) {
+    return assertMesaAvailability(this.prisma, mesaId, currentComandaId)
+  }
+
+  private takeMatchingKitchenState(...args: Parameters<typeof takeMatchingKitchenState>) {
+    return takeMatchingKitchenState(...args)
+  }
+
+  private buildKitchenItemRealtimeDelta(...args: Parameters<typeof buildKitchenItemRealtimeDelta>) {
+    return buildKitchenItemRealtimeDelta(...args)
+  }
+
+  private buildKitchenItemRealtimeDeltas(...args: Parameters<typeof buildKitchenItemRealtimeDeltas>) {
+    return buildKitchenItemRealtimeDeltas(...args)
+  }
+
+  private publishComandaOpenedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaOpened>[2],
+    businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
+  ) {
+    publishComandaOpened(this.operationsRealtimeService, auth, comanda, businessDate, instrumentation)
+  }
+
+  private publishComandaUpdatedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaUpdated>[2],
+    businessDate: Date,
+    options?: Parameters<typeof publishComandaUpdated>[4],
+    instrumentation?: OperationsRealtimePublishInstrumentation,
+  ) {
+    publishComandaUpdated(this.operationsRealtimeService, auth, comanda, businessDate, options, instrumentation)
+  }
+
+  private publishComandaCloseRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishComandaClosed>[2],
+    refreshedSession: Parameters<typeof publishComandaClosed>[3],
+    closure: Parameters<typeof publishComandaClosed>[4],
+    businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
+  ) {
+    publishComandaClosed(this.operationsRealtimeService, auth, comanda, refreshedSession, closure, businessDate, instrumentation)
+  }
+
+  private publishKitchenItemQueuedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishKitchenItemQueued>[2],
+    item: Parameters<typeof publishKitchenItemQueued>[3],
+    businessDate: Date,
+    instrumentation?: OperationsRealtimePublishInstrumentation,
+  ) {
+    publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, item, businessDate, instrumentation)
+  }
+
+  private publishKitchenItemUpdatedRealtime(
+    auth: AuthContext,
+    comanda: Parameters<typeof publishKitchenItemUpdated>[2],
+    item: Parameters<typeof publishKitchenItemUpdated>[3],
+    businessDate: Date,
+    options?: Parameters<typeof publishKitchenItemUpdated>[5],
+    instrumentation?: OperationsRealtimePublishInstrumentation,
+  ) {
+    publishKitchenItemUpdated(this.operationsRealtimeService, auth, comanda, item, businessDate, options, instrumentation)
+  }
+
   private refreshFinanceSummary(workspaceOwnerUserId: string) {
     if (this.financeService) {
       void this.financeService.invalidateAndWarmSummary(workspaceOwnerUserId)
@@ -64,15 +179,31 @@ export class ComandaService {
     void this.cache.del(CacheService.financeKey(workspaceOwnerUserId))
   }
 
-  async getComandaDetails(auth: AuthContext, comandaId: string) {
-    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+  private calculateConfirmedPaidAmount(comanda: {
+    payments?: Array<{ amount: Prisma.Decimal | number; status?: string }>
+  }) {
+    return roundCurrency(
+      (comanda.payments ?? [])
+        .filter((payment) => !payment.status || payment.status === ComandaPaymentStatus.CONFIRMED)
+        .reduce((sum, payment) => sum + toNumberOrZero(payment.amount), 0),
+    )
+  }
 
-    const comanda = await this.prisma.comanda.findUnique({
-      where: { id: comandaId, companyOwnerId: workspaceOwnerUserId },
+  private async loadComandaWithPayments(transaction: Prisma.TransactionClient, comandaId: string) {
+    const comanda = await transaction.comanda.findUnique({
+      where: { id: comandaId },
       include: {
         items: {
           orderBy: {
             createdAt: 'asc',
+          },
+        },
+        payments: {
+          where: {
+            status: ComandaPaymentStatus.CONFIRMED,
+          },
+          orderBy: {
+            paidAt: 'asc',
           },
         },
       },
@@ -80,6 +211,119 @@ export class ComandaService {
 
     if (!comanda) {
       throw new NotFoundException('Comanda nao encontrada.')
+    }
+
+    return comanda
+  }
+
+  private async syncComandaCashState(
+    transaction: Prisma.TransactionClient,
+    workspaceOwnerUserId: string,
+    comanda: Parameters<OperationsHelpersService['resolveComandaBusinessDate']>[1] & {
+      cashSessionId?: string | null
+    },
+  ) {
+    const businessDate = await this.helpers.resolveComandaBusinessDate(transaction, comanda)
+    const refreshedSession = comanda.cashSessionId
+      ? await this.helpers.recalculateCashSession(transaction, comanda.cashSessionId)
+      : null
+    const closure = await this.helpers.syncCashClosure(transaction, workspaceOwnerUserId, businessDate)
+
+    return {
+      businessDate,
+      closure,
+      refreshedSession,
+    }
+  }
+
+  private async settleRemainingComandaBalance(
+    transaction: Prisma.TransactionClient,
+    workspaceOwnerUserId: string,
+    comanda: {
+      cashSessionId?: string | null
+      currentEmployeeId?: string | null
+      id: string
+      totalAmount: Prisma.Decimal | number | null
+    },
+    actorUserId: string,
+    paymentMethod: ComandaPaymentMethod,
+    actorEmployeeId?: string | null,
+  ) {
+    const confirmedPayments = await transaction.comandaPayment.aggregate({
+      where: {
+        comandaId: comanda.id,
+        status: ComandaPaymentStatus.CONFIRMED,
+      },
+      _sum: {
+        amount: true,
+      },
+    })
+    const paidAmount = roundCurrency(toNumberOrZero(confirmedPayments._sum.amount))
+    const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(comanda.totalAmount) - paidAmount))
+
+    if (remainingAmount <= 0) {
+      return {
+        createdPayment: false,
+        remainingAmount,
+      }
+    }
+
+    await transaction.comandaPayment.create({
+      data: {
+        companyOwnerId: workspaceOwnerUserId,
+        comandaId: comanda.id,
+        cashSessionId: comanda.cashSessionId ?? null,
+        employeeId: comanda.currentEmployeeId ?? actorEmployeeId ?? null,
+        createdByUserId: actorUserId,
+        method: paymentMethod,
+        amount: remainingAmount,
+        note: 'Pagamento final da comanda',
+      },
+    })
+
+    return {
+      createdPayment: true,
+      remainingAmount,
+    }
+  }
+
+  async getComandaDetails(auth: AuthContext, comandaId: string) {
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+
+    const comanda = await this.prisma.comanda.findFirst({
+      where: { id: comandaId, companyOwnerId: workspaceOwnerUserId },
+      include: {
+        items: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+        payments: {
+          where: {
+            status: ComandaPaymentStatus.CONFIRMED,
+          },
+          orderBy: {
+            paidAt: 'asc',
+          },
+        },
+      },
+    })
+
+    if (!comanda) {
+      throw new NotFoundException('Comanda nao encontrada.')
+    }
+
+    if (auth.role === 'STAFF') {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      if (!actorEmployee) {
+        throw new ForbiddenException(
+          'Seu acesso precisa estar vinculado a um funcionario ativo para consultar comandas.',
+        )
+      }
+
+      if (!isOpenComandaStatus(comanda.status) && comanda.currentEmployeeId !== actorEmployee.id) {
+        throw new ForbiddenException('Seu acesso so pode consultar historico do seu proprio atendimento.')
+      }
     }
 
     return {
@@ -93,101 +337,44 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
-    const tableLabel = sanitizePlainText(dto.tableLabel, 'Mesa', {
-      allowEmpty: false,
-      rejectFormula: true,
-    })!
-    const customerName = sanitizePlainText(dto.customerName, 'Nome do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const customerDocument = sanitizePlainText(dto.customerDocument, 'Documento do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const participantCount = dto.participantCount ?? 1
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
-    const discountAmount = roundCurrency(dto.discountAmount ?? 0)
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? 0)
-    this.assertMonetaryAdjustmentsWithinSubtotal(
-      this.calculateDraftItemsSubtotal(draftItems),
-      discountAmount,
-      serviceFeeAmount,
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      draftItems
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
     )
-
-    if (participantCount < 1) {
-      throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
-    }
-
-    const operationalBusinessDate = resolveBusinessDate()
-    let currentEmployeeId: string | null = null
-    let cashSessionId: string | null = dto.cashSessionId ?? null
-    let businessDate: Date
-
-    if (auth.role === 'STAFF') {
-      if (!actorEmployee) {
-        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo.')
-      }
-
-      const openSession = await this.prisma.cashSession.findFirst({
-        where: {
-          companyOwnerId: workspaceOwnerUserId,
-          employeeId: actorEmployee.id,
-          businessDate: operationalBusinessDate,
-          status: CashSessionStatus.OPEN,
-        },
-        orderBy: {
-          openedAt: 'desc',
-        },
+    const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
+      prepareComandaDraftFields({
+        customerDocument: dto.customerDocument,
+        customerName: dto.customerName,
+        discountAmount: dto.discountAmount,
+        fallbackParticipantCount: 1,
+        notes: dto.notes,
+        participantCount: dto.participantCount,
+        serviceFeeAmount: dto.serviceFeeAmount,
+        subtotal: calculateDraftItemsSubtotal(draftItems),
+        tableLabel: dto.tableLabel,
       })
 
-      if (!openSession) {
-        throw new ConflictException('Abra o caixa do funcionario antes de criar comandas.')
-      }
-
-      currentEmployeeId = actorEmployee.id
-      cashSessionId = openSession.id
-      businessDate = openSession.businessDate
-    } else {
-      if (dto.employeeId) {
-        const assignedEmployee = await this.helpers.requireOwnedEmployee(
-          this.prisma,
-          workspaceOwnerUserId,
-          dto.employeeId,
-        )
-        const employeeOpenSession = await this.prisma.cashSession.findFirst({
-          where: {
-            companyOwnerId: workspaceOwnerUserId,
-            employeeId: assignedEmployee.id,
-            businessDate: operationalBusinessDate,
-            status: CashSessionStatus.OPEN,
-          },
-          orderBy: {
-            openedAt: 'desc',
-          },
-        })
-
-        if (!employeeOpenSession) {
-          throw new ConflictException('O funcionario precisa abrir o proprio caixa antes de receber uma mesa.')
-        }
-
-        currentEmployeeId = assignedEmployee.id
-        cashSessionId = cashSessionId ?? employeeOpenSession.id
-      }
-
-      if (cashSessionId) {
-        const session = await this.helpers.requireOwnedCashSession(this.prisma, workspaceOwnerUserId, cashSessionId)
-        businessDate = session.businessDate
-      } else {
-        businessDate = operationalBusinessDate
-      }
-    }
+    const operationalBusinessDate = resolveBusinessDate()
+    const sessionContext = await resolveComandaSessionContext(
+      this.prisma,
+      this.helpers,
+      auth.role,
+      workspaceOwnerUserId,
+      operationalBusinessDate,
+      actorEmployee,
+      dto,
+    )
+    const { currentEmployeeId, cashSessionId, businessDate } = sessionContext
 
     const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId)
     const resolvedMesaId = mesaSelection.mesaId
@@ -298,7 +485,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.opened',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -311,8 +498,11 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaOpenedRealtime(auth, comanda, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaOpenedRealtime(auth, comanda, businessDate, {
+      mutationName: 'open-comanda',
+      mutationStartedAtMs,
+    })
 
     for (const kitchenItem of kitchenItems) {
       if (kitchenItem.kitchenStatus === KitchenItemStatus.QUEUED && kitchenItem.kitchenQueuedAt) {
@@ -320,7 +510,7 @@ export class ComandaService {
       }
     }
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, comanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, comanda, options)
   }
 
   async addComandaItem(
@@ -330,6 +520,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -350,6 +541,13 @@ export class ComandaService {
     let requiresKitchen = false
 
     if (dto.productId) {
+      await this.helpers.assertDraftSelectionsStockAvailability(this.prisma, workspaceOwnerUserId, [
+        {
+          productId: dto.productId,
+          quantity: dto.quantity,
+        },
+      ])
+
       const product = await this.prisma.product.findFirst({
         where: {
           id: dto.productId,
@@ -364,7 +562,7 @@ export class ComandaService {
 
       productId = product.id
       productName = product.name
-      unitPrice = roundCurrency(dto.unitPrice ?? toNumber(product.unitPrice))
+      unitPrice = roundCurrency(dto.unitPrice ?? toNumberOrZero(product.unitPrice))
       // requiresKitchen: use product flag; if false but category suggests food, infer true
       // This handles products created before the auto-detection feature
       requiresKitchen = product.requiresKitchen || isKitchenCategory(product.category)
@@ -420,7 +618,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda_item.created',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -435,14 +633,17 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'add-comanda-item',
+      mutationStartedAtMs,
+    })
 
     if (requiresKitchen && kitchenQueuedAt) {
       this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
     }
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
   async addComandaItems(
@@ -452,6 +653,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -465,6 +667,17 @@ export class ComandaService {
     if (!isOpenComandaStatus(comanda.status)) {
       throw new ConflictException('Nao e possivel adicionar itens em uma comanda encerrada ou cancelada.')
     }
+
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      dto.items
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
+    )
 
     const uniqueProductIds = Array.from(
       new Set(dto.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
@@ -502,7 +715,9 @@ export class ComandaService {
         throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
       }
 
-      const unitPrice = roundCurrency(product ? (itemDto.unitPrice ?? toNumber(product.unitPrice)) : itemDto.unitPrice!)
+      const unitPrice = roundCurrency(
+        product ? (itemDto.unitPrice ?? toNumberOrZero(product.unitPrice)) : itemDto.unitPrice!,
+      )
       const notes = sanitizePlainText(itemDto.notes, 'Observacoes do item', {
         allowEmpty: true,
         rejectFormula: false,
@@ -524,23 +739,25 @@ export class ComandaService {
     const helpers = this.helpers
     const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(
       async (transaction) => {
-        const insertedItems = []
-        for (const item of preparedItems) {
-          const createdItem = await transaction.comandaItem.create({
-            data: {
-              comandaId: comanda.id,
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalAmount: item.totalAmount,
-              notes: item.notes,
-              kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
-              kitchenQueuedAt: item.kitchenQueuedAt,
-            },
-          })
-          insertedItems.push(createdItem)
-        }
+        await transaction.comandaItem.createMany({
+          data: preparedItems.map((item) => ({
+            comandaId: comanda.id,
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            notes: item.notes,
+            kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+            kitchenQueuedAt: item.kitchenQueuedAt,
+          })),
+        })
+
+        const insertedItems = await transaction.comandaItem.findMany({
+          where: { comandaId: comanda.id },
+          orderBy: { createdAt: 'desc' },
+          take: preparedItems.length,
+        })
 
         const updatedComanda = await helpers.recalculateComanda(transaction, comanda.id)
         const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, updatedComanda)
@@ -557,7 +774,7 @@ export class ComandaService {
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda_items.batch_created',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -569,10 +786,13 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
     this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    }, {
+      mutationName: 'add-comanda-items',
+      mutationStartedAtMs,
     })
 
     for (const item of createdItems) {
@@ -581,7 +801,7 @@ export class ComandaService {
       }
     }
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
   async replaceComanda(
@@ -591,6 +811,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -605,35 +826,31 @@ export class ComandaService {
       throw new ConflictException('Nao e possivel editar uma comanda encerrada ou cancelada.')
     }
 
-    const tableLabel = sanitizePlainText(dto.tableLabel, 'Mesa', {
-      allowEmpty: false,
-      rejectFormula: true,
-    })!
-    const customerName = sanitizePlainText(dto.customerName, 'Nome do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const customerDocument = sanitizePlainText(dto.customerDocument, 'Documento do cliente', {
-      allowEmpty: true,
-      rejectFormula: true,
-    })
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const participantCount = dto.participantCount ?? comanda.participantCount
     const draftItems = await this.helpers.resolveComandaDraftItems(this.prisma, workspaceOwnerUserId, dto.items)
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
-    this.assertMonetaryAdjustmentsWithinSubtotal(
-      this.calculateDraftItemsSubtotal(draftItems),
-      discountAmount,
-      serviceFeeAmount,
+    await this.helpers.assertDraftSelectionsStockAvailability(
+      this.prisma,
+      workspaceOwnerUserId,
+      draftItems
+        .filter((item) => Boolean(item.productId))
+        .map((item) => ({
+          productId: item.productId!,
+          quantity: item.quantity,
+        })),
     )
-
-    if (participantCount < 1) {
-      throw new BadRequestException('A comanda precisa ter pelo menos uma pessoa.')
-    }
+    const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
+      prepareComandaDraftFields({
+        customerDocument: dto.customerDocument,
+        customerName: dto.customerName,
+        discountAmount: dto.discountAmount,
+        fallbackDiscountAmount: toNumberOrZero(comanda.discountAmount),
+        fallbackParticipantCount: comanda.participantCount,
+        fallbackServiceFeeAmount: toNumberOrZero(comanda.serviceFeeAmount),
+        notes: dto.notes,
+        participantCount: dto.participantCount,
+        serviceFeeAmount: dto.serviceFeeAmount,
+        subtotal: calculateDraftItemsSubtotal(draftItems),
+        tableLabel: dto.tableLabel,
+      })
 
     const mesaSelection = await this.resolveMesaSelection(workspaceOwnerUserId, tableLabel, dto.mesaId, comanda.id)
     const resolvedMesaId = mesaSelection.mesaId
@@ -702,7 +919,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.replaced',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -716,13 +933,16 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
     this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
       replaceKitchenItems: true,
       kitchenItems: this.buildKitchenItemRealtimeDeltas(refreshedComanda, businessDate),
+    }, {
+      mutationName: 'replace-comanda',
+      mutationStartedAtMs,
     })
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
   async assignComanda(
@@ -732,6 +952,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     assertOwnerRole(auth, 'Somente o dono pode redistribuir mesas entre funcionarios.')
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const comanda = await this.helpers.requireOwnedComanda(this.prisma, workspaceOwnerUserId, comandaId)
@@ -802,7 +1023,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.assigned',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -814,10 +1035,13 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'assign-comanda',
+      mutationStartedAtMs,
+    })
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
   async updateComandaStatus(
@@ -827,6 +1051,7 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
     const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
     const comanda = await this.helpers.requireAuthorizedComanda(
@@ -884,7 +1109,7 @@ export class ComandaService {
     })
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.comanda.status_updated',
       resource: 'comanda',
       resourceId: comanda.id,
@@ -895,13 +1120,123 @@ export class ComandaService {
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+      ...(comanda.status !== dto.status ? { previousStatus: toRealtimeStatus(comanda.status) } : {}),
+    }, {
+      mutationName: 'update-comanda-status',
+      mutationStartedAtMs,
+    })
     if (closure) {
       this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
     }
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
+  }
+
+  async createComandaPayment(
+    auth: AuthContext,
+    comandaId: string,
+    dto: CreateComandaPaymentDto,
+    context: RequestContext,
+    options?: OperationsResponseOptionsDto,
+  ) {
+    const mutationStartedAtMs = performance.now()
+    const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+    const comanda = await this.helpers.requireAuthorizedComanda(
+      this.prisma,
+      workspaceOwnerUserId,
+      auth,
+      comandaId,
+      actorEmployee,
+    )
+
+    if (!isOpenComandaStatus(comanda.status)) {
+      throw new ConflictException('Nao e possivel registrar pagamento em uma comanda encerrada ou cancelada.')
+    }
+
+    const amount = roundCurrency(dto.amount)
+    const paidAmount = this.calculateConfirmedPaidAmount(comanda)
+    const remainingAmount = roundCurrency(Math.max(0, toNumberOrZero(comanda.totalAmount) - paidAmount))
+    if (amount > remainingAmount) {
+      throw new BadRequestException('O pagamento informado passa do saldo restante da comanda.')
+    }
+
+    const note = sanitizePlainText(dto.note, 'Observacao do pagamento', {
+      allowEmpty: true,
+      rejectFormula: false,
+    })
+
+    const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
+      async (transaction) => {
+        await transaction.comandaPayment.create({
+          data: {
+            companyOwnerId: workspaceOwnerUserId,
+            comandaId: comanda.id,
+            cashSessionId: comanda.cashSessionId,
+            employeeId: comanda.currentEmployeeId ?? actorEmployee?.id ?? null,
+            createdByUserId: auth.userId,
+            method: dto.method,
+            amount,
+            note,
+          },
+        })
+
+        const updatedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
+        const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
+          transaction,
+          workspaceOwnerUserId,
+          updatedComanda,
+        )
+
+        return {
+          refreshedComanda: updatedComanda,
+          refreshedSession,
+          closure,
+          businessDate,
+        }
+      },
+      {
+        isolationLevel: COMANDA_WRITE_ISOLATION_LEVEL,
+      },
+    )
+
+    await this.auditLogService.record({
+      actorUserId: resolveAuthActorUserId(auth),
+      event: 'operations.comanda_payment.created',
+      resource: 'comanda',
+      resourceId: comanda.id,
+      metadata: {
+        amount,
+        method: dto.method,
+        remainingAmount: roundCurrency(
+          Math.max(
+            0,
+            toNumberOrZero(refreshedComanda.totalAmount) - this.calculateConfirmedPaidAmount(refreshedComanda),
+          ),
+        ),
+      },
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+    })
+
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+    this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, undefined, {
+      mutationName: 'create-comanda-payment',
+      mutationStartedAtMs,
+    })
+    if (refreshedSession) {
+      this.operationsRealtimeService.publishCashUpdated(auth, {
+        ...buildCashUpdatedPayload(refreshedSession),
+        businessDate: formatBusinessDateKey(businessDate),
+      })
+    }
+    if (closure) {
+      this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
+    }
+
+    return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
   }
 
   async updateKitchenItemStatus(
@@ -910,112 +1245,106 @@ export class ComandaService {
     dto: UpdateKitchenItemStatusDto,
     context: RequestContext,
   ) {
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
+    if (auth.role === 'STAFF') {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      if (!actorEmployee) {
+        throw new ForbiddenException('Seu acesso precisa estar vinculado a um funcionario ativo para operar a cozinha.')
+      }
+    }
 
-    const item = await this.prisma.comandaItem.findUnique({
-      where: { id: itemId },
-      include: {
-        comanda: {
-          select: {
-            id: true,
-            companyOwnerId: true,
-            tableLabel: true,
-            status: true,
-            cashSessionId: true,
-            openedAt: true,
+    const helpers = this.helpers
+
+    const { updatedItem, refreshedComanda, businessDate, comandaId, previousKitchenStatus, previousComandaStatus } =
+      await this.prisma.$transaction(
+      async (tx) => {
+        const item = await tx.comandaItem.findUnique({
+          where: { id: itemId },
+          include: {
+            comanda: {
+              select: {
+                id: true,
+                companyOwnerId: true,
+                tableLabel: true,
+                status: true,
+                cashSessionId: true,
+                openedAt: true,
+              },
+            },
           },
-        },
-      },
-    })
-
-    if (!item || item.comanda.companyOwnerId !== workspaceOwnerUserId) {
-      throw new NotFoundException('Item de comanda nao encontrado.')
-    }
-
-    if (!item.kitchenStatus) {
-      throw new BadRequestException('Este item nao esta na fila da cozinha.')
-    }
-
-    const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
-
-    // Update the individual item
-    const updatedItem = await this.prisma.comandaItem.update({
-      where: { id: itemId },
-      data: {
-        kitchenStatus: dto.status as KitchenItemStatus,
-        kitchenReadyAt: kitchenReadyAt ?? null,
-      },
-    })
-
-    // ── Propagate to comanda status ──────────────────────────────────────────
-    const allItems = await this.prisma.comandaItem.findMany({
-      where: { comandaId: item.comanda.id },
-      select: { kitchenStatus: true },
-    })
-
-    const kitchenItems = allItems.filter((i) => i.kitchenStatus !== null)
-    let refreshedComanda: Awaited<ReturnType<typeof this.helpers.recalculateComanda>> | undefined
-
-    if (kitchenItems.length > 0 && isOpenComandaStatus(item.comanda.status)) {
-      const allReady = kitchenItems.every(
-        (i) => i.kitchenStatus === KitchenItemStatus.READY || i.kitchenStatus === KitchenItemStatus.DELIVERED,
-      )
-      const anyInPrep = kitchenItems.some((i) => i.kitchenStatus === KitchenItemStatus.IN_PREPARATION)
-
-      let newComandaStatus: ComandaStatus | null = null
-      if (allReady) {
-        newComandaStatus = ComandaStatus.READY
-      } else if (anyInPrep && item.comanda.status === ComandaStatus.OPEN) {
-        newComandaStatus = ComandaStatus.IN_PREPARATION
-      }
-
-      if (newComandaStatus) {
-        refreshedComanda = await this.prisma.comanda.update({
-          where: { id: item.comanda.id },
-          data: { status: newComandaStatus },
-          include: { items: { orderBy: { createdAt: 'asc' } } },
         })
-      }
-    }
 
-    // If status didn't change, still fetch the comanda for the realtime event
-    if (!refreshedComanda) {
-      refreshedComanda =
-        (await this.prisma.comanda.findUnique({
-          where: { id: item.comanda.id },
-          include: { items: { orderBy: { createdAt: 'asc' } } },
-        })) ?? undefined
-    }
-    // ─────────────────────────────────────────────────────────────────────────
+        if (item?.comanda.companyOwnerId !== workspaceOwnerUserId) {
+          throw new NotFoundException('Item de comanda nao encontrado.')
+        }
 
-    const businessDate = await this.helpers.resolveComandaBusinessDate(
-      this.prisma,
-      refreshedComanda ?? {
-        cashSessionId: item.comanda.cashSessionId,
-        openedAt: item.comanda.openedAt,
+        if (!item.kitchenStatus) {
+          throw new BadRequestException('Este item nao esta na fila da cozinha.')
+        }
+
+        const kitchenReadyAt = dto.status === 'READY' ? new Date() : (item.kitchenReadyAt ?? undefined)
+
+        const txUpdatedItem = await tx.comandaItem.update({
+          where: { id: itemId },
+          data: {
+            kitchenStatus: dto.status as KitchenItemStatus,
+            kitchenReadyAt: kitchenReadyAt ?? null,
+          },
+        })
+
+        const txRefreshedComanda = await propagateKitchenStatusToComanda(
+          tx,
+          item.comanda,
+          deriveComandaStatusFromKitchen,
+        )
+
+        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(
+          tx,
+          txRefreshedComanda ?? {
+            cashSessionId: item.comanda.cashSessionId,
+            openedAt: item.comanda.openedAt,
+          },
+        )
+
+        return {
+          updatedItem: txUpdatedItem,
+          refreshedComanda: txRefreshedComanda,
+          businessDate: resolvedBusinessDate,
+          comandaId: item.comanda.id,
+          previousKitchenStatus: item.kitchenStatus,
+          previousComandaStatus: item.comanda.status,
+        }
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
       },
     )
 
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(auth),
       event: 'operations.kitchen_item.status_updated',
       resource: 'comanda_item',
       resourceId: itemId,
-      metadata: { status: dto.status, comandaId: item.comanda.id },
+      metadata: { status: dto.status, comandaId },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
     })
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
+    invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
 
-    // Emit kitchen item event (for Cozinha tab)
     if (refreshedComanda) {
-      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate)
-    }
-
-    // Emit comanda updated event (for Pedidos tab + web PDV drag-and-drop)
-    if (refreshedComanda) {
-      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate)
+      this.publishKitchenItemUpdatedRealtime(auth, refreshedComanda, updatedItem, businessDate, {
+        previousKitchenStatus: resolvePreviousKitchenStatus(previousKitchenStatus),
+      }, {
+        mutationName: 'update-kitchen-item-status',
+        mutationStartedAtMs,
+      })
+      this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
+        ...(refreshedComanda.status !== previousComandaStatus
+          ? { previousStatus: toRealtimeStatus(previousComandaStatus) }
+          : {}),
+      })
     }
 
     return { itemId, status: dto.status }
@@ -1028,532 +1357,145 @@ export class ComandaService {
     context: RequestContext,
     options?: OperationsResponseOptionsDto,
   ) {
+    const closeStartedAt = performance.now()
+    const mutationStartedAtMs = performance.now()
     const workspaceOwnerUserId = resolveWorkspaceOwnerUserId(auth)
-    const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
-    const comanda = await this.helpers.requireAuthorizedComanda(
-      this.prisma,
-      workspaceOwnerUserId,
-      auth,
-      comandaId,
-      actorEmployee,
-    )
+    try {
+      const actorEmployee = await this.resolveActorEmployee(workspaceOwnerUserId, auth)
+      const comanda = await this.helpers.requireAuthorizedComanda(
+        this.prisma,
+        workspaceOwnerUserId,
+        auth,
+        comandaId,
+        actorEmployee,
+      )
 
-    if (comanda.status === ComandaStatus.CLOSED) {
-      throw new ConflictException('Esta comanda ja foi encerrada.')
-    }
+      if (comanda.status === ComandaStatus.CLOSED) {
+        throw new ConflictException('Esta comanda ja foi encerrada.')
+      }
 
-    if (comanda.status === ComandaStatus.CANCELLED) {
-      throw new ConflictException('Comandas canceladas nao podem ser encerradas novamente.')
-    }
+      if (comanda.status === ComandaStatus.CANCELLED) {
+        throw new ConflictException('Comandas canceladas nao podem ser encerradas novamente.')
+      }
 
-    if (comanda.items.length === 0) {
-      throw new ConflictException('Adicione itens antes de fechar a comanda.')
-    }
+      if (comanda.items.length === 0) {
+        throw new ConflictException('Adicione itens antes de fechar a comanda.')
+      }
 
-    const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const discountAmount = roundCurrency(dto.discountAmount ?? toNumber(comanda.discountAmount))
-    const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumber(comanda.serviceFeeAmount))
-    this.assertMonetaryAdjustmentsWithinSubtotal(
-      this.calculateDraftItemsSubtotal(comanda.items),
-      discountAmount,
-      serviceFeeAmount,
-    )
-
-    const helpers = this.helpers
-    const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
-      async (transaction) => {
-        const recalculatedComanda = await helpers.recalculateComanda(transaction, comanda.id, {
-          discountAmount,
-          serviceFeeAmount,
-        })
-        const closedComanda = await transaction.comanda.update({
-          where: { id: comanda.id },
-          data: {
-            status: ComandaStatus.CLOSED,
-            closedAt: new Date(),
-            closedByUserId: auth.userId,
-            notes: notes ?? recalculatedComanda.notes,
-          },
-          include: {
-            items: {
-              orderBy: {
-                createdAt: 'asc',
-              },
-            },
-          },
-        })
-
-        await helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
-
-        const resolvedBusinessDate = await helpers.resolveComandaBusinessDate(transaction, closedComanda)
-        const updatedSession = closedComanda.cashSessionId
-          ? await helpers.recalculateCashSession(transaction, closedComanda.cashSessionId)
-          : null
-        const closureSnapshot = await helpers.syncCashClosure(transaction, workspaceOwnerUserId, resolvedBusinessDate)
-
-        return {
-          refreshedComanda: closedComanda,
-          refreshedSession: updatedSession,
-          closure: closureSnapshot,
-          businessDate: resolvedBusinessDate,
-        }
-      },
-    )
-
-    await this.auditLogService.record({
-      actorUserId: auth.userId,
-      event: 'operations.comanda.closed',
-      resource: 'comanda',
-      resourceId: comanda.id,
-      metadata: {
+      const notes = sanitizePlainText(dto.notes, 'Observacoes da comanda', {
+        allowEmpty: true,
+        rejectFormula: false,
+      })
+      const discountAmount = roundCurrency(dto.discountAmount ?? toNumberOrZero(comanda.discountAmount))
+      const serviceFeeAmount = roundCurrency(dto.serviceFeeAmount ?? toNumberOrZero(comanda.serviceFeeAmount))
+      assertMonetaryAdjustmentsWithinSubtotal(
+        calculateDraftItemsSubtotal(comanda.items),
         discountAmount,
         serviceFeeAmount,
-        totalAmount: toNumber(refreshedComanda.totalAmount),
-      },
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-    })
+      )
 
-    this.invalidateLiveSnapshotCache(workspaceOwnerUserId, businessDate)
-    this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate)
-    void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
-    this.refreshFinanceSummary(workspaceOwnerUserId)
-    void this.checkLowStockAfterClose(auth.userId, workspaceOwnerUserId, refreshedComanda.items)
+      const { refreshedComanda, refreshedSession, closure, businessDate } = await this.prisma.$transaction(
+        async (transaction) => {
+          const recalculatedComanda = await this.helpers.recalculateComanda(transaction, comanda.id, {
+            discountAmount,
+            serviceFeeAmount,
+          })
+          await this.settleRemainingComandaBalance(
+            transaction,
+            workspaceOwnerUserId,
+            {
+              cashSessionId: comanda.cashSessionId,
+              currentEmployeeId: comanda.currentEmployeeId,
+              id: comanda.id,
+              totalAmount: recalculatedComanda.totalAmount,
+            },
+            auth.userId,
+            dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
+            actorEmployee?.id ?? null,
+          )
 
-    return this.buildComandaResponse(workspaceOwnerUserId, businessDate, refreshedComanda, options)
-  }
+          await transaction.comanda.update({
+            where: { id: comanda.id },
+            data: {
+              status: ComandaStatus.CLOSED,
+              closedAt: new Date(),
+              closedByUserId: auth.userId,
+              notes: notes ?? recalculatedComanda.notes,
+            },
+          })
+          const closedComanda = await this.loadComandaWithPayments(transaction, comanda.id)
 
-  private async checkLowStockAfterClose(
-    actorUserId: string,
-    workspaceOwnerUserId: string,
-    items: Array<{ productId: string | null; productName: string }>,
-  ) {
-    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[]
-    if (!productIds.length) return
+          await this.helpers.ensureOrderForClosedComanda(transaction, workspaceOwnerUserId, closedComanda.id)
+          const { businessDate, closure, refreshedSession } = await this.syncComandaCashState(
+            transaction,
+            workspaceOwnerUserId,
+            closedComanda,
+          )
 
-    const products =
-      (await this.prisma.product.findMany({
-        where: {
-          id: { in: productIds },
-          userId: workspaceOwnerUserId,
-          lowStockThreshold: { not: null },
+          return {
+            refreshedComanda: closedComanda,
+            refreshedSession,
+            closure,
+            businessDate,
+          }
         },
-        select: { id: true, name: true, stock: true, lowStockThreshold: true },
-      })) ?? []
+      )
 
-    for (const product of products) {
-      if (product.lowStockThreshold != null && product.stock <= product.lowStockThreshold) {
-        void this.auditLogService.record({
-          actorUserId,
-          event: 'product.stock.low',
-          resource: 'product',
-          resourceId: product.id,
-          severity: AuditSeverity.WARN,
-          metadata: {
-            name: product.name,
-            stock: product.stock,
-            lowStockThreshold: product.lowStockThreshold,
-          },
-        })
-      }
+      await this.auditLogService.record({
+        actorUserId: resolveAuthActorUserId(auth),
+        event: 'operations.comanda.closed',
+        resource: 'comanda',
+        resourceId: comanda.id,
+        metadata: {
+          discountAmount,
+          serviceFeeAmount,
+          totalAmount: toNumberOrZero(refreshedComanda.totalAmount),
+        },
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+      })
+
+      invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
+      this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate, {
+        mutationName: 'close-comanda',
+        mutationStartedAtMs,
+      })
+      void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
+      this.refreshFinanceSummary(workspaceOwnerUserId)
+      void checkLowStockAfterClose(
+        this.prisma,
+        this.auditLogService,
+        auth.userId,
+        workspaceOwnerUserId,
+        refreshedComanda.items,
+      )
+
+      return buildComandaResponse(this.helpers, workspaceOwnerUserId, businessDate, refreshedComanda, options)
+    } finally {
+      recordOperationsCloseComandaTelemetry(performance.now() - closeStartedAt, {
+        'desk.operations.actor_role': auth.role,
+        'desk.operations.comanda_id_present': Boolean(comandaId),
+      })
     }
-  }
-
-  private async buildOptionalSnapshot(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return buildOptionalOperationsSnapshot(this.helpers, workspaceOwnerUserId, businessDate, options)
-  }
-
-  private invalidateLiveSnapshotCache(workspaceOwnerUserId: string, businessDate: Date) {
-    invalidateOperationsLiveCache(this.cache, workspaceOwnerUserId, businessDate)
   }
 
   private resolveActorEmployee(workspaceOwnerUserId: string, auth: AuthContext) {
     return this.helpers.resolveEmployeeForStaff(this.prisma, workspaceOwnerUserId, auth)
   }
+}
 
-  private async buildComandaResponse(
-    workspaceOwnerUserId: string,
-    businessDate: Date,
-    comanda: Parameters<typeof toComandaRecord>[0],
-    options?: OperationsResponseOptionsDto,
-  ) {
-    return {
-      comanda: toComandaRecord(comanda),
-      ...(await this.buildOptionalSnapshot(workspaceOwnerUserId, businessDate, options)),
-    }
+function resolvePreviousKitchenStatus(status: KitchenItemStatus | null) {
+  if (status === 'DELIVERED') {
+    return 'DELIVERED' as const
   }
 
-  private publishComandaOpenedRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof toComandaRecord>[0],
-    businessDate: Date,
-  ) {
-    this.operationsRealtimeService.publishComandaOpened(auth, {
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      openedAt: comanda.openedAt.toISOString(),
-      employeeId: comanda.currentEmployeeId,
-      status: comanda.status === 'IN_PREPARATION' ? 'EM_PREPARO' : comanda.status === 'READY' ? 'PRONTA' : 'ABERTA',
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
-      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
-      businessDate: formatBusinessDateKey(businessDate),
-    })
+  if (status === 'READY') {
+    return 'READY' as const
   }
 
-  private publishComandaUpdatedRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof toComandaRecord>[0],
-    businessDate: Date,
-    options?: {
-      requiresKitchenRefresh?: boolean
-      replaceKitchenItems?: boolean
-      kitchenItems?: Array<{
-        itemId: string
-        comandaId: string
-        mesaLabel: string
-        employeeId: string | null
-        productName: string
-        quantity: number
-        notes: string | null
-        kitchenStatus: 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
-        kitchenQueuedAt: string | null
-        kitchenReadyAt: string | null
-        businessDate: string
-      }>
-    },
-  ) {
-    this.operationsRealtimeService.publishComandaUpdated(auth, {
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      status:
-        comanda.status === 'OPEN'
-          ? 'ABERTA'
-          : comanda.status === 'IN_PREPARATION'
-            ? 'EM_PREPARO'
-            : comanda.status === 'READY'
-              ? 'PRONTA'
-              : 'FECHADA',
-      employeeId: comanda.currentEmployeeId,
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
-      totalItems: comanda.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0,
-      businessDate: formatBusinessDateKey(businessDate),
-      ...(options?.requiresKitchenRefresh ? { requiresKitchenRefresh: true } : {}),
-      ...(options?.replaceKitchenItems ? { replaceKitchenItems: true } : {}),
-      ...(options?.kitchenItems ? { kitchenItems: options.kitchenItems } : {}),
-    })
+  if (status === 'IN_PREPARATION') {
+    return 'IN_PREPARATION' as const
   }
 
-  private publishKitchenItemQueuedRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof toComandaRecord>[0],
-    item: {
-      id: string
-      productName: string
-      quantity: number
-      notes: string | null
-      kitchenStatus: KitchenItemStatus | null
-      kitchenQueuedAt: Date | null
-      kitchenReadyAt: Date | null
-    },
-    businessDate: Date,
-  ) {
-    const payload = this.buildKitchenItemRealtimeDelta(comanda, item, businessDate)
-    this.operationsRealtimeService.publishKitchenItemQueued(auth, {
-      ...payload,
-      kitchenStatus: 'QUEUED',
-      kitchenQueuedAt: payload.kitchenQueuedAt ?? new Date().toISOString(),
-    })
-  }
-
-  private publishKitchenItemUpdatedRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof toComandaRecord>[0],
-    item: {
-      id: string
-      productName: string
-      quantity: number
-      notes: string | null
-      kitchenStatus: KitchenItemStatus | null
-      kitchenQueuedAt: Date | null
-      kitchenReadyAt: Date | null
-    },
-    businessDate: Date,
-  ) {
-    const payload = this.buildKitchenItemRealtimeDelta(comanda, item, businessDate)
-    this.operationsRealtimeService.publishKitchenItemUpdated(auth, {
-      ...payload,
-      kitchenStatus:
-        item.kitchenStatus === 'DELIVERED' ? 'DELIVERED' : item.kitchenStatus === 'READY' ? 'READY' : 'IN_PREPARATION',
-    })
-  }
-
-  private publishComandaCloseRealtime(
-    auth: AuthContext,
-    comanda: {
-      id: string
-      tableLabel: string
-      currentEmployeeId: string | null
-      subtotalAmount: { toNumber(): number } | number
-      discountAmount: { toNumber(): number } | number
-      serviceFeeAmount: { toNumber(): number } | number
-      totalAmount: { toNumber(): number } | number
-      closedAt: Date | null
-      items: Array<{ quantity: number }>
-    },
-    refreshedSession: Parameters<typeof buildCashUpdatedPayload>[0] | null,
-    closure: Parameters<typeof buildCashClosurePayload>[0],
-    businessDate: Date,
-  ) {
-    this.operationsRealtimeService.publishComandaClosed(auth, {
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      closedAt: comanda.closedAt?.toISOString() ?? new Date().toISOString(),
-      employeeId: comanda.currentEmployeeId,
-      status: 'FECHADA',
-      subtotal: toNumber(comanda.subtotalAmount),
-      discountAmount: toNumber(comanda.discountAmount),
-      serviceFeeAmount: toNumber(comanda.serviceFeeAmount),
-      totalAmount: toNumber(comanda.totalAmount),
-      totalItems: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
-      paymentMethod: null,
-      businessDate: formatBusinessDateKey(businessDate),
-    })
-
-    if (refreshedSession) {
-      this.operationsRealtimeService.publishCashUpdated(auth, {
-        ...buildCashUpdatedPayload(refreshedSession),
-        businessDate: formatBusinessDateKey(businessDate),
-      })
-    }
-
-    this.operationsRealtimeService.publishCashClosureUpdated(auth, buildCashClosurePayload(closure))
-  }
-
-  private calculateDraftItemsSubtotal(
-    items: Array<{
-      totalAmount: { toNumber(): number } | number
-    }>,
-  ) {
-    return roundCurrency(items.reduce((sum, item) => sum + toNumber(item.totalAmount), 0))
-  }
-
-  private assertMonetaryAdjustmentsWithinSubtotal(
-    subtotalAmount: number,
-    discountAmount: number,
-    serviceFeeAmount: number,
-  ) {
-    if (discountAmount > subtotalAmount) {
-      throw new BadRequestException('O desconto não pode ser maior que o subtotal da comanda.')
-    }
-
-    if (serviceFeeAmount > subtotalAmount) {
-      throw new BadRequestException('A taxa de serviço não pode ser maior que o subtotal da comanda.')
-    }
-  }
-
-  private buildKitchenItemRealtimeDeltas(comanda: Parameters<typeof toComandaRecord>[0], businessDate: Date) {
-    return (comanda.items ?? [])
-      .filter(
-        (
-          item,
-        ): item is NonNullable<Parameters<typeof toComandaRecord>[0]['items']>[number] & {
-          kitchenStatus: KitchenItemStatus
-        } => item.kitchenStatus != null,
-      )
-      .map((item) => this.buildKitchenItemRealtimeDelta(comanda, item, businessDate))
-  }
-
-  private buildKitchenItemRealtimeDelta(
-    comanda: Parameters<typeof toComandaRecord>[0],
-    item: {
-      id: string
-      productName: string
-      quantity: number
-      notes: string | null
-      kitchenStatus: KitchenItemStatus | null
-      kitchenQueuedAt: Date | string | null
-      kitchenReadyAt: Date | string | null
-    },
-    businessDate: Date,
-  ) {
-    return {
-      itemId: item.id,
-      comandaId: comanda.id,
-      mesaLabel: comanda.tableLabel,
-      employeeId: comanda.currentEmployeeId,
-      productName: item.productName,
-      quantity: item.quantity,
-      notes: item.notes ?? null,
-      kitchenStatus:
-        item.kitchenStatus === 'DELIVERED'
-          ? 'DELIVERED'
-          : item.kitchenStatus === 'READY'
-            ? 'READY'
-            : item.kitchenStatus === 'IN_PREPARATION'
-              ? 'IN_PREPARATION'
-              : 'QUEUED',
-      kitchenQueuedAt:
-        item.kitchenQueuedAt instanceof Date ? item.kitchenQueuedAt.toISOString() : (item.kitchenQueuedAt ?? null),
-      kitchenReadyAt:
-        item.kitchenReadyAt instanceof Date ? item.kitchenReadyAt.toISOString() : (item.kitchenReadyAt ?? null),
-      businessDate: formatBusinessDateKey(businessDate),
-    } as const
-  }
-
-  private async resolveMesaSelection(
-    workspaceOwnerUserId: string,
-    tableLabel: string,
-    mesaId?: string | null,
-    currentComandaId?: string,
-  ) {
-    if (mesaId) {
-      const mesa = await this.prisma.mesa.findUnique({
-        where: { id: mesaId },
-        select: {
-          id: true,
-          label: true,
-          active: true,
-          companyOwnerId: true,
-        },
-      })
-
-      if (!mesa || mesa.companyOwnerId !== workspaceOwnerUserId || !mesa.active) {
-        throw new NotFoundException('Mesa nao encontrada ou inativa.')
-      }
-
-      await this.helpers.assertOpenTableAvailability(this.prisma, workspaceOwnerUserId, mesa.label, currentComandaId)
-      await this.assertMesaAvailability(mesa.id, currentComandaId)
-
-      return {
-        mesaId: mesa.id,
-        tableLabel: mesa.label,
-      }
-    }
-
-    const mesa = await this.prisma.mesa.findUnique({
-      where: {
-        companyOwnerId_label: {
-          companyOwnerId: workspaceOwnerUserId,
-          label: tableLabel,
-        },
-      },
-      select: {
-        id: true,
-        label: true,
-        active: true,
-      },
-    })
-
-    const resolvedMesaId = mesa?.active ? mesa.id : null
-    const resolvedTableLabel = mesa?.active ? mesa.label : tableLabel
-
-    await this.helpers.assertOpenTableAvailability(
-      this.prisma,
-      workspaceOwnerUserId,
-      resolvedTableLabel,
-      currentComandaId,
-    )
-
-    if (resolvedMesaId) {
-      await this.assertMesaAvailability(resolvedMesaId, currentComandaId)
-    }
-
-    return {
-      mesaId: resolvedMesaId,
-      tableLabel: resolvedTableLabel,
-    }
-  }
-
-  private takeMatchingKitchenState(
-    existingItems: Array<{
-      productId: string | null
-      productName: string
-      quantity: number
-      unitPrice: { toNumber(): number } | number
-      notes: string | null
-      kitchenStatus: KitchenItemStatus | null
-      kitchenQueuedAt: Date | null
-      kitchenReadyAt: Date | null
-    }>,
-    nextItem: {
-      productId: string | null
-      productName: string
-      quantity: number
-      unitPrice: number
-      notes: string | null
-    },
-    needsKitchen: boolean,
-    fallbackQueuedAt: Date,
-  ) {
-    if (!needsKitchen) {
-      return {
-        kitchenStatus: null,
-        kitchenQueuedAt: null,
-        kitchenReadyAt: null,
-      }
-    }
-
-    const matchingItemIndex = existingItems.findIndex(
-      (existingItem) =>
-        existingItem.productId === nextItem.productId &&
-        existingItem.productName === nextItem.productName &&
-        existingItem.quantity === nextItem.quantity &&
-        roundCurrency(toNumber(existingItem.unitPrice)) === roundCurrency(nextItem.unitPrice) &&
-        (existingItem.notes ?? null) === (nextItem.notes ?? null),
-    )
-
-    if (matchingItemIndex === -1) {
-      return {
-        kitchenStatus: KitchenItemStatus.QUEUED,
-        kitchenQueuedAt: fallbackQueuedAt,
-        kitchenReadyAt: null,
-      }
-    }
-
-    const [matchingItem] = existingItems.splice(matchingItemIndex, 1)
-
-    return {
-      kitchenStatus: matchingItem.kitchenStatus ?? KitchenItemStatus.QUEUED,
-      kitchenQueuedAt: matchingItem.kitchenQueuedAt ?? fallbackQueuedAt,
-      kitchenReadyAt: matchingItem.kitchenReadyAt,
-    }
-  }
-
-  private async assertMesaAvailability(mesaId: string, currentComandaId?: string) {
-    const occupiedComanda = await this.prisma.comanda.findFirst({
-      where: {
-        mesaId,
-        status: {
-          in: OPEN_COMANDA_STATUSES,
-        },
-        ...(currentComandaId
-          ? {
-              id: {
-                not: currentComandaId,
-              },
-            }
-          : {}),
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    if (occupiedComanda) {
-      throw new ConflictException('Essa mesa ja possui uma comanda aberta.')
-    }
-  }
+  return 'QUEUED' as const
 }

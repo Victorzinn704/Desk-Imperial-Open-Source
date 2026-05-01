@@ -1,4 +1,4 @@
-export type ComandaStatus = 'aberta' | 'em_preparo' | 'pronta' | 'fechada'
+export type ComandaStatus = 'aberta' | 'em_preparo' | 'pronta' | 'cancelada' | 'fechada'
 
 export type MesaStatus = 'livre' | 'ocupada' | 'reservada'
 
@@ -27,12 +27,22 @@ export type ComandaItem = {
   observacao?: string
 }
 
+export type ComandaPayment = {
+  id: string
+  method: 'CASH' | 'PIX' | 'DEBIT' | 'CREDIT' | 'VOUCHER' | 'OTHER'
+  amount: number
+  note?: string
+  paidAt: Date
+}
+
 export type Comanda = {
   id: string
   status: ComandaStatus
   mesa?: string
   clienteNome?: string
   clienteDocumento?: string
+  participantCount?: number
+  notes?: string
   garcomId?: string
   garcomNome?: string
   itens: ComandaItem[]
@@ -42,6 +52,10 @@ export type Comanda = {
   subtotalBackend?: number
   // backend provided totals for compact mode:
   totalBackend?: number
+  paidAmount?: number
+  remainingAmount?: number
+  paymentStatus?: 'UNPAID' | 'PARTIAL' | 'PAID'
+  payments?: ComandaPayment[]
 }
 
 export type KanbanColumn = {
@@ -57,34 +71,42 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
   {
     id: 'aberta',
     label: 'Aberta',
-    color: 'text-[#60a5fa]',
-    dotColor: '#60a5fa',
-    bgColor: 'rgba(96, 165, 250, 0.08)',
-    borderColor: 'rgba(96, 165, 250, 0.22)',
+    color: 'text-[#2563eb]',
+    dotColor: '#2563eb',
+    bgColor: 'rgba(37, 99, 235, 0.08)',
+    borderColor: 'rgba(37, 99, 235, 0.22)',
   },
   {
     id: 'em_preparo',
     label: 'Em Preparo',
-    color: 'text-[#fb923c]',
-    dotColor: '#fb923c',
-    bgColor: 'rgba(251, 146, 60, 0.08)',
-    borderColor: 'rgba(251, 146, 60, 0.22)',
+    color: 'text-[#d97706]',
+    dotColor: '#d97706',
+    bgColor: 'rgba(217, 119, 6, 0.08)',
+    borderColor: 'rgba(217, 119, 6, 0.22)',
   },
   {
     id: 'pronta',
     label: 'Pronta',
-    color: 'text-[#36f57c]',
-    dotColor: '#36f57c',
-    bgColor: 'rgba(54, 245, 124, 0.08)',
-    borderColor: 'rgba(54, 245, 124, 0.22)',
+    color: 'text-[#16a34a]',
+    dotColor: '#16a34a',
+    bgColor: 'rgba(22, 163, 74, 0.08)',
+    borderColor: 'rgba(22, 163, 74, 0.22)',
+  },
+  {
+    id: 'cancelada',
+    label: 'Cancelada',
+    color: 'text-[#dc2626]',
+    dotColor: '#dc2626',
+    bgColor: 'rgba(220, 38, 38, 0.08)',
+    borderColor: 'rgba(220, 38, 38, 0.22)',
   },
   {
     id: 'fechada',
     label: 'Fechada',
-    color: 'text-[#7a8896]',
-    dotColor: '#7a8896',
-    bgColor: 'rgba(122, 136, 150, 0.06)',
-    borderColor: 'rgba(122, 136, 150, 0.16)',
+    color: 'text-[#6b7280]',
+    dotColor: '#6b7280',
+    bgColor: 'rgba(107, 114, 128, 0.06)',
+    borderColor: 'rgba(107, 114, 128, 0.16)',
   },
 ]
 
@@ -120,10 +142,16 @@ export function calcTotal(comanda: Comanda): number {
   return total
 }
 
+export function isEndedComandaStatus(status: ComandaStatus): boolean {
+  return status === 'fechada' || status === 'cancelada'
+}
+
 export function formatElapsed(abertaEm: Date): string {
   const ms = Date.now() - abertaEm.getTime()
   const min = Math.floor(ms / 60000)
-  if (min < 60) return `${min}min`
+  if (min < 60) {
+    return `${min}min`
+  }
   const h = Math.floor(min / 60)
   const m = min % 60
   return `${h}h${m > 0 ? ` ${m}min` : ''}`

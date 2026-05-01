@@ -24,7 +24,7 @@ const params = {
 }
 
 export default function () {
-  const response = http.post(`${baseUrl}/api/auth/login`, payload, params)
+  const response = http.post(`${baseUrl}/api/v1/auth/login`, payload, params)
 
   check(response, {
     'login responds deterministically': (r) => [200, 201, 401, 403, 429].includes(r.status),

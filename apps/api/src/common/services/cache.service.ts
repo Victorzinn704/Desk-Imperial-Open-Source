@@ -60,11 +60,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    if (!this.enabled || !this.client) return null
+    if (!this.enabled || !this.client) {
+      return null
+    }
     try {
       const raw = await this.client.get(key)
       this.failureCount = 0
-      if (!raw) return null
+      if (!raw) {
+        return null
+      }
       return JSON.parse(raw) as T
     } catch {
       this.handleFailure('get')
@@ -73,7 +77,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds)
       this.failureCount = 0
@@ -82,8 +88,41 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async setIfAbsent(key: string, value: unknown, ttlSeconds: number): Promise<boolean> {
+    if (!this.enabled || !this.client) {
+      return true
+    }
+    try {
+      const result = await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds, 'NX')
+      this.failureCount = 0
+      return result === 'OK'
+    } catch {
+      this.handleFailure('setIfAbsent')
+      return false
+    }
+  }
+
+  async increment(key: string, ttlSeconds?: number): Promise<number> {
+    if (!this.enabled || !this.client) {
+      return 0
+    }
+    try {
+      const count = await this.client.incr(key)
+      if (count === 1 && ttlSeconds) {
+        await this.client.expire(key, ttlSeconds)
+      }
+      this.failureCount = 0
+      return count
+    } catch {
+      this.handleFailure('increment')
+      return 0
+    }
+  }
+
   async del(key: string): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       await this.client.del(key)
       this.failureCount = 0
@@ -93,7 +132,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async delByPrefix(prefix: string): Promise<void> {
-    if (!this.enabled || !this.client) return
+    if (!this.enabled || !this.client) {
+      return
+    }
     try {
       let cursor = '0'
       do {
@@ -114,7 +155,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async ping(): Promise<boolean> {
-    if (!this.enabled || !this.client) return false
+    if (!this.enabled || !this.client) {
+      return false
+    }
     try {
       const result = await this.client.ping()
       return result === 'PONG' || result === 'pong'
@@ -136,6 +179,18 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /** Chave para cache de insight do Gemini por usuário, moeda e foco */
   static geminiKey(userId: string, currency: string, focus: string): string {
     return `gemini:insight:${userId}:${currency}:${focus.toLowerCase()}`
+  }
+
+  static notificationsDeliveryKey(workspaceOwnerUserId: string, idempotencyKey: string): string {
+    return `notifications:delivery:${workspaceOwnerUserId}:${idempotencyKey}`
+  }
+
+  static telegramUpdateKey(updateId: number) {
+    return `telegram:update:${updateId}`
+  }
+
+  static telegramRateLimitKey(chatId: string) {
+    return `telegram:ratelimit:${chatId}`
   }
 
   static productsKey(userId: string, scope: 'active' | 'all' = 'active') {

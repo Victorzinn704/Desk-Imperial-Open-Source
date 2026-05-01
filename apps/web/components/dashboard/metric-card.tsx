@@ -1,91 +1,87 @@
-import type { LucideIcon } from 'lucide-react'
-import { LineChart, Line } from 'recharts'
+import { cn } from '@/lib/utils'
+import { ArrowDown, ArrowUp, type LucideIcon } from 'lucide-react'
 import { MetricCardSkeleton } from '@/components/shared/skeleton'
-import { ChartResponsiveContainer } from '@/components/dashboard/chart-responsive-container'
-import { Tooltip } from '@/components/shared/tooltip'
 
 export function MetricCard({
+  delta,
+  deltaPositive,
+  hint,
   icon: Icon,
   label,
   value,
-  hint,
   loading = false,
   trend,
-  color,
 }: Readonly<{
-  icon: LucideIcon
+  delta?: number | string
+  deltaPositive?: boolean
+  hint?: string
+  icon?: LucideIcon
   label: string
   value: string
-  hint: string
   loading?: boolean
   trend?: number[]
-  color?: string
 }>) {
-  if (loading) return <MetricCardSkeleton />
+  if (loading) {return <MetricCardSkeleton />}
 
-  const trendColor =
-    color ?? (!trend || trend.length < 2 ? '#7a8896' : trend[trend.length - 1] >= trend[0] ? '#36f57c' : '#ef4444')
+  const hasTrend = trend && trend.length >= 2
+  let resolvedDelta: string | null = null
+  let isUp = true
 
-  const sparkData = trend?.map((v, i) => ({ i, v }))
-
-  const [r, g, b] = hexToRgb(trendColor.startsWith('#') ? trendColor : '#d4b16a')
-  const iconGlow = `0 0 18px rgba(${r},${g},${b},0.28)`
-  const iconBorderColor = `rgba(${r},${g},${b},0.32)`
-  const iconBg = `rgba(${r},${g},${b},0.1)`
+  if (typeof delta === 'number') {
+    isUp = deltaPositive ?? delta >= 0
+    resolvedDelta = `${Math.abs(delta).toFixed(1)}%`
+  } else if (typeof delta === 'string' && delta.trim().length > 0) {
+    const normalizedDelta = delta.trim()
+    isUp = deltaPositive ?? !normalizedDelta.startsWith('-')
+    resolvedDelta = normalizedDelta
+  } else if (hasTrend) {
+    const prev = trend[trend.length - 2]
+    const curr = trend[trend.length - 1]
+    isUp = curr >= prev
+    const trendPercent = prev === 0 ? (curr === 0 ? 0 : 100) : Math.abs(((curr - prev) / prev) * 100)
+    resolvedDelta = `${trendPercent.toFixed(1)}%`
+  }
 
   return (
-    <article className="imperial-card-stat p-5">
-      <div className="flex items-start justify-between gap-2">
-        <Tooltip content={hint} side="top">
-          <span
-            className="flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-200"
-            style={{
-              background: iconBg,
-              borderColor: iconBorderColor,
-              boxShadow: iconGlow,
-              color: trendColor,
-            }}
-          >
-            <Icon className="size-5" />
-          </span>
-        </Tooltip>
-
-        {sparkData && sparkData.length > 1 && (
-          <div className="h-12 w-24 shrink-0">
-            <ChartResponsiveContainer>
-              <LineChart data={sparkData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-                <Line
-                  dataKey="v"
-                  dot={false}
-                  isAnimationActive={false}
-                  stroke={trendColor}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  type="natural"
-                />
-              </LineChart>
-            </ChartResponsiveContainer>
+    <article className="relative rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3.5 shadow-[var(--shadow-panel)] md:px-5 md:py-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-[0.82rem] uppercase tracking-[0.08em] text-[var(--text-muted)]">
+            {Icon ? (
+              <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--accent)]">
+                <Icon className="size-3.5" />
+              </span>
+            ) : null}
+            <span className="truncate text-[0.75rem]">{label}</span>
           </div>
-        )}
-      </div>
 
-      <p className="mt-5 text-sm font-medium text-[var(--text-soft)]">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-2 text-sm text-[var(--text-soft)]">{hint}</p>
+          <h4 className="mt-3 text-[clamp(1.8rem,2.6vw,2.35rem)] font-semibold leading-none tracking-[-0.04em] text-[var(--text-primary)] tabular-nums">
+            {value}
+          </h4>
+          {hint ? <p className="mt-2 text-[0.88rem] leading-5 text-[var(--text-muted)]">{hint}</p> : null}
+        </div>
+
+        {resolvedDelta ? (
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[11px] font-semibold',
+              isUp ? 'text-[var(--success)]' : 'text-[var(--danger)]',
+            )}
+            style={getDeltaToneStyle(isUp)}
+          >
+            {isUp ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
+            {resolvedDelta}
+          </span>
+        ) : null}
+      </div>
     </article>
   )
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace('#', '')
-  const full =
-    clean.length === 3
-      ? clean
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : clean
-  const n = parseInt(full, 16)
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+function getDeltaToneStyle(isPositive: boolean) {
+  const tone = isPositive ? 'var(--success)' : 'var(--danger)'
+  return {
+    borderColor: `color-mix(in srgb, ${tone} 32%, var(--border))`,
+    backgroundColor: `color-mix(in srgb, ${tone} 10%, var(--surface))`,
+  }
 }

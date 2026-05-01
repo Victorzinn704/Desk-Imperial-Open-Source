@@ -1,27 +1,39 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: partner-portal-postgres
+    container_name: desk-imperial-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-partner_portal}
-      POSTGRES_USER: ${POSTGRES_USER:-desk_imperial}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-desk_imperial_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — set it in .env, never use a default}
     ports:
       - '5432:5432'
     volumes:
-      - partner_portal_pgdata:/var/lib/postgresql/data
+      - desk_imperial_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-desk_imperial}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
-    container_name: partner-portal-redis
+    container_name: desk-imperial-redis
     restart: unless-stopped
-    command: ['redis-server', '--appendonly', 'yes']
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:-change_me_in_prod}']
     ports:
       - '6379:6379'
     volumes:
-      - partner_portal_redis_data:/data
+      - desk_imperial_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-change_me_in_prod}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
-  partner_portal_pgdata:
-  partner_portal_redis_data:
+  desk_imperial_pgdata:
+  desk_imperial_redis_data:

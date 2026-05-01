@@ -44,6 +44,11 @@ const createTestQueryClient = () =>
 describe('LoginForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 1280,
+    })
   })
 
   it('liga os labels aos campos corretos para empresa e funcionário', async () => {
@@ -62,8 +67,8 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /funcionário/i }))
 
     expect(screen.getByLabelText(/email da empresa/i)).toHaveAttribute('id', 'login-company-email')
-    expect(screen.getByLabelText(/id do funcionário/i)).toHaveAttribute('id', 'login-employee-code')
-    expect(screen.getByLabelText(/pin de acesso/i)).toHaveAttribute('id', 'login-password')
+    expect(screen.getByLabelText(/id de acesso/i)).toHaveAttribute('id', 'login-employee-code')
+    expect(screen.getAllByLabelText(/senha de acesso/i)[0]).toHaveAttribute('id', 'login-password')
   })
 
   it('envia credenciais do owner e aciona o fluxo demo do staff', async () => {
@@ -92,14 +97,41 @@ describe('LoginForm', () => {
       email: 'ceo@empresa.com',
       password: '12345678',
     })
-    expect(routerReplace).toHaveBeenCalledWith('/dashboard')
+    expect(routerReplace).toHaveBeenCalledWith('/design-lab/overview')
 
     await user.click(screen.getByRole('button', { name: /funcionário/i }))
     await user.click(screen.getByRole('button', { name: /acessar sessão demo funcionário/i }))
 
     expect(loginDemo).toHaveBeenCalledWith(
       { loginMode: 'STAFF', employeeCode: 'VD-001' },
-      expect.anything(),
+      expect.objectContaining({ client: expect.anything() }),
     )
+  })
+
+  it('redireciona owner mobile para o app móvel em vez do desktop', async () => {
+    const user = userEvent.setup()
+    const queryClient = createTestQueryClient()
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 430,
+    })
+
+    vi.mocked(fetchCurrentUser).mockResolvedValue({ user: { role: 'OWNER' } } as never)
+    vi.mocked(fetchFinanceSummary).mockResolvedValue({ totals: {} } as never)
+    vi.mocked(login).mockResolvedValue({ user: { role: 'OWNER' } } as never)
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LoginForm />
+      </QueryClientProvider>,
+    )
+
+    await user.type(screen.getByLabelText(/email corporativo/i), 'ceo@empresa.com')
+    await user.type(screen.getByLabelText(/senha de acesso/i), '12345678')
+    await user.click(screen.getByRole('button', { name: /entrar no portal/i }))
+
+    expect(routerReplace).toHaveBeenCalledWith('/app/owner')
   })
 })

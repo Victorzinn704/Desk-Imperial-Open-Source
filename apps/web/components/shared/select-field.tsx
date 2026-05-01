@@ -19,8 +19,8 @@ export function SelectField({ label, options, error, hint, className, ...props }
       <span className="text-sm font-medium text-[var(--text-muted)]">{label}</span>
       <select
         className={cn(
-          'h-12 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]',
-          error && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[rgba(245,132,132,0.18)]',
+          'flex h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]',
+          error && 'border-[var(--danger)] focus:border-[var(--danger)] focus:ring-[var(--danger)]',
           className,
         )}
         {...props}

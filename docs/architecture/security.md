@@ -1,7 +1,7 @@
 # Arquitetura de Segurança — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01
+**Versão:** 1.1  
+**Última atualização:** 2026-05-01
 
 ---
 
@@ -29,23 +29,24 @@ A segurança do Desk Imperial é construída em camadas. Cada camada resolve um 
 
 ### Como funciona
 
-A autenticação usa cookies HTTP-only — o JavaScript do cliente nunca acessa o token de sessão.
+A autenticação usa uma **sessão opaca** com cookie HttpOnly. O browser não acessa o token de sessão via JavaScript.
 
 **Cookies emitidos no login:**
 
-| Cookie                                   | Flags                          | Conteúdo                                    |
-| ---------------------------------------- | ------------------------------ | ------------------------------------------- |
-| `partner_session` (prod) / `dev_session` | HttpOnly, Secure, SameSite=Lax | Token opaco da sessão (hash SHA-256 do JWT) |
-| `partner_csrf` (prod) / `dev_csrf`       | Secure, SameSite=Lax           | Token CSRF legível pelo JS do cliente       |
+| Cookie                                                     | Flags                                   | Conteúdo                                                       |
+| ---------------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------- |
+| `partner_session` (dev) / `__Host-partner_session` (prod) | HttpOnly, Secure em prod, SameSite=Lax  | Token opaco aleatório da sessão                                |
+| `partner_csrf` (dev) / `__Host-partner_csrf` (prod)       | Secure em prod, SameSite=Lax            | Token CSRF legível pelo cliente para mutações                  |
+| `partner_admin_pin` / `__Host-partner_admin_pin`          | HttpOnly, Secure em prod, SameSite=Lax  | Prova curta de verificação do Admin PIN para ações sensíveis   |
 
-O cookie de sessão aponta para um registro no banco (`UserSession`). A cada requisição autenticada, o `SessionGuard` valida:
+O token opaco da sessão é persistido na entidade `Session` com `tokenHash` no banco. A cada requisição autenticada, o `SessionGuard` e o `AuthSessionService` validam:
 
-1. O cookie existe e pode ser lido
-2. O hash do cookie bate com o registro no banco
-3. A sessão não está expirada
-4. O usuário não está bloqueado
+1. o cookie de sessão existe
+2. o token resolve para uma sessão ativa
+3. a sessão não está expirada nem revogada
+4. o ator autenticado continua ativo e autorizado
 
-**Cache de sessão:** para não bater no banco a cada requisição, o contexto de autenticação fica cacheado no Redis por 5 minutos (`session:auth:{sessionId}`). O cache é invalidado no logout.
+**Cache de sessão:** o contexto de autenticação é cacheado por `tokenHash` e `sessionId`, com invalidação no logout/revogação. O caminho de autenticação também usa negative cache curto para reduzir churn de token inválido em reconnect e brute force.
 
 ---
 
@@ -67,12 +68,12 @@ Mutação (POST/PATCH/DELETE)
   → servidor compara: cookie CSRF == header == token esperado para a sessão
 ```
 
-O `CsrfGuard` executa três verificações com `timingSafeEqual` (resistente a timing attacks):
+O `CsrfGuard` executa verificações com `timingSafeEqual` (resistente a timing attacks):
 
 1. `cookieToken == headerToken` — garante que o header veio de código que leu o cookie
 2. `cookieToken == expectedToken` — garante que o token pertence à sessão atual
 
-O token esperado é derivado do `sessionId` via HMAC-SHA256 com o `CSRF_SECRET` da aplicação.
+O token esperado é derivado do `sessionId` via HMAC-SHA256 com `CSRF_SECRET` ou, em fallback controlado, `COOKIE_SECRET`.
 
 ### Verificação de origin
 
@@ -121,19 +122,19 @@ Protege ações sensíveis que um funcionário não deveria executar sem autoriz
 ### Fluxo de verificação
 
 ```
-1. Frontend solicita verificação: POST /admin-pin/verify
+1. Frontend solicita verificação: `POST /api/v1/admin/verify-pin`
 2. Servidor valida o PIN contra o hash (argon2id)
 3. Se correto:
-   → gera um challengeId único (randomBytes)
-   → cria uma entrada AdminPinVerification no Redis com TTL
-   → emite cookie HttpOnly com os dados da verificação
-4. Ação protegida é liberada
-5. AdminPinGuard verifica o cookie em cada endpoint protegido
+   → gera um `challengeId` único
+   → registra a prova efêmera no Redis com TTL
+   → emite um cookie HttpOnly curto com a prova da verificação
+4. A ação protegida é liberada
+5. `AdminPinGuard` verifica a prova curta e o vínculo com a sessão/workspace
 ```
 
 ### O que fica no cookie
 
-O cookie `partner_admin_pin` (prod) contém um objeto com:
+O cookie de verificação contém um objeto serializado com:
 
 - `challengeId` — UUID único por verificação
 - `workspaceOwnerUserId` — garante que a verificação pertence ao workspace certo
@@ -146,6 +147,21 @@ O cookie `partner_admin_pin` (prod) contém um objeto com:
 ### Anti-brute-force
 
 Após 3 tentativas incorretas em 5 minutos, o PIN é bloqueado por 5 minutos. O estado fica no Redis. Se o Redis estiver indisponível, o sistema rejeita a verificação por precaução.
+
+---
+
+## 5.1 Realtime autenticado
+
+O runtime de Socket.IO operacional usa o mesmo modelo de sessão do portal. O handshake aceita, nesta ordem:
+
+1. `handshake.auth.token`
+2. `handshake.auth.bearer`
+3. `handshake.auth.accessToken`
+4. header `Authorization: Bearer ...`
+5. header `X-Access-Token`
+6. cookie de sessão (`partner_session` / `__Host-partner_session`)
+
+Se a sessão estiver inválida, expirada ou revogada, o namespace `/operations` rejeita a conexão.
 
 ---
 
@@ -205,12 +221,13 @@ O sistema usa `sanitizePlainText` e redação explícita antes de qualquer outpu
 
 ## 9. Variáveis de ambiente críticas para segurança
 
-| Variável         | Uso                           | Risco se vazar               |
-| ---------------- | ----------------------------- | ---------------------------- |
-| `SESSION_SECRET` | Assina tokens de sessão       | Permite forjar sessões       |
-| `CSRF_SECRET`    | Deriva tokens CSRF por sessão | Permite bypass de CSRF       |
-| `DATABASE_URL`   | Conexão direta ao banco       | Acesso total aos dados       |
-| `REDIS_URL`      | Conexão ao Redis              | Acesso ao cache e rate limit |
+| Variável         | Uso                                                | Risco se vazar                                 |
+| ---------------- | -------------------------------------------------- | ---------------------------------------------- |
+| `COOKIE_SECRET`  | Endurece derivação e integridade de cookies        | Enfraquece a proteção de sessão/CSRF           |
+| `CSRF_SECRET`    | Deriva tokens CSRF por sessão                      | Permite bypass de CSRF                         |
+| `ENCRYPTION_KEY` | Cifra campos sensíveis protegidos no backend       | Exposição de dados criptografados em repouso   |
+| `DATABASE_URL`   | Conexão direta ao banco                            | Acesso total aos dados                         |
+| `REDIS_URL`      | Conexão ao Redis                                   | Acesso ao cache, rate limit e provas efêmeras  |
 
 Nenhuma dessas variáveis vai para o cliente. O `.env.example` contém apenas valores de placeholder.
 

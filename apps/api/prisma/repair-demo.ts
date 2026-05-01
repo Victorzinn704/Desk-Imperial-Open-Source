@@ -1,26 +1,8 @@
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import * as argon2 from 'argon2'
 import { ComandaStatus, PrismaClient } from '@prisma/client'
 import { isKitchenCategory } from '../src/common/utils/is-kitchen-category.util'
-
-function loadSeedEnv() {
-  if (typeof process.loadEnvFile !== 'function') {
-    return
-  }
-
-  const candidatePaths = [
-    resolve(process.cwd(), '.env'),
-    resolve(__dirname, '..', '.env'),
-    resolve(__dirname, '..', '..', '..', '.env'),
-  ]
-
-  for (const envPath of candidatePaths) {
-    if (existsSync(envPath)) {
-      process.loadEnvFile(envPath)
-    }
-  }
-}
+import { ensureEmployeeLoginUser } from '../src/modules/auth/auth-login-actor.utils'
+import { loadSeedEnv } from './seed-runtime'
 
 function normalizeTableLabel(value: string) {
   return value
@@ -42,10 +24,6 @@ async function main() {
 
   const owner = await prisma.user.findUnique({
     where: { email: companyEmail },
-    select: {
-      id: true,
-      email: true,
-    },
   })
 
   if (!owner) {
@@ -57,6 +35,19 @@ async function main() {
     prisma.employee.findMany({
       where: { userId: owner.id },
       orderBy: { employeeCode: 'asc' },
+      select: {
+        id: true,
+        active: true,
+        employeeCode: true,
+        displayName: true,
+        passwordHash: true,
+        loginUser: {
+          select: {
+            id: true,
+            passwordHash: true,
+          },
+        },
+      },
     }),
     prisma.product.findMany({
       where: {
@@ -93,9 +84,6 @@ async function main() {
   ])
 
   const employeePasswordHash = await argon2.hash(staffPassword, { type: argon2.argon2id })
-  const loginUserIds = employees
-    .map((employee) => employee.loginUserId)
-    .filter((value): value is string => Boolean(value))
   const kitchenProductIds = products
     .filter((product) => !product.requiresKitchen && isKitchenCategory(product.category))
     .map((product) => product.id)
@@ -121,26 +109,24 @@ async function main() {
     })
 
     if (employees.length > 0) {
-      await Promise.all(
-        employees.map((employee) =>
-          transaction.employee.update({
-            where: { id: employee.id },
-            data: {
-              passwordHash: employeePasswordHash,
-              active: true,
-            },
-          }),
-        ),
-      )
-    }
+      for (const employee of employees) {
+        await transaction.employee.update({
+          where: { id: employee.id },
+          data: {
+            passwordHash: employeePasswordHash,
+            active: true,
+          },
+        })
 
-    if (loginUserIds.length > 0) {
-      await transaction.user.updateMany({
-        where: { id: { in: loginUserIds } },
-        data: {
-          passwordHash: employeePasswordHash,
-        },
-      })
+        await ensureEmployeeLoginUser(transaction, {
+          employee: {
+            ...employee,
+            passwordHash: employeePasswordHash,
+          },
+          ownerUser: owner,
+          fallbackPasswordHash: employeePasswordHash,
+        })
+      }
     }
 
     if (kitchenProductIds.length > 0) {

@@ -1,7 +1,7 @@
 # Requisitos — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
+**Versão:** 1.1  
+**Última atualização:** 2026-05-01  
 **Base:** comportamento real do código em produção
 
 ---
@@ -36,8 +36,8 @@
 | ID      | Requisito                                               | Status       |
 | ------- | ------------------------------------------------------- | ------------ |
 | RF-02.1 | O sistema deve suportar dois papéis: OWNER e STAFF      | Implementado |
-| RF-02.2 | OWNER deve ter acesso a todas as seções do painel       | Implementado |
-| RF-02.3 | STAFF deve ter acesso apenas a PDV, vendas e calendário | Implementado |
+| RF-02.2 | OWNER deve ter acesso às superfícies administrativas, financeiras e operacionais do workspace | Implementado |
+| RF-02.3 | STAFF deve ter acesso apenas às superfícies operacionais permitidas para sua conta             | Implementado |
 | RF-02.4 | Dados de um workspace nunca devem ser visíveis em outro | Implementado |
 
 ---
@@ -76,21 +76,25 @@
 | ID      | Requisito                                                                                   | Status       |
 | ------- | ------------------------------------------------------------------------------------------- | ------------ |
 | RF-05.1 | O sistema deve propagar mudanças de comanda para todos os clientes conectados via Socket.IO | Implementado |
-| RF-05.2 | Cada workspace deve ter seu próprio canal de eventos isolado                                | Implementado |
-| RF-05.3 | A conexão Socket.IO deve ser autenticada — sessão inválida deve ser rejeitada               | Implementado |
-| RF-05.4 | O frontend deve aplicar patches otimistas sem recarregar a página                           | Implementado |
+| RF-05.2 | Cada workspace deve ter canais isolados por domínio operacional (`workspace`, `kitchen`, `mesa`, `cash`) | Implementado |
+| RF-05.3 | A conexão Socket.IO deve ser autenticada — sessão inválida deve ser rejeitada                              | Implementado |
+| RF-05.4 | O frontend deve aplicar patch local e refresh controlado sem recarregar a página                           | Implementado |
+| RF-05.5 | O sistema deve limitar eventos financeiros aos clientes autorizados                                          | Implementado |
 
 ---
 
 ### RF-06 — Gestão de produtos e portfólio
 
-| ID      | Requisito                                                                | Status                                                    |
-| ------- | ------------------------------------------------------------------------ | --------------------------------------------------------- |
-| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade | Implementado                                              |
-| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado    | Implementado                                              |
-| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão             | Implementado                                              |
-| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)       | Implementado                                              |
-| RF-06.5 | Importação de produtos via CSV                                           | Bloqueado (HTTP 410 — lógica existe, endpoint desativado) |
+| ID      | Requisito                                                                | Status       |
+| ------- | ------------------------------------------------------------------------ | ------------ |
+| RF-06.1 | OWNER deve poder cadastrar produtos com nome, preço, categoria e unidade | Implementado |
+| RF-06.2 | O sistema deve suportar combos com itens componentes e preço agrupado    | Implementado |
+| RF-06.3 | Produtos devem poder ser ativados e desativados sem exclusão             | Implementado |
+| RF-06.4 | OWNER deve poder definir preço em múltiplas moedas (BRL, USD, EUR)       | Implementado |
+| RF-06.5 | Importação de produtos via CSV                                           | Implementado |
+| RF-06.6 | OWNER deve poder cadastrar e buscar produtos por código de barras        | Implementado |
+| RF-06.7 | O sistema deve sugerir rascunho inteligente de produto via Gemini        | Implementado |
+| RF-06.8 | O cadastro rápido deve consultar catálogo auxiliar via Open Food Facts quando houver barcode válido | Implementado |
 
 ---
 
@@ -179,24 +183,36 @@
 
 ---
 
-### RF-15 — LGPD e consentimento
+### RF-15 — Telegram e preferências de notificação
 
-| ID      | Requisito                                                                    | Status       |
-| ------- | ---------------------------------------------------------------------------- | ------------ |
-| RF-15.1 | O sistema deve exibir banner de consentimento de cookies ao usuário          | Implementado |
-| RF-15.2 | Preferências de cookies devem ser armazenadas por usuário autenticado        | Implementado |
-| RF-15.3 | O sistema deve versionar documentos legais (termos, política de privacidade) | Implementado |
-| RF-15.4 | O aceite de documentos legais deve ser registrado com data e versão          | Implementado |
+| ID       | Requisito                                                                                     | Status       |
+| -------- | --------------------------------------------------------------------------------------------- | ------------ |
+| RF-15.1  | O sistema deve permitir vincular a conta do usuário ao bot oficial do Telegram                | Implementado |
+| RF-15.2  | O sistema deve permitir desvincular o chat vinculado                                          | Implementado |
+| RF-15.3  | O workspace deve poder configurar preferências de entrega por tipo de evento                  | Implementado |
+| RF-15.4  | O usuário deve poder configurar preferências pessoais de ruído operacional                    | Implementado |
+| RF-15.5  | O webhook do Telegram deve validar segredo compartilhado antes de processar eventos recebidos | Implementado |
 
 ---
 
-### RF-16 — Mobile
+### RF-16 — LGPD e consentimento
 
 | ID      | Requisito                                                                    | Status       |
 | ------- | ---------------------------------------------------------------------------- | ------------ |
-| RF-16.1 | OWNER deve ter painel executivo otimizado para celular                       | Implementado |
-| RF-16.2 | STAFF deve ter PDV e atendimento funcionais pelo celular                     | Implementado |
-| RF-16.3 | A interface mobile deve usar virtualização de listas longas para performance | Implementado |
+| RF-16.1 | O sistema deve exibir banner de consentimento de cookies ao usuário          | Implementado |
+| RF-16.2 | Preferências de cookies devem ser armazenadas por usuário autenticado        | Implementado |
+| RF-16.3 | O sistema deve versionar documentos legais (termos, política de privacidade) | Implementado |
+| RF-16.4 | O aceite de documentos legais deve ser registrado com data e versão          | Implementado |
+
+---
+
+### RF-17 — Mobile
+
+| ID      | Requisito                                                                    | Status       |
+| ------- | ---------------------------------------------------------------------------- | ------------ |
+| RF-17.1 | OWNER deve ter painel executivo otimizado para celular                       | Implementado |
+| RF-17.2 | STAFF deve ter PDV e atendimento funcionais pelo celular                     | Implementado |
+| RF-17.3 | A interface mobile deve usar componentes e listas ajustados para operação contínua | Implementado |
 
 ---
 
@@ -221,7 +237,7 @@
 | ID       | Requisito                                                                      | Status       |
 | -------- | ------------------------------------------------------------------------------ | ------------ |
 | RNF-02.1 | Cache Redis com TTL por domínio de dados (finanças, produtos, employees)       | Implementado |
-| RNF-02.2 | Snapshot de operações ao vivo com TTL de 30s e patch incremental via Socket.IO | Implementado |
+| RNF-02.2 | Snapshot de operações ao vivo com patch local, reconcile seletivo e fallback por refresh controlado | Implementado |
 | RNF-02.3 | Consultas críticas com índices compostos no banco (companyOwnerId + openedAt)  | Implementado |
 | RNF-02.4 | Virtualização de listas longas no frontend com TanStack Virtual                | Implementado |
 | RNF-02.5 | Build com code splitting e lazy loading por rota                               | Implementado |
@@ -232,9 +248,9 @@
 
 | ID       | Requisito                                                                        | Status       |
 | -------- | -------------------------------------------------------------------------------- | ------------ |
-| RNF-03.1 | Health check em `/api/health` com estado de DB e Redis                           | Implementado |
+| RNF-03.1 | Health check principal em `/api/v1/health` com estado de DB e Redis              | Implementado |
 | RNF-03.2 | Degradação graciosa quando Redis está indisponível (sem cache, sistema continua) | Implementado |
-| RNF-03.3 | Deploy contínuo via Railway com zero downtime                                    | Implementado |
+| RNF-03.3 | Runtime de produção hospedado em Oracle Cloud com banco PostgreSQL dedicado       | Implementado |
 
 ---
 
@@ -264,13 +280,12 @@
 | ID       | Requisito                                         | Status       |
 | -------- | ------------------------------------------------- | ------------ |
 | RNF-06.1 | Logging estruturado com request-id por requisição | Implementado |
-| RNF-06.2 | Monitoramento de erros/traces com stack OSS       | Implementado |
+| RNF-06.2 | Monitoramento de erros, traces e runtime com OpenTelemetry, Faro e Sentry | Implementado |
 
 ---
 
 ## Restrições conhecidas
 
-1. **Importação CSV de produtos** está desativada (HTTP 410). A lógica existe no service mas o endpoint foi bloqueado.
-2. **Observabilidade OSS** ainda está em rollout progressivo entre ambientes.
-3. **Service Worker** está limitado ao módulo `/app` — não cobre todas as rotas.
-4. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.
+1. **Realtime** ainda está em recuperação incremental de topologia, consistência e ruído.
+2. **Service Worker** cobre hoje as superfícies `/app` e `/lite`, mas ainda não é uma política única para todas as rotas públicas e experimentais.
+3. **Cobertura frontend** é parcial — os testes cobrem os módulos críticos mas não toda a superfície.

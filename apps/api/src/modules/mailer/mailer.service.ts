@@ -7,6 +7,7 @@ import {
   buildLoginAlertEmailContent,
   buildPasswordChangedEmailContent,
   buildPasswordResetEmailContent,
+  buildTelegramLinkedEmailContent,
 } from './mailer.templates'
 
 type DeliveryMode = 'brevo-api' | 'log'
@@ -47,7 +48,7 @@ export class MailerService {
       text: content.text,
       html: content.html,
       tags: content.tags,
-      fallbackLogMessage: `Email nao configurado. Codigo de redefinicao para ${params.to}: ${params.code}`,
+      fallbackLogMessage: `Email nao configurado. Codigo de redefinicao emitido para ${params.to}.`,
     })
   }
 
@@ -66,7 +67,7 @@ export class MailerService {
       text: content.text,
       html: content.html,
       tags: content.tags,
-      fallbackLogMessage: `Email nao configurado. Codigo de verificacao para ${params.to}: ${params.code}`,
+      fallbackLogMessage: `Email nao configurado. Codigo de verificacao emitido para ${params.to}.`,
     })
   }
 
@@ -76,7 +77,7 @@ export class MailerService {
       supportEmail: this.getSupportEmail(),
       fullName: params.fullName,
       changedAt: params.changedAt,
-      ipAddress: params.ipAddress,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
     })
 
     return this.sendTransactionalEmail({
@@ -101,8 +102,8 @@ export class MailerService {
       supportEmail: this.getSupportEmail(),
       fullName: params.fullName,
       occurredAt: params.occurredAt,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
+      ...(params.userAgent !== undefined ? { userAgent: params.userAgent } : {}),
     })
 
     return this.sendTransactionalEmail({
@@ -130,9 +131,9 @@ export class MailerService {
       fullName: params.fullName,
       occurredAt: params.occurredAt,
       attemptCount: params.attemptCount,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
-      locationSummary: params.locationSummary,
+      ...(params.ipAddress !== undefined ? { ipAddress: params.ipAddress } : {}),
+      ...(params.userAgent !== undefined ? { userAgent: params.userAgent } : {}),
+      ...(params.locationSummary !== undefined ? { locationSummary: params.locationSummary } : {}),
     })
 
     return this.sendTransactionalEmail({
@@ -168,6 +169,32 @@ export class MailerService {
       html: content.html,
       tags: content.tags,
       fallbackLogMessage: `Email nao configurado. Feedback recebido para ${params.to}, protocolo ${params.ticketId}.`,
+    })
+  }
+
+  async sendTelegramLinkedEmail(params: {
+    to: string
+    fullName: string
+    linkedAt: Date
+    telegramUsername?: string | null
+    telegramChatId: string
+  }) {
+    const content = buildTelegramLinkedEmailContent({
+      appName: this.getAppName(),
+      supportEmail: this.getSupportEmail(),
+      fullName: params.fullName,
+      linkedAt: params.linkedAt,
+      telegramChatId: params.telegramChatId,
+      ...(params.telegramUsername !== undefined ? { telegramUsername: params.telegramUsername } : {}),
+    })
+
+    return this.sendTransactionalEmail({
+      to: params.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      tags: content.tags,
+      fallbackLogMessage: `Email nao configurado. Telegram vinculado para ${params.to}.`,
     })
   }
 

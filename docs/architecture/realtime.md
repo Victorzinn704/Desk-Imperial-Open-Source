@@ -1,172 +1,265 @@
 # Tempo Real — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
+**Versão:** 1.1  
+**Última atualização:** 2026-05-01  
 **Tecnologia:** Socket.IO  
-**Namespace:** `/operations-realtime`
+**Namespace:** `/operations`
 
 ---
 
 ## Visão geral
 
-O sistema de tempo real do Desk Imperial permite que toda a equipe de um workspace veja o estado das comandas, caixa e mesas atualizado imediatamente, sem precisar recarregar a página.
+O realtime do Desk Imperial sincroniza comandas, cozinha, caixa e mesas entre as superfícies web e mobile sem recarga manual.
 
-Quando alguém abre uma comanda, muda o status ou fecha um pedido, essa mudança aparece na tela de todos os outros dispositivos conectados em menos de um segundo.
+O modelo atual combina:
+
+- mutação HTTP como fonte de verdade;
+- emissão de envelopes Socket.IO do servidor para o cliente;
+- patch local no cache do frontend;
+- refresh controlado quando o patch não basta ou quando a sessão volta de reconnect.
+
+Este documento descreve o comportamento atual da malha. O backlog de recuperação e redução de ruído fica em [../waves/realtime-recovery-plan-2026-05-01.md](../waves/realtime-recovery-plan-2026-05-01.md).
 
 ---
 
-## Arquitetura
+## Pipeline atual
 
-```
-┌─────────────┐     HTTP REST        ┌─────────────────┐
-│   Frontend  │ ──────────────────── │   API (NestJS)  │
-│  (Next.js)  │                      │                 │
-│             │     Socket.IO        │  operations-    │
-│             │ ════════════════════ │  realtime       │
-│             │  /operations-realtime│  gateway        │
-└─────────────┘                      └────────┬────────┘
-                                              │
-                                         Redis Pub/Sub
-                                              │
-                                     (outras instâncias
-                                      se houver scale)
+```text
+cliente -> HTTP /api/v1/operations/* -> service de dominio -> publish realtime
+        -> namespace /operations -> rooms do workspace -> patch local / reconcile
 ```
 
-**Fluxo de uma mutação:**
+Fluxo típico de mutação:
 
-```
-1. Frontend faz requisição REST (ex: PATCH /comanda/:id/status)
-2. API processa a mutação e persiste no banco
-3. API publica evento no canal do workspace via Redis Pub/Sub
-4. Gateway Socket.IO recebe o evento e emite para todos os clientes do workspace
-5. Frontend recebe o evento e aplica patch otimista no estado local
-   → Sem recarregar o snapshot completo
-   → Sem fazer nova requisição HTTP
-```
+1. o cliente envia uma mutação HTTP autenticada, por exemplo `POST /api/v1/operations/comandas/:comandaId/status`;
+2. a API valida sessão, CSRF e regra de negócio;
+3. após persistir o estado, a API publica um envelope realtime;
+4. o gateway emite o envelope nas rooms compatíveis com aquele domínio;
+5. o frontend aplica patch local e, se necessário, agenda refresh do baseline.
+
+---
+
+## Namespace, transport e ciclo de vida
+
+### Namespace
+
+- namespace atual: `/operations`
+
+### Transport
+
+- servidor aceita `websocket` e `polling`
+- cliente web atual conecta com `websocket` apenas, `upgrade: false`
+
+### Heartbeat
+
+- `pingInterval`: `25000`
+- `pingTimeout`: `20000`
+
+### Reconexão e retomada
+
+No cliente:
+
+- `reconnectionDelay`: `2000`
+- `reconnectionDelayMax`: `10000`
+- ao voltar para foreground ou recuperar conectividade, o cliente pede refresh controlado do baseline
+- eventos tratados explicitamente:
+  - `visibilitychange`
+  - `pageshow`
+  - `online`
+  - `operations.error`
 
 ---
 
 ## Autenticação da conexão
 
-A conexão Socket.IO **exige sessão válida**. Conexões sem sessão são rejeitadas antes de qualquer evento ser processado.
+A conexão realtime exige sessão válida.
 
-**Fluxo de autenticação:**
+O gateway aceita autenticação via:
 
-```
-1. Cliente tenta conectar ao namespace /operations-realtime
-2. Gateway verifica o cookie de sessão na requisição de handshake
-3. Se sessão inválida ou expirada → desconecta imediatamente
-4. Se sessão válida → associa socket ao workspace (companyOwnerId)
-5. Cliente entra na sala do workspace
-```
+- cookie de sessão;
+- `Authorization: Bearer ...`;
+- `X-Access-Token`;
+- campos equivalentes no handshake do Socket.IO.
 
-**Isolamento:** cada workspace tem sua própria sala Socket.IO. Um evento emitido para o workspace A nunca chega ao workspace B.
+Fluxo atual:
+
+1. cliente tenta conectar em `/operations`;
+2. gateway valida origem permitida;
+3. aplica rate limit básico de churn de conexão;
+4. valida a sessão;
+5. se falhar, emite `operations.error` e desconecta;
+6. se aceitar, associa o socket à sessão e às rooms do workspace.
 
 ---
 
-## Eventos
+## Topologia de rooms
 
-### Eventos emitidos pelo servidor → cliente
+A malha já não trabalha só com uma room única.
 
-| Evento             | Quando é emitido                          | Payload                      |
-| ------------------ | ----------------------------------------- | ---------------------------- |
-| `comanda:created`  | Nova comanda aberta                       | dados completos da comanda   |
-| `comanda:updated`  | Status, itens ou dados da comanda mudaram | dados atualizados            |
-| `comanda:closed`   | Comanda fechada                           | id e timestamp de fechamento |
-| `cash:updated`     | Caixa aberto ou fechado                   | dados da sessão de caixa     |
-| `operations:patch` | Patch incremental do snapshot             | diff com as mudanças         |
+Rooms atuais:
 
-### Eventos emitidos pelo cliente → servidor
+- `workspace:{workspaceOwnerUserId}`
+- `workspace:{workspaceOwnerUserId}:kitchen`
+- `workspace:{workspaceOwnerUserId}:cash`
+- `workspace:{workspaceOwnerUserId}:mesa`
+- `workspace:{workspaceOwnerUserId}:employee:{employeeId}`
 
-O frontend **não emite eventos** para mudar estado. Toda mutação passa pela API REST com validação CSRF.
+Assinatura atual por role:
 
-O Socket.IO no Desk Imperial é **unidirecional do servidor para o cliente** — o servidor publica, o cliente consome.
+- `OWNER`
+  - `workspace`
+  - `kitchen`
+  - `mesa`
+  - `cash`
+- `STAFF`
+  - `workspace`
+  - `kitchen`
+  - `mesa`
+  - `employee:{employeeId}` quando aplicável
+
+Objetivo prático:
+
+- reduzir fan-out desnecessário;
+- impedir que STAFF receba eventos financeiros;
+- manter compatibilidade de `comanda.*` no canal amplo enquanto a malha ainda é refinada.
+
+---
+
+## Eventos atuais
+
+### Servidor -> cliente
+
+| Evento | Uso principal | Canal atual |
+| --- | --- | --- |
+| `cash.opened` | abertura de caixa | `cash` |
+| `cash.updated` | atualização de sessão de caixa | `cash` |
+| `cash.closure.updated` | consolidação/fechamento de caixa | `cash` |
+| `comanda.opened` | nova comanda | `workspace` |
+| `comanda.updated` | mudança de status ou conteúdo da comanda | `workspace` |
+| `comanda.closed` | fechamento de comanda | `workspace` |
+| `kitchen.item.queued` | entrada de item na cozinha | `kitchen` |
+| `kitchen.item.updated` | avanço de item na cozinha | `kitchen` |
+| `mesa.upserted` | mudança de mesa/planta operacional | `mesa` |
+
+### Cliente -> servidor
+
+O cliente não emite eventos de mutação operacional para alterar estado.
+
+Toda mudança de estado continua passando por HTTP autenticado + CSRF.  
+O Socket.IO é usado como trilha de propagação do servidor para os clientes.
+
+---
+
+## Payloads e autoridade de estado
+
+O envelope atual inclui:
+
+- `id`
+- `event`
+- `workspaceOwnerUserId`
+- `actorUserId`
+- `actorRole`
+- `createdAt`
+- `payload`
+
+O payload ainda é híbrido:
+
+- alguns eventos são deltas pequenos;
+- outros carregam dados mais largos, como `cashSession` ou `kitchenItems`;
+- `comanda.updated` ainda é um evento coringa e por isso continua sendo ponto de atenção.
+
+Em outras palavras:
+
+- a malha atual funciona;
+- mas o contrato ainda não é o mais enxuto possível;
+- o backlog de deltas, ordering e correlator permanece aberto.
 
 ---
 
 ## Comportamento do frontend
 
-### Conexão
+O hook base do cliente:
 
-O hook `use-operations-realtime.ts` gerencia o ciclo de vida da conexão:
+- monta a conexão quando a superfície operacional está ativa;
+- registra listeners de todos os eventos operacionais conhecidos;
+- desconecta com cleanup explícito ao desmontar;
+- trata `operations.error` como falha semântica de sessão, não só queda de socket.
 
-```
-1. Monta quando o usuário está autenticado e no painel
-2. Conecta ao namespace /operations-realtime com cookie de sessão
-3. Registra listeners para os eventos relevantes
-4. Desmonta e desconecta quando o componente sai da tela
-```
+Modelo atual de sincronização:
 
-### Patch otimista
+1. recebe envelope;
+2. tenta aplicar patch local sobre o cache;
+3. registra métricas de processamento;
+4. se o patch não fecha o estado, agenda reconcile/invalidate controlado.
 
-Ao receber um evento, o frontend atualiza o estado local via `setQueryData` do TanStack Query **sem invalidar a query** (sem nova requisição HTTP):
+O sistema já tem instrumentação para:
 
-```typescript
-// Exemplo conceitual — não é o código real
-queryClient.setQueryData(OPERATIONS_LIVE_KEY, (prev) => {
-  return applyPatch(prev, event.payload)
-})
-```
-
-Isso garante que a tela atualize em milissegundos, com zero latência de rede adicional.
-
-### Cache e TTL
-
-O snapshot ao vivo tem TTL de 30 segundos no Redis. Quando o cache expira:
-
-- A próxima requisição HTTP busca o snapshot completo do banco
-- Enquanto o cache é válido, atualizações chegam via Socket.IO
+- lifecycle do socket;
+- envelope processado;
+- reconcile agendado/mesclado/settled;
+- refresh após reconnect.
 
 ---
 
-## Redis Pub/Sub
+## Redis adapter e escala horizontal
 
-Em produção, o Desk Imperial usa o Redis como adapter do Socket.IO. Isso permite que múltiplas instâncias da API se comuniquem:
+Quando `REDIS_URL` está disponível:
 
-```
-Instância A (recebe mutação)
-    → publica evento no Redis channel do workspace
+- o gateway configura o `@socket.io/redis-adapter`;
+- múltiplas instâncias conseguem propagar eventos entre si.
 
-Instância B (tem clientes conectados)
-    → recebe evento do Redis
-    → emite para os clientes Socket.IO conectados
-```
+Quando Redis não está disponível:
 
-**Configuração:**
+- o gateway cai para adapter em memória;
+- o realtime continua funcional em instância única;
+- a escala horizontal deixa de propagar eventos entre nós.
 
-- `REDIS_URL` é usado tanto para cache quanto para Pub/Sub
-- Se Redis não estiver disponível, Socket.IO funciona apenas em uma instância (sem sincronização entre instâncias)
+O runtime atual grava telemetria explícita sobre esse estado.
 
 ---
 
-## Garantias e limitações
+## Garantias e limitações atuais
 
-### O que é garantido
+### Garantido hoje
 
-- Isolamento: eventos de um workspace nunca chegam a outro
-- Autenticação: conexões sem sessão válida são rejeitadas
-- Consistência eventual: se o cliente perde a conexão, ao reconectar busca o snapshot completo via HTTP
+- autenticação de sessão no handshake;
+- isolamento por workspace;
+- rooms segmentadas por domínio operacional;
+- refresh controlado após reconnect/foreground;
+- fallback para baseline HTTP quando o patch não basta.
 
-### O que não é garantido
+### Não garantido hoje
 
-- **Entrega exatamente uma vez:** se o cliente estiver offline no momento do evento, ele não recebe o evento histórico. A reconciliação acontece via HTTP no próximo `refetch`.
-- **Ordem absoluta dos eventos:** em cenários de alta concorrência, a ordem de chegada dos eventos pode variar. O design assume que o estado final é sempre reconciliável via snapshot HTTP.
+- replay de evento perdido;
+- ordering absoluto entre eventos concorrentes;
+- entrega exatamente uma vez;
+- correlator completo entre mutação otimista e evento real em toda a malha.
+
+Por isso a consistência atual é:
+
+- forte na mutação HTTP;
+- eventual no cliente reconnectado;
+- ainda dependente de reconcile em alguns fluxos.
 
 ---
 
-## Diagnóstico
+## Diagnóstico operacional
 
-**Como verificar se o Socket.IO está funcionando:**
+Validação mínima:
 
-1. Acesse `GET /api/health` — verifica se Redis está acessível
-2. Abra o painel em dois dispositivos com o mesmo usuário
-3. Abra uma comanda em um dispositivo — deve aparecer no outro em menos de 1 segundo
+1. `GET /api/v1/health`
+2. abrir a mesma superfície operacional em duas sessões do mesmo workspace
+3. disparar:
+   - abertura de comanda
+   - atualização de item de cozinha
+   - fechamento de comanda
+4. confirmar propagação nas telas corretas
 
-**Problemas comuns:**
+Problemas comuns:
 
-| Sintoma                                     | Causa provável                | Solução                                         |
-| ------------------------------------------- | ----------------------------- | ----------------------------------------------- |
-| Atualizações não chegam em tempo real       | Redis offline                 | Verificar `REDIS_URL` e status do Redis         |
-| Conexão cai imediatamente                   | Sessão expirada               | Verificar TTL da sessão e cookies               |
-| Atualizações chegam apenas em uma instância | Redis Pub/Sub não configurado | Verificar `REDIS_URL` nas variáveis de ambiente |
-| Eventos de outro workspace chegando         | Bug crítico                   | Abrir issue imediatamente                       |
+| Sintoma | Causa provável | Ação recomendada |
+| --- | --- | --- |
+| conexão cai logo ao abrir a tela | sessão inválida, origem rejeitada ou rate limit de churn | revisar cookies, origem e logs do gateway |
+| staff recebe dado financeiro | regressão de room scoping | auditar `resolveOperationsRealtimeEventChannels` e joins por role |
+| reconnect volta “conectado” mas com estado velho | patch não fechou o estado e baseline não refrescou | revisar `onReconnect` e reconcile |
+| funciona em instância única e falha em scale | Redis adapter ausente ou degradado | validar `REDIS_URL` e telemetria do adapter |

@@ -8,7 +8,7 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { OwnerMobileShell } from './owner-mobile-shell'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as api from '@/lib/api'
@@ -19,6 +19,10 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
+const { useOperationsRealtimeMock } = vi.hoisted(() => ({
+  useOperationsRealtimeMock: vi.fn(() => ({ status: 'connected' })),
+}))
+
 // Mock das dependências
 vi.mock('@/lib/api', () => ({
   fetchOperationsLive: vi.fn(),
@@ -26,11 +30,15 @@ vi.mock('@/lib/api', () => ({
   fetchOperationsSummary: vi.fn(),
   fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
+  fetchFinanceSummary: vi.fn(),
+  fetchComandaDetails: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
+  replaceComanda: vi.fn(),
   addComandaItem: vi.fn(),
   addComandaItems: vi.fn(),
   closeComanda: vi.fn(),
+  createComandaPayment: vi.fn(),
   updateComandaStatus: vi.fn(),
   openCashSession: vi.fn(),
   ApiError: class ApiError extends Error {
@@ -43,7 +51,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 vi.mock('../operations/use-operations-realtime', () => ({
-  useOperationsRealtime: vi.fn(() => ({ status: 'connected' })),
+  useOperationsRealtime: useOperationsRealtimeMock,
 }))
 
 // Mock do QueryClient
@@ -67,12 +75,15 @@ describe('OwnerMobileShell', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useOperationsRealtimeMock.mockReturnValue({ status: 'connected' })
     testQueryClient = createTestQueryClient()
     const mockFetchOperationsLive = vi.mocked(api.fetchOperationsLive)
     const mockFetchOperationsKitchen = vi.mocked(api.fetchOperationsKitchen)
     const mockFetchOperationsSummary = vi.mocked(api.fetchOperationsSummary)
     const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
+    const mockFetchFinanceSummary = vi.mocked(api.fetchFinanceSummary)
+    const mockFetchComandaDetails = vi.mocked(api.fetchComandaDetails)
 
     const mockSnapshot = buildOperationsSnapshot({
       closure: {
@@ -89,7 +100,7 @@ describe('OwnerMobileShell', () => {
           comandas: [
             {
               id: 'c-1',
-              status: 'CLOSED',
+              status: 'OPEN',
               tableLabel: '1',
               totalAmount: 120,
               openedAt: '2026-03-28T10:00:00.000Z',
@@ -128,6 +139,41 @@ describe('OwnerMobileShell', () => {
     })
 
     mockFetchOperationsLive.mockResolvedValue(mockSnapshot)
+    mockFetchComandaDetails.mockResolvedValue({
+      comanda: {
+        id: 'c-2',
+        companyOwnerId: mockSnapshot.companyOwnerId,
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-2',
+        currentEmployeeId: 'emp-1',
+        tableLabel: '2',
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: 'OPEN',
+        subtotalAmount: 80,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 80,
+        notes: null,
+        openedAt: '2026-03-28T11:00:00.000Z',
+        closedAt: null,
+        items: [
+          {
+            id: 'i-2',
+            productId: null,
+            productName: 'Café',
+            quantity: 1,
+            unitPrice: 10,
+            totalAmount: 10,
+            notes: null,
+            kitchenStatus: 'QUEUED',
+            kitchenQueuedAt: '2026-03-28T11:00:00.000Z',
+            kitchenReadyAt: null,
+          },
+        ],
+      },
+    })
     mockFetchOperationsKitchen.mockResolvedValue({
       businessDate: mockSnapshot.businessDate,
       companyOwnerId: mockSnapshot.companyOwnerId,
@@ -269,6 +315,59 @@ describe('OwnerMobileShell', () => {
     }
     mockFetchOrders.mockResolvedValue(mockOrdersResponse)
     mockFetchProducts.mockResolvedValue(mockProductsResponse)
+    mockFetchFinanceSummary.mockResolvedValue({
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      totals: {
+        activeProducts: 3,
+        inventoryUnits: 30,
+        inventoryCostValue: 300,
+        inventorySalesValue: 600,
+        potentialProfit: 300,
+        realizedRevenue: 300,
+        realizedCost: 180,
+        realizedProfit: 120,
+        completedOrders: 2,
+        currentMonthRevenue: 300,
+        currentMonthProfit: 120,
+        previousMonthRevenue: 200,
+        previousMonthProfit: 80,
+        revenueGrowthPercent: 50,
+        profitGrowthPercent: 50,
+        averageMarginPercent: 40,
+        averageMarkupPercent: 66.6,
+        lowStockItems: 0,
+      },
+      categoryBreakdown: [
+        {
+          category: 'Petiscos',
+          products: 2,
+          units: 12,
+          inventoryCostValue: 120,
+          inventorySalesValue: 240,
+          potentialProfit: 120,
+        },
+        {
+          category: 'Cervejas',
+          products: 1,
+          units: 18,
+          inventoryCostValue: 180,
+          inventorySalesValue: 360,
+          potentialProfit: 180,
+        },
+      ],
+      topProducts: [],
+      recentOrders: [],
+      revenueTimeline: [],
+      salesByChannel: [],
+      topCustomers: [],
+      topEmployees: [],
+      salesMap: [],
+      topRegions: [],
+      categoryTopProducts: {},
+    })
 
     // Pré-popula o cache para evitar estados de "loading" nos testes
     testQueryClient.setQueryData(OPERATIONS_LIVE_COMPACT_QUERY_KEY, mockSnapshot)
@@ -393,30 +492,80 @@ describe('OwnerMobileShell', () => {
         },
       } as unknown as Awaited<ReturnType<typeof api.fetchOrders>>,
     )
-    testQueryClient.setQueryData(
-      ['products'],
-      {
-        displayCurrency: 'BRL',
-        ratesUpdatedAt: null,
-        ratesSource: 'fallback',
-        ratesNotice: null,
-        items: [],
-        totals: {
-          totalProducts: 0,
-          activeProducts: 0,
-          inactiveProducts: 0,
-          stockUnits: 0,
-          stockPackages: 0,
-          stockLooseUnits: 0,
-          stockBaseUnits: 0,
-          inventoryCostValue: 0,
-          inventorySalesValue: 0,
-          potentialProfit: 0,
-          averageMarginPercent: 0,
-          categories: [],
+    testQueryClient.setQueryData(['products'], {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      items: [],
+      totals: {
+        totalProducts: 0,
+        activeProducts: 0,
+        inactiveProducts: 0,
+        stockUnits: 0,
+        stockPackages: 0,
+        stockLooseUnits: 0,
+        stockBaseUnits: 0,
+        inventoryCostValue: 0,
+        inventorySalesValue: 0,
+        potentialProfit: 0,
+        averageMarginPercent: 0,
+        categories: [],
+      },
+    } as unknown as Awaited<ReturnType<typeof api.fetchProducts>>)
+    testQueryClient.setQueryData(['finance', 'summary', 'owner-mobile'], {
+      displayCurrency: 'BRL',
+      ratesUpdatedAt: null,
+      ratesSource: 'fallback',
+      ratesNotice: null,
+      totals: {
+        activeProducts: 3,
+        inventoryUnits: 30,
+        inventoryCostValue: 300,
+        inventorySalesValue: 600,
+        potentialProfit: 300,
+        realizedRevenue: 300,
+        realizedCost: 180,
+        realizedProfit: 120,
+        completedOrders: 2,
+        currentMonthRevenue: 300,
+        currentMonthProfit: 120,
+        previousMonthRevenue: 200,
+        previousMonthProfit: 80,
+        revenueGrowthPercent: 50,
+        profitGrowthPercent: 50,
+        averageMarginPercent: 40,
+        averageMarkupPercent: 66.6,
+        lowStockItems: 0,
+      },
+      categoryBreakdown: [
+        {
+          category: 'Petiscos',
+          products: 2,
+          units: 12,
+          inventoryCostValue: 120,
+          inventorySalesValue: 240,
+          potentialProfit: 120,
         },
-      } as unknown as Awaited<ReturnType<typeof api.fetchProducts>>,
-    )
+        {
+          category: 'Cervejas',
+          products: 1,
+          units: 18,
+          inventoryCostValue: 180,
+          inventorySalesValue: 360,
+          potentialProfit: 180,
+        },
+      ],
+      topProducts: [],
+      recentOrders: [],
+      revenueTimeline: [],
+      salesByChannel: [],
+      topCustomers: [],
+      topEmployees: [],
+      salesMap: [],
+      topRegions: [],
+      categoryTopProducts: {},
+    } as unknown as Awaited<ReturnType<typeof api.fetchFinanceSummary>>)
   })
 
   const renderWithClient = (ui: React.ReactElement) => {
@@ -434,15 +583,14 @@ describe('OwnerMobileShell', () => {
     const user = userEvent.setup()
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
 
-    // Verifica se a navegação está presente
-    expect(screen.getByTestId('nav-mesas')).toBeInTheDocument()
-    expect(screen.getByTestId('nav-cozinha')).toBeInTheDocument()
+    expect(screen.getByTestId('nav-today')).toBeInTheDocument()
+    expect(screen.getByTestId('nav-pdv')).toBeInTheDocument()
 
-    const kitchenTab = screen.getByTestId('nav-cozinha')
-    await user.click(kitchenTab)
+    await user.click(screen.getByTestId('nav-pdv'))
+    await user.click(screen.getByTestId('owner-pdv-cozinha'))
 
     await waitFor(() => {
-      expect(screen.getByText('Na fila')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /iniciar preparo/i })).toBeInTheDocument()
     })
   })
 
@@ -460,12 +608,8 @@ describe('OwnerMobileShell', () => {
     })
   })
 
-  it('deve exibir o resumo executivo na aba resumo', async () => {
-    const user = userEvent.setup()
-
+  it('deve exibir o resumo executivo na aba Hoje', async () => {
     renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
-
-    await user.click(screen.getByTestId('nav-resumo'))
 
     await waitFor(() => {
       expect(screen.getByTestId('owner-kpi-receita')).toHaveTextContent('320,00')
@@ -473,5 +617,90 @@ describe('OwnerMobileShell', () => {
       expect(screen.getByTestId('owner-kpi-comandas')).toHaveTextContent('2')
       expect(screen.getByText('Ranking garçons')).toBeInTheDocument()
     })
+  })
+
+  it('permite fechar uma comanda aberta pelo mobile do owner', async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.closeComanda).mockResolvedValue({
+      comanda: {
+        id: 'c-2',
+        companyOwnerId: 'owner-1',
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-2',
+        currentEmployeeId: 'emp-1',
+        tableLabel: '2',
+        customerName: null,
+        customerDocument: null,
+        participantCount: 1,
+        status: 'CLOSED',
+        subtotalAmount: 80,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 80,
+        paidAmount: 80,
+        remainingAmount: 0,
+        paymentStatus: 'PAID',
+        notes: null,
+        openedAt: '2026-03-28T11:00:00.000Z',
+        closedAt: '2026-03-28T11:20:00.000Z',
+        payments: [
+          {
+            id: 'pay-1',
+            amount: 80,
+            method: 'PIX',
+            note: null,
+            paidAt: '2026-03-28T11:20:00.000Z',
+            status: 'CONFIRMED',
+          },
+        ],
+        items: [],
+      },
+    })
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+
+    await user.click(screen.getByTestId('nav-comandas'))
+    const comandaCard = await screen.findByTestId('owner-comanda-card-c-2')
+    await user.click(comandaCard.querySelector('button') as HTMLButtonElement)
+    await user.click(await screen.findByRole('button', { name: /pagar restante e fechar/i }))
+
+    await waitFor(() => {
+      expect(api.closeComanda).toHaveBeenCalledWith(
+        'c-2',
+        { discountAmount: 0, paymentMethod: 'PIX', serviceFeeAmount: 0 },
+        { includeSnapshot: false },
+      )
+    })
+  })
+
+  it('expõe aviso offline na visão de mesas do owner quando a conexão cai', async () => {
+    const user = userEvent.setup()
+    useOperationsRealtimeMock.mockReturnValue({ status: 'disconnected' })
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+    await user.click(screen.getByTestId('nav-pdv'))
+
+    expect(await screen.findByText(/O PDV pode estar desatualizado até a reconexão/i)).toBeInTheDocument()
+  })
+
+  it('abre primeiro a comanda ao tocar em uma mesa ocupada e só depois edita itens', async () => {
+    const user = userEvent.setup()
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+    await user.click(screen.getByTestId('nav-pdv'))
+    await user.click(await screen.findByTestId('mobile-mesa-mesa-1'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('owner-comanda-card-c-1')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('nav-comandas')).toBeInTheDocument()
+
+    await user.click(await screen.findByRole('button', { name: /editar \/ adicionar itens/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Editar comanda')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Buscar produto...')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('nav-pdv')).not.toBeInTheDocument()
   })
 })

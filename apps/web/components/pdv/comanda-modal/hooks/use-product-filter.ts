@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { normalizeTextForSearch } from '@/lib/normalize-text-for-search'
 import type { SimpleProduct } from '../types'
 
@@ -8,6 +8,7 @@ export function useProductFilter(products: SimpleProduct[]) {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const trimmedSearch = search.trim()
+  const deferredSearch = useDeferredValue(search)
 
   const categories = useMemo(
     () =>
@@ -17,21 +18,33 @@ export function useProductFilter(products: SimpleProduct[]) {
     [products],
   )
 
-  const filtered = useMemo(
-    () => {
-      const normalizedSearch = normalizeTextForSearch(search)
+  const searchIndex = useMemo(
+    () =>
+      products.map((product) => ({
+        category: product.category,
+        normalizedCategory: normalizeTextForSearch(product.category),
+        normalizedName: normalizeTextForSearch(product.name),
+        product,
+      })),
+    [products],
+  )
 
-      return products.filter((p) => {
+  const filtered = useMemo(() => {
+    const normalizedSearch = normalizeTextForSearch(deferredSearch)
+
+    return searchIndex
+      .filter((entry) => {
         const matchSearch =
           normalizedSearch.length === 0 ||
-          normalizeTextForSearch(p.name).includes(normalizedSearch) ||
-          normalizeTextForSearch(p.category).includes(normalizedSearch)
-        const matchCat = selectedCategory ? p.category === selectedCategory : true
+          entry.normalizedName.includes(normalizedSearch) ||
+          entry.normalizedCategory.includes(normalizedSearch)
+        const matchCat = selectedCategory ? entry.category === selectedCategory : true
         return matchSearch && matchCat
       })
-    },
-    [products, search, selectedCategory],
-  )
+      .map((entry) => {
+        return entry.product
+      })
+  }, [deferredSearch, searchIndex, selectedCategory])
 
   return {
     search,
@@ -40,6 +53,7 @@ export function useProductFilter(products: SimpleProduct[]) {
     setSelectedCategory,
     categories,
     filtered,
-    showProducts: selectedCategory !== null || trimmedSearch.length > 0 || categories.length === 0,
+    showProducts:
+      products.length > 0 || selectedCategory !== null || trimmedSearch.length > 0 || categories.length === 0,
   }
 }

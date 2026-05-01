@@ -1,554 +1,65 @@
 'use client'
 
-import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react'
-import type { Comanda, ComandaStatus } from '@/components/pdv/pdv-types'
-import { calcSubtotal, calcTotal, formatElapsed } from '@/components/pdv/pdv-types'
-import { Plus, Trash2, Edit2, ChevronDown, ChevronRight } from 'lucide-react'
-import { OperationEmptyState } from '@/components/operations/operation-empty-state'
-import { formatBRL as formatCurrency } from '@/lib/currency'
-import { useQuery } from '@tanstack/react-query'
-import { fetchComandaDetails } from '@/lib/api'
-import { toPdvComanda } from '@/components/pdv/pdv-operations'
+import { MobileComandaListContent } from './mobile-comanda-list.content'
+import { MobileComandaListEmptyState } from './mobile-comanda-list.empty-state'
+import { resolveMobileComandaListContentState } from './mobile-comanda-list.helpers'
+import type { MobileComandaListProps } from './mobile-comanda-list.types'
+import { useMobileComandaListController } from './use-mobile-comanda-list-controller'
 
-interface MobileComandaListProps {
-  comandas: Comanda[]
-  onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
-  onAddItems?: (comanda: Comanda) => void
-  onNewComanda?: () => void
-  onCancelComanda?: (id: string) => Promise<void> | void
-  onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
-  focusedId?: string | null
-  onFocus?: (id: string | null) => void
-}
-
-type StatusConfig = {
-  label: string
-  chipColor: string
-  chipBg: string
-  nextStatus: ComandaStatus | null
-  nextLabel: string | null
-  nextBg: string
-}
-
-const STATUS_CONFIG: Record<Exclude<ComandaStatus, 'fechada'>, StatusConfig> = {
-  aberta: {
-    label: 'Aberta',
-    chipColor: '#60a5fa',
-    chipBg: 'rgba(96, 165, 250, 0.12)',
-    nextStatus: 'em_preparo',
-    nextLabel: 'Iniciar preparo',
-    nextBg: 'rgba(251, 146, 60, 0.15)',
-  },
-  em_preparo: {
-    label: 'Em Preparo',
-    chipColor: '#fb923c',
-    chipBg: 'rgba(251, 146, 60, 0.12)',
-    nextStatus: 'pronta',
-    nextLabel: 'Marcar pronta',
-    nextBg: 'rgba(54, 245, 124, 0.12)',
-  },
-  pronta: {
-    label: 'Pronta',
-    chipColor: '#36f57c',
-    chipBg: 'rgba(54, 245, 124, 0.12)',
-    nextStatus: 'fechada',
-    nextLabel: 'Fechar comanda',
-    nextBg: 'rgba(122, 136, 150, 0.12)',
-  },
-}
-
-interface ComandaCardProps {
-  comanda: Comanda
-  isFocused: boolean
-  onUpdateStatus: (id: string, status: ComandaStatus) => Promise<void> | void
-  onAddItems?: (comanda: Comanda) => void
-  onCancelComanda?: (id: string) => Promise<void> | void
-  onCloseComanda?: (id: string, discountPercent: number, surchargePercent: number) => Promise<void> | void
-  onFocus?: (id: string | null) => void
-}
-
+// eslint-disable-next-line max-lines-per-function
 export function MobileComandaList({
   comandas,
+  currentEmployeeId = null,
   onUpdateStatus,
   onAddItems,
   onNewComanda,
   onCancelComanda,
   onCloseComanda,
+  onCreatePayment,
   focusedId,
   onFocus,
+  isLoading = false,
+  isOffline = false,
+  errorMessage = null,
+  isBusy = false,
+  summary,
 }: MobileComandaListProps) {
-  const active = useMemo(() => comandas.filter((c) => c.status !== 'fechada'), [comandas])
-  const focusedRef = useRef<HTMLLIElement | null>(null)
+  const controller = useMobileComandaListController({ comandas, focusedId })
+  const contentState = resolveMobileComandaListContentState({
+    count: controller.active.length,
+    errorMessage,
+    isLoading,
+    isOffline,
+  })
 
-  // scroll focused comanda into view when it changes
-  useEffect(() => {
-    if (focusedId && focusedRef.current) {
-      focusedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }, [focusedId])
-
-  // sort: focused first, then by openedAt desc
-  const sorted = useMemo(() => {
-    if (!focusedId) {
-      return active
-    }
-
-    return [...active].sort((a, b) => {
-      if (a.id === focusedId) return -1
-      if (b.id === focusedId) return 1
-      return b.abertaEm.getTime() - a.abertaEm.getTime()
-    })
-  }, [active, focusedId])
-
-  const fechadas = useMemo(() => comandas.filter((c) => c.status === 'fechada'), [comandas])
-
-  if (active.length === 0 && fechadas.length === 0) {
+  if (contentState !== 'items') {
     return (
-      <OperationEmptyState
-        title="Nenhuma comanda ativa"
-        description="Crie um pedido em uma mesa para começar."
-        Icon={Plus}
-        action={
-          onNewComanda ? (
-            <button
-              type="button"
-              onClick={onNewComanda}
-              className="flex items-center gap-2 rounded-xl bg-[rgba(155,132,96,0.15)] px-5 py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-opacity active:opacity-70"
-            >
-              <Plus className="size-4" />
-              Nova comanda
-            </button>
-          ) : null
-        }
+      <MobileComandaListEmptyState
+        errorMessage={contentState === 'loading' ? null : errorMessage}
+        isBusy={isBusy}
+        isLoading={contentState === 'loading'}
+        isOffline={contentState === 'offline'}
+        onNewComanda={onNewComanda}
       />
     )
   }
 
   return (
-    <div className="p-4">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-          Comandas ativas — {active.length}
-        </p>
-        {onNewComanda && (
-          <button
-            type="button"
-            onClick={onNewComanda}
-            className="flex items-center gap-1.5 rounded-xl border border-[rgba(155,132,96,0.3)] bg-[rgba(155,132,96,0.1)] px-3 py-1.5 text-xs font-semibold text-[var(--accent,#9b8460)] transition-colors active:bg-[rgba(155,132,96,0.2)]"
-          >
-            <Plus className="size-3.5" />
-            Nova
-          </button>
-        )}
-      </div>
-
-      <ul className="space-y-4">
-        {sorted.map((comanda) => {
-          const isFocused = comanda.id === focusedId
-
-          return (
-            <ComandaCard
-              key={comanda.id}
-              comanda={comanda}
-              isFocused={isFocused}
-              ref={isFocused ? focusedRef : undefined}
-              onFocus={onFocus}
-              onAddItems={onAddItems}
-              onUpdateStatus={onUpdateStatus}
-              onCancelComanda={onCancelComanda}
-              onCloseComanda={onCloseComanda}
-            />
-          )
-        })}
-      </ul>
-
-      {/* Comprovantes — tocáveis para ver extrato */}
-      {fechadas.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-            Comprovantes — {fechadas.length}
-          </p>
-          <ul className="space-y-2">
-            {fechadas.map((comanda) => (
-              <ExtratoCard key={comanda.id} comanda={comanda} />
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
-
-const ComandaCard = memo(
-  forwardRef<HTMLLIElement, ComandaCardProps>(function ComandaCard(
-    { comanda, isFocused, onUpdateStatus, onAddItems, onCancelComanda, onCloseComanda, onFocus },
-    ref,
-  ) {
-    const [discountPercent, setDiscountPercent] = useState(() => comanda.desconto ?? 0)
-    const [surchargePercent, setSurchargePercent] = useState(() => comanda.acrescimo ?? 0)
-    const { data: detailsData, isLoading: isLoadingDetails } = useQuery({
-      queryKey: ['comanda-details', comanda.id],
-      queryFn: async () => {
-        const res = await fetchComandaDetails(comanda.id)
-        return toPdvComanda(res.comanda)
-      },
-      enabled: isFocused,
-      staleTime: 5000,
-    })
-
-    const activeComanda = detailsData ?? comanda
-
-    const config = STATUS_CONFIG[activeComanda.status as Exclude<ComandaStatus, 'fechada'>]
-    const total = useMemo(() => calcTotal(activeComanda), [activeComanda])
-    const subtotal = useMemo(() => calcSubtotal(activeComanda), [activeComanda])
-    const elapsed = useMemo(() => formatElapsed(activeComanda.abertaEm), [activeComanda.abertaEm])
-    const itemCount = useMemo(
-      () => activeComanda.itens.reduce((sum, i) => sum + i.quantidade, 0),
-      [activeComanda.itens],
-    )
-    const canAddItems = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
-    const showDirectClose = activeComanda.status === 'aberta' || activeComanda.status === 'em_preparo'
-    const adjustedTotal = useMemo(
-      () => subtotal * (1 - discountPercent / 100) * (1 + surchargePercent / 100),
-      [discountPercent, surchargePercent, subtotal],
-    )
-
-    return (
-      <li
-        ref={ref}
-        className="group relative overflow-hidden rounded-[20px] transition-all duration-300"
-        style={{
-          background: isFocused ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-          border: `1px solid ${isFocused ? `${config.chipColor}55` : 'rgba(255,255,255,0.06)'}`,
-          boxShadow: isFocused ? `0 0 24px ${config.chipColor}15` : undefined,
-          backdropFilter: isFocused ? 'blur(16px)' : 'blur(8px)',
-        }}
-      >
-        {!isFocused && onFocus && (
-          <button
-            aria-label={`Abrir detalhes da ${activeComanda.mesa ?? 'comanda'}`}
-            className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0"
-            type="button"
-            onClick={() => onFocus(comanda.id)}
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          />
-        )}
-
-        {isFocused && (
-          <div
-            className="pointer-events-none absolute -right-[20%] -top-[50%] size-[150%] rounded-full opacity-[0.08] blur-3xl transition-opacity"
-            style={{ background: `radial-gradient(circle, ${config.chipColor} 0%, transparent 70%)` }}
-          />
-        )}
-
-        <div className="relative z-20 p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl font-bold text-white tracking-tight">{activeComanda.mesa ?? 'Comanda'}</span>
-                <span
-                  className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.15em] border"
-                  style={{
-                    color: config.chipColor,
-                    backgroundColor: config.chipBg,
-                    borderColor: `${config.chipColor}33`,
-                  }}
-                >
-                  {config.label}
-                </span>
-              </div>
-              {activeComanda.clienteNome && (
-                <p className="text-sm font-medium text-white mb-0.5 truncate">{activeComanda.clienteNome}</p>
-              )}
-              <p className="text-xs text-[var(--text-soft,#7a8896)] flex items-center gap-1.5 opacity-80">
-                <span>
-                  {itemCount} {itemCount === 1 ? 'item' : 'itens'}
-                </span>
-                <span className="text-[10px] opacity-40">•</span>
-                <span>há {elapsed}</span>
-              </p>
-            </div>
-
-            <div className="flex flex-col items-end shrink-0">
-              <span className="text-lg font-bold text-white tracking-tight">{formatCurrency(total)}</span>
-              {isFocused && (
-                <button
-                  type="button"
-                  onClick={() => onFocus?.(null)}
-                  className="mt-2 text-[10px] text-[var(--text-soft)] underline underline-offset-2"
-                >
-                  Recolher
-                </button>
-              )}
-            </div>
-          </div>
-
-          {isFocused && (
-            <div className="mt-5 animate-in fade-in slide-in-from-top-2 duration-300 fill-mode-forwards">
-              <div className="flex gap-2 mb-5">
-                {onAddItems && canAddItems && (
-                  <button
-                    type="button"
-                    onClick={() => onAddItems(activeComanda)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[rgba(155,132,96,0.4)] bg-[rgba(155,132,96,0.12)] py-2.5 text-sm font-semibold text-[var(--accent,#9b8460)] transition-all active:scale-95"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <Edit2 className="size-4" />
-                    Editar / Itens
-                  </button>
-                )}
-
-                {onCancelComanda && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm('Tem certeza que deseja cancelar esta comanda inteira?')) {
-                        onCancelComanda(activeComanda.id)
-                      }
-                    }}
-                    className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#f87171] transition-all active:scale-95"
-                    aria-label="Cancelar comanda"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                  >
-                    <Trash2 className="size-4.5" />
-                  </button>
-                )}
-              </div>
-
-              {isLoadingDetails ? (
-                <div className="mb-5 flex justify-center py-4">
-                  <div className="size-5 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
-                </div>
-              ) : (
-                activeComanda.itens.length > 0 && (
-                  <div className="mb-5 rounded-[14px] bg-[rgba(0,0,0,0.3)] p-3 border border-[rgba(255,255,255,0.04)]">
-                    <ul className="space-y-2.5">
-                      {activeComanda.itens.map((item, idx) => (
-                        <li key={`${item.produtoId}-${idx}`} className="flex items-center justify-between text-[13px]">
-                          <div className="flex gap-2.5 items-start">
-                            <span className="font-bold text-[var(--accent,#9b8460)] w-4 text-center">
-                              {item.quantidade}x
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-white/90">{item.nome}</span>
-                              {item.observacao && (
-                                <span className="text-[10px] text-white/40 italic">{`"${item.observacao}"`}</span>
-                              )}
-                            </div>
-                          </div>
-                          <span className="shrink-0 font-medium text-[var(--text-soft,#7a8896)] ml-3">
-                            {formatCurrency(item.quantidade * item.precoUnitario)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              )}
-
-              <div className="mb-4 grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-soft,#7a8896)]">
-                    Desconto %
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--text-soft,#7a8896)]">
-                    Acréscimo %
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={surchargePercent}
-                    onChange={(e) => setSurchargePercent(Math.min(100, Math.max(0, Number(e.target.value))))}
-                    className="w-full rounded-xl border border-[rgba(255,255,255,0.1)] bg-[rgba(0,0,0,0.4)] px-3 py-2 text-sm text-white outline-none focus:border-[rgba(155,132,96,0.4)]"
-                  />
-                </div>
-              </div>
-
-              {(discountPercent > 0 || surchargePercent > 0) && (
-                <div className="mb-4 flex items-center justify-between rounded-xl border border-[rgba(155,132,96,0.2)] bg-[rgba(155,132,96,0.06)] px-4 py-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-soft,#7a8896)]">
-                      Total Final
-                    </p>
-                    <p className="text-xs text-[var(--text-soft,#7a8896)] line-through">{formatCurrency(total)}</p>
-                  </div>
-                  <span className="text-xl font-bold text-[var(--accent,#9b8460)]">
-                    {formatCurrency(adjustedTotal)}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2.5">
-                {config.nextStatus && (
-                  <button
-                    type="button"
-                    onClick={() => void onUpdateStatus(comanda.id, config.nextStatus!)}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3.5 text-sm font-bold text-white transition-all active:scale-[0.98] shadow-lg"
-                    style={{
-                      backgroundColor: config.nextBg,
-                      border: `1px solid ${config.chipColor}44`,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    {config.nextLabel}
-                    <ChevronRight className="size-4 opacity-70" />
-                  </button>
-                )}
-
-                {showDirectClose && onCloseComanda && (
-                  <button
-                    type="button"
-                    onClick={() => void onCloseComanda(comanda.id, discountPercent, surchargePercent)}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[#94a3b8] transition-all active:bg-[rgba(255,255,255,0.06)]"
-                    style={{
-                      border: '1px solid rgba(148,163,184,0.15)',
-                      background: 'rgba(148,163,184,0.05)',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    Fechar Comanda (com desconto/juros)
-                  </button>
-                )}
-
-                {showDirectClose && !onCloseComanda && (
-                  <button
-                    type="button"
-                    onClick={() => void onUpdateStatus(comanda.id, 'fechada')}
-                    className="w-full flex items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-bold text-[#94a3b8] transition-all active:bg-[rgba(255,255,255,0.06)]"
-                    style={{
-                      border: '1px solid rgba(148,163,184,0.15)',
-                      background: 'rgba(148,163,184,0.05)',
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    Efetuar Pagamento (Caixa)
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </li>
-    )
-  }),
-)
-
-// ── Extrato expandível ────────────────────────────────────────────────────────
-const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  aberta: { label: 'Aberta', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  em_preparo: { label: 'Em preparo', color: '#fb923c', bg: 'rgba(251,146,60,0.12)' },
-  pronta: { label: 'Pronta', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-  fechada: { label: 'Paga', color: '#7a8896', bg: 'rgba(122,136,150,0.12)' },
-}
-
-function ExtratoCard({ comanda }: { comanda: Comanda }) {
-  const [open, setOpen] = useState(false)
-  const total = calcTotal(comanda)
-  const subtotal = calcSubtotal(comanda)
-  const descontoVal = subtotal * (comanda.desconto / 100)
-  const acrescimoVal = subtotal * (comanda.acrescimo / 100)
-  const badge = STATUS_BADGE[comanda.status] ?? STATUS_BADGE.aberta
-
-  return (
-    <li className="overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(7,9,13,0.78)] shadow-[0_12px_36px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      {/* Header — clicável */}
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-4 py-4 transition-colors active:bg-[rgba(255,255,255,0.04)]"
-        style={{ WebkitTapHighlightColor: 'transparent' }}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div className="text-left">
-          <div className="mb-1 flex items-center gap-2">
-            <p className="text-sm font-semibold text-white">Mesa {comanda.mesa ?? '—'}</p>
-            <span
-              className="rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ color: badge.color, background: badge.bg }}
-            >
-              {badge.label}
-            </span>
-          </div>
-          <p className="text-xs text-[var(--text-soft,#7a8896)]">
-            {comanda.itens.reduce((s, i) => s + i.quantidade, 0)} itens · aberta há {formatElapsed(comanda.abertaEm)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft,#7a8896)]">
-              Total
-            </p>
-            <span className="text-sm font-bold text-[#36f57c]">{formatCurrency(total)}</span>
-          </div>
-          {open ? (
-            <ChevronDown className="size-4 text-[var(--text-soft,#7a8896)]" />
-          ) : (
-            <ChevronRight className="size-4 text-[var(--text-soft,#7a8896)]" />
-          )}
-        </div>
-      </button>
-
-      {/* Extrato expandido */}
-      {open && (
-        <div className="border-t border-[rgba(255,255,255,0.06)] px-4 pb-4 pt-4">
-          {/* Itens */}
-          <ul className="mb-4 space-y-2">
-            {comanda.itens.map((item, idx) => (
-              <li
-                key={idx}
-                className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)] px-3 py-2.5"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-xs font-semibold text-white">
-                    {item.quantidade}× {item.nome}
-                  </p>
-                  {item.observacao && (
-                    <p className="mt-1 text-[10px] italic text-[var(--text-soft,#7a8896)]">{item.observacao}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-xs font-semibold text-white">
-                  {formatCurrency(item.quantidade * item.precoUnitario)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Totais */}
-          <div className="rounded-[16px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4 text-xs">
-            <div className="flex justify-between text-[var(--text-soft,#7a8896)]">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {comanda.desconto > 0 && (
-              <div className="mt-2 flex justify-between text-[#f87171]">
-                <span>Desconto ({comanda.desconto}%)</span>
-                <span>– {formatCurrency(descontoVal)}</span>
-              </div>
-            )}
-            {comanda.acrescimo > 0 && (
-              <div className="mt-2 flex justify-between text-[#fb923c]">
-                <span>Serviço ({comanda.acrescimo}%)</span>
-                <span>+ {formatCurrency(acrescimoVal)}</span>
-              </div>
-            )}
-            <div className="mt-3 flex justify-between border-t border-[rgba(255,255,255,0.06)] pt-3 font-semibold text-white">
-              <span>Total final</span>
-              <span className="text-[#36f57c]">{formatCurrency(total)}</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </li>
+    <MobileComandaListContent
+      controller={controller}
+      currentEmployeeId={currentEmployeeId}
+      errorMessage={errorMessage}
+      focusedId={focusedId}
+      isBusy={isBusy}
+      isOffline={isOffline}
+      summary={summary}
+      onAddItems={onAddItems}
+      onCancelComanda={onCancelComanda}
+      onCloseComanda={onCloseComanda}
+      onCreatePayment={onCreatePayment}
+      onFocus={onFocus}
+      onNewComanda={onNewComanda}
+      onUpdateStatus={onUpdateStatus}
+    />
   )
 }

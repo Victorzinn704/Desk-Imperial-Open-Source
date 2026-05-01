@@ -1,4 +1,4 @@
-import { Body, Controller, NotFoundException, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, NotFoundException, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { SessionGuard } from '../auth/guards/session.guard'
 import { LookupPostalCodeDto } from './dto/lookup-postal-code.dto'
@@ -11,6 +11,7 @@ export class GeocodingController {
 
   @UseGuards(SessionGuard)
   @Post('postal-code/lookup')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async lookupPostalCode(@Body() body: LookupPostalCodeDto) {
     const result = await this.geocodingService.lookupPostalCode(body.postalCode)
 

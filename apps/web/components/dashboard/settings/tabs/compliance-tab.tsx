@@ -1,4 +1,3 @@
-import { ShieldCheck } from 'lucide-react'
 import type { CookiePreferencePayload, CookiePreferences } from '@/lib/api'
 import { CheckboxField } from '@/components/shared/checkbox-field'
 import { SettingsInfoCard } from '@/components/dashboard/settings/components/settings-info-card'
@@ -20,7 +19,7 @@ type ComplianceTabProps = Readonly<{
 
 function EmptyCard({ message }: Readonly<{ message: string }>) {
   return (
-    <div className="rounded-[18px] border border-dashed border-white/8 bg-white/[0.02] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
+    <div className="rounded-[18px] border border-dashed border-[var(--border)] bg-[var(--surface)] px-5 py-8 text-center text-sm leading-7 text-[var(--text-soft)]">
       {message}
     </div>
   )
@@ -34,30 +33,17 @@ export function ComplianceTab({
   preferenceMutation,
 }: ComplianceTabProps) {
   return (
-    <>
-      <article className="imperial-card p-7">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 items-center justify-center rounded-2xl border border-[rgba(52,242,127,0.18)] bg-[rgba(52,242,127,0.08)] text-[#36f57c]">
-            <ShieldCheck className="size-5" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#8fffb9]">
-              Governança e consentimento
+    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+      <div className="grid xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
+        <article className="p-6 md:p-8 xl:border-r xl:border-[var(--border)]">
+          <div className="border-b border-[var(--border)] pb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Documentos aceitos
             </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white">Conformidade integrada à central da conta</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">
-              O bloco de conformidade deixa a navegação principal mais limpa e passa a viver onde a governança realmente
-              faz sentido.
+            <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+              Histórico de consentimento e leitura do que já foi aceito pela conta.
             </p>
           </div>
-        </div>
-      </article>
-
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr] xl:items-start">
-        <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">Documentos aceitos</p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Histórico de consentimento</h3>
-
           <div className="mt-6 space-y-3">
             {legalAcceptances.length ? (
               legalAcceptances.map((acceptance) => (
@@ -74,12 +60,15 @@ export function ComplianceTab({
           </div>
         </article>
 
-        <article className="imperial-card p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            Preferências de cookies
-          </p>
-          <h3 className="mt-3 text-2xl font-semibold text-white">Controle de consentimento opcional</h3>
-
+        <article className="border-t border-[var(--border)] p-6 md:p-8 xl:border-t-0">
+          <div className="border-b border-[var(--border)] pb-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">
+              Preferências de cookies
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+              Controle opcional de analytics e marketing sem esconder o estado atual.
+            </p>
+          </div>
           <div className="mt-6 grid gap-3">
             <CheckboxField
               checked={cookiePreferences.analytics}
@@ -112,6 +101,6 @@ export function ComplianceTab({
           ) : null}
         </article>
       </div>
-    </>
+    </section>
   )
 }

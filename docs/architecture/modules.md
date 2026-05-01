@@ -1,339 +1,426 @@
-# Módulos de Domínio — Desk Imperial API
+# Modulos de Dominio — Desk Imperial API
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
-**Localização:** `apps/api/src/modules/`
-
----
-
-## Visão geral
-
-A API do Desk Imperial é organizada em 16 módulos de domínio, cada um com responsabilidade clara e isolada.
-Todos seguem o padrão NestJS: Module → Controller → Service → DTO.
-
-Princípio central: **todo acesso a dado de negócio filtra por `companyOwnerId`**. Nenhum módulo retorna dados de outro workspace.
+**Versao:** 1.2  
+**Ultima atualizacao:** 2026-05-01  
+**Localizacao:** `apps/api/src/modules/`
 
 ---
 
-## Mapa de módulos
+## Visao geral
 
-```
+A API do Desk Imperial esta organizada por modulos de dominio com fronteiras claras. O estado atual da borda HTTP e:
+
+- prefixo global ativo: `/api/v1`
+- sessao baseada em cookie HttpOnly com guards de sessao e CSRF
+- modulos mais novos usam Zod nos contratos de entrada
+- a superficie OpenAPI e gerada a partir do runtime e publicada em `packages/api-contract/openapi.json`
+
+Principio central: **todo acesso a dado operacional e financeiro e resolvido no escopo do workspace owner**. O codigo usa `workspaceOwnerUserId` ou `companyOwnerUserId` conforme a camada, mas a regra de negocio e a mesma: um workspace nao enxerga dados de outro.
+
+---
+
+## Mapa atual de modulos
+
+```text
 modules/
-├── auth/                  # Autenticação, sessão, CSRF, recuperação de senha
-├── admin-pin/             # PIN de 4 dígitos para ações sensíveis
-├── operations/            # Comandas, caixa, mesas — core operacional
-├── operations-realtime/   # Gateway Socket.IO para propagação de eventos
-├── orders/                # Pedidos com validação de estoque
-├── products/              # Portfólio de produtos e combos
-├── finance/               # KPIs financeiros e analytics
-├── employees/             # Gestão de equipe e folha de pagamento
-├── users/                 # Perfil de usuário e workspace
-├── consent/               # LGPD — consentimento e documentos legais
-├── currency/              # Cotações de moeda com cache e fallback
-├── geocoding/             # Geocodificação de endereços via Nominatim
-├── mailer/                # E-mails transacionais via Brevo
-├── market-intelligence/   # Insight executivo com Gemini AI
-├── monitoring/            # Health check e observabilidade
-└── cache/                 # Serviço Redis compartilhado
+├── auth/                  # Autenticacao, sessao, CSRF, perfil, reset, verify-email
+├── admin-pin/             # Validacao administrativa por PIN com prova opaca
+├── operations/            # Comandas, caixa, cozinha, mesas e snapshot operacional
+├── operations-realtime/   # Gateway Socket.IO e publicacao realtime operacional
+├── orders/                # Vendas/pedidos com estoque, desconto e geocodificacao
+├── products/              # Catalogo, combos, importacao e smart draft
+├── finance/               # KPIs e analytics financeiros
+├── employees/             # Equipe, acesso STAFF e folha operacional
+├── consent/               # LGPD, documentos e preferencias de cookies
+├── currency/              # Cotacoes com cache e fallback
+├── geocoding/             # Geocodificacao de enderecos
+├── notifications/         # Telegram, preferencias e webhook inbound
+├── market-intelligence/   # Insight executivo via Gemini
+├── intelligence-platform/ # Boundary de tools, RAG e politicas
+├── monitoring/            # Audit log e observabilidade compartilhada
+└── health/                # Health, readiness e liveness
 ```
 
+Shared infrastructure fora dessa arvore:
+
+- `database/prisma.module.ts` — Prisma global
+- `cache/cache.module.ts` — Redis e `CacheService`
+
 ---
 
-## Módulo: auth
+## Modulo: auth
 
-**Responsabilidade:** autenticação, sessão, CSRF e ciclo completo de identidade do usuário.
+**Responsabilidade:** autenticacao, sessao, CSRF e ciclo de identidade do usuario.
 
 **Arquivos principais:**
 
-- `auth.service.ts` — lógica de login, registro, logout, verificação de e-mail, reset de senha
-- `auth.controller.ts` — endpoints HTTP de autenticação
-- `auth-rate-limit.service.ts` — controle de taxa por domínio de operação
-- `demo-access.service.ts` — conta demo com limite de tempo
-- `guards/session.guard.ts` — guard obrigatório em todas as rotas privadas
-- `guards/csrf.guard.ts` — guard obrigatório em todas as mutações autenticadas
-- `decorators/current-auth.decorator.ts` — injeta sessão atual nos controllers
+- `auth.service.ts` — fachada do dominio
+- `auth-session.service.ts` — emissao/validacao de sessao, cookies e CSRF
+- `auth-login.service.ts` — login owner/staff/demo e resolucao de ator
+- `auth-registration.service.ts` — cadastro de conta e bootstrap de workspace
+- `auth-password.service.ts` — reset de senha
+- `auth-email-verification.service.ts` — verify-email por OTP
+- `auth-rate-limit.service.ts` — rate limit de auth e handshake realtime
+- `auth.controller.ts` — borda HTTP
 
 **Endpoints relevantes:**
 
-- `POST /auth/register` — cadastro de novo usuário
-- `POST /auth/login` — autenticação
-- `POST /auth/logout` — encerrar sessão
-- `POST /auth/verify-email` — verificar e-mail com código
-- `POST /auth/forgot-password` — solicitar reset de senha
-- `POST /auth/reset-password` — redefinir senha com token
-- `GET /auth/me` — dados da sessão atual
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/demo`
+- `POST /auth/forgot-password`
+- `POST /auth/verify-email/request`
+- `POST /auth/verify-email/confirm`
+- `POST /auth/reset-password`
+- `POST /auth/logout`
+- `GET /auth/me`
+- `PATCH /auth/profile`
+- `GET /auth/activity`
+- `GET /auth/activity-feed`
 
-**Segurança:**
+**Seguranca:**
 
-- Cookies emitidos com `HttpOnly`, `Secure`, `SameSite`
-- CSRF token duplo: cookie `csrf-token` + header `x-csrf-token`
-- Senhas com `argon2id`
-- Rate limit em todos os endpoints sensíveis via Redis
+- cookie de sessao com `HttpOnly`, `Secure` e `SameSite`
+- padrao double-submit para CSRF (`csrf-token` + `x-csrf-token`)
+- hash de senha com `argon2id`
+- rate limit em login, reset, verify-email e conexao realtime
 
 ---
 
-## Módulo: admin-pin
+## Modulo: admin-pin
 
-**Responsabilidade:** proteger ações sensíveis com PIN de 4 dígitos verificado server-side.
+**Responsabilidade:** proteger operacoes sensiveis com PIN do owner validado server-side.
 
 **Arquivos principais:**
 
-- `admin-pin.service.ts` — setup, verificação, remoção do PIN; challenge efêmero
-- `admin-pin.guard.ts` — guard que verifica prova de PIN nos endpoints protegidos
-- `admin-pin.controller.ts` — endpoints de gestão do PIN
+- `admin-pin.service.ts` — setup, verificacao, prova e revogacao
+- `admin-pin.guard.ts` — exige prova valida em endpoints protegidos
+- `admin-pin.controller.ts` — borda HTTP
 
 **Endpoints relevantes:**
 
-- `POST /admin-pin/setup` — configurar PIN
-- `POST /admin-pin/verify` — verificar PIN e emitir prova
-- `POST /admin-pin/remove` — remover PIN configurado
+- `GET /admin/pin`
+- `POST /admin/verify-pin`
+- `POST /admin/pin`
+- `DELETE /admin/pin`
 
-**Comportamento:**
+**Comportamento atual:**
 
-- PIN armazenado com hash
-- Challenge efêmero gerado por requisição de verificação
-- Prova de verificação emitida em cookie HttpOnly — nunca exposta ao JS
-- Bloqueio após 3 tentativas incorretas (5 minutos)
-- Rate limit via Redis
+- o frontend envia o PIN uma vez para emitir um challenge
+- o backend grava uma prova curta em cookie HttpOnly
+- endpoints com `AdminPinGuard` leem e validam essa prova
+- nao existe JWT exposto ao browser nesse fluxo
 
 ---
 
-## Módulo: operations
+## Modulo: operations
 
-**Responsabilidade:** core operacional — comandas, caixa e mesas. O módulo mais complexo da API.
+**Responsabilidade:** core operacional do produto — comandas, caixa, cozinha, mesas e visoes ao vivo.
 
 **Arquivos principais:**
 
-- `operations.service.ts` (via facade) — coordena todas as operações
-- `operations-helpers.service.ts` — construção do snapshot ao vivo (`buildLiveSnapshot`)
-- `comanda.service.ts` — ciclo de vida completo de comandas
-- `cash-session.service.ts` — abertura e fechamento de sessão de caixa
-- `operations-domain.utils.ts` — utilitários de domínio, invalidação de cache
-- `operations.controller.ts` — endpoints REST de operações
-- `operations.types.ts` — tipos de domínio operacional
+- `operations.service.ts` — fachada das operacoes
+- `operations-helpers.service.ts` — montagem de snapshot/live views
+- `comanda.service.ts` — ciclo de vida de comandas e itens
+- `cash-session.service.ts` — abertura e fechamento de caixa
+- `operations-domain.utils.ts` — invalidacao e helpers de dominio
+- `operations.controller.ts` — endpoints REST
+- `operations.schemas.ts` — contratos Zod da borda
 
 **Endpoints relevantes:**
 
-- `GET /operations/live` — snapshot ao vivo de comandas, caixa e mesas
-- `POST /operations/comanda` — abrir comanda
-- `PATCH /operations/comanda/:id/status` — mudar status da comanda
-- `POST /operations/comanda/:id/item` — adicionar item à comanda
-- `DELETE /operations/comanda/:id/item/:itemId` — remover item
-- `POST /operations/cash-session/open` — abrir caixa
-- `POST /operations/cash-session/close` — fechar caixa
+- `GET /operations/live`
+- `GET /operations/kitchen`
+- `GET /operations/summary`
+- `POST /operations/cash-sessions`
+- `POST /operations/cash-sessions/:cashSessionId/movements`
+- `POST /operations/cash-sessions/:cashSessionId/close`
+- `POST /operations/comandas`
+- `POST /operations/comandas/:comandaId/items`
+- `POST /operations/comandas/:comandaId/items/batch`
+- `PATCH /operations/comandas/:comandaId`
+- `POST /operations/comandas/:comandaId/assign`
+- `POST /operations/comandas/:comandaId/status`
+- `GET /operations/comandas/:comandaId/details`
+- `POST /operations/comandas/:comandaId/payments`
+- `POST /operations/comandas/:comandaId/close`
+- `POST /operations/closures/close`
+- `PATCH /operations/kitchen-items/:itemId/status`
+- `GET /operations/mesas`
+- `POST /operations/mesas`
+- `PATCH /operations/mesas/:mesaId`
 
-**Cache:**
+**Observacoes operacionais:**
 
-- Snapshot ao vivo: TTL 30s, invalidado por evento Socket.IO
-- Kitchen e summary: invalidados em mutações
-
-**Performance:**
-
-- `buildLiveSnapshot` executa 5 queries em `Promise.all` (query unificada, não sequencial)
-- `compactMode` reduz payload quando itens detalhados não são necessários
+- `live`, `kitchen` e `summary` usam cache e reconciliacao com realtime
+- o hot path ainda concentra boa parte da complexidade do backend
+- `closeComanda` e `cash` continuam sendo hotspots de latencia e manutencao
 
 ---
 
-## Módulo: operations-realtime
+## Modulo: operations-realtime
 
-**Responsabilidade:** gateway Socket.IO para propagação de eventos operacionais em tempo real.
+**Responsabilidade:** transporte Socket.IO da malha operacional realtime.
 
-**Namespace:** `/operations-realtime`
+**Namespace:** `/operations`
 
 **Arquivos principais:**
 
-- `operations-realtime.gateway.ts` — WebSocket gateway
-- `operations-realtime.service.ts` — publicação de eventos por workspace
-- `operations-realtime.auth.ts` — autenticação da conexão Socket.IO
+- `operations-realtime.gateway.ts` — lifecycle do socket
+- `operations-realtime.service.ts` — publicacao de envelopes
+- `operations-realtime.socket-auth.ts` — autenticacao no connect
+- `operations-realtime.sessions.service.ts` — indice `sessionId -> sockets`
+- `operations-realtime.types.ts` — eventos, payloads e rooms
 
-**Comportamento:**
+**Topologia atual:**
 
-- Cada workspace tem seu próprio canal de eventos (isolamento por `companyOwnerId`)
-- Conexão exige sessão válida — conexões não autenticadas são rejeitadas
-- Eventos propagados: `comanda:updated`, `comanda:created`, `comanda:closed`, `cash:updated`
-- Frontend aplica patches otimistas ao receber eventos sem recarregar o snapshot completo
+- room base: `workspace:{workspaceOwnerUserId}`
+- rooms segmentadas:
+  - `workspace:{id}:kitchen`
+  - `workspace:{id}:cash`
+  - `workspace:{id}:mesa`
+  - `workspace:{id}:employee:{employeeId}`
+
+**Eventos atuais:**
+
+- `cash.opened`
+- `cash.updated`
+- `cash.closure.updated`
+- `comanda.opened`
+- `comanda.updated`
+- `comanda.closed`
+- `kitchen.item.queued`
+- `kitchen.item.updated`
+- `mesa.upserted`
+
+**Comportamento atual:**
+
+- OWNER entra em canais financeiros; STAFF nao
+- autenticacao aceita sessao por cookie e headers de token
+- o servidor suporta `websocket` e `polling`, mas o cliente web atual abre `websocket` only
+- logout e revogacao de sessao derrubam sockets rastreados por `sessionId`
+- ainda nao existe replay/cursor/exactly-once; a consistencia depende de patch + refresh controlado
 
 ---
 
-## Módulo: orders
+## Modulo: orders
 
-**Responsabilidade:** criação e cancelamento de pedidos com validação de estoque.
+**Responsabilidade:** registro e cancelamento de vendas/pedidos.
 
 **Arquivos principais:**
 
-- `orders.service.ts` — criação, validação de estoque, cálculo de lucro, cancelamento
+- `orders.controller.ts`
+- `orders.service.ts`
+- `orders-discount.utils.ts`
 
-**Comportamento crítico:**
+**Endpoints relevantes:**
 
-- Criação de pedido usa transação `SERIALIZABLE` para evitar venda duplicada em concorrência
-- Estoque decrementado automaticamente ao confirmar
-- Cancelamento reverte o estoque
-- Lucro calculado por item (preço de venda − custo)
+- `GET /orders`
+- `POST /orders`
+- `POST /orders/:orderId/cancel`
 
----
+**Comportamento critico:**
 
-## Módulo: products
-
-**Responsabilidade:** portfólio de produtos, combos e componentes.
-
-**Comportamento:**
-
-- Produtos têm nome, preço, categoria, unidade, margem e flag de ativo/inativo
-- Combos agrupam múltiplos produtos com preço único
-- Produtos inativos não aparecem no PDV mas mantêm histórico
-- Preço suporta múltiplas moedas (BRL, USD, EUR)
-- Import CSV: lógica existe no service, endpoint bloqueado (HTTP 410)
+- criacao usa transacao forte para proteger estoque
+- desconto acima do limite de STAFF exige validacao administrativa
+- geocodificacao e enriquecimento comercial fazem parte do fluxo de venda
 
 ---
 
-## Módulo: finance
+## Modulo: products
 
-**Responsabilidade:** analytics financeiro — KPIs, top produtos, top vendedores, recortes por período.
+**Responsabilidade:** catalogo, combos, importacao e cadastro inteligente.
 
-**Comportamento:**
+**Endpoints relevantes:**
 
-- Calcula receita, custo, margem e lucro por período (dia, semana, mês, customizado)
-- Ranking de top produtos por receita
-- Ranking de top vendedores por volume de vendas
-- Conversão de valores via módulo `currency`
-- Cache Redis com TTL 120s
+- `GET /products`
+- `POST /products`
+- `POST /products/smart-draft`
+- `POST /products/import`
+- `PATCH /products/:productId`
+- `POST /products/restock-bulk`
+- `DELETE /products/:productId`
+- `DELETE /products/:productId/permanent`
+- `POST /products/:productId/restore`
 
----
+**Comportamento atual:**
 
-## Módulo: employees
-
-**Responsabilidade:** gestão de equipe, folha de pagamento e login de funcionários.
-
-**Comportamento:**
-
-- Cadastro de funcionário com nome, cargo, salário base e percentual de comissão
-- Folha calculada automaticamente: `salário_base + (total_vendas × percentual_comissão)`
-- Histórico de vendas por funcionário
-- Funcionários podem ter credenciais de login próprias (papel STAFF)
-- Cache Redis com TTL 600s
+- importacao CSV continua ativa e protegida por sessao + CSRF
+- `smart-draft` usa Gemini para montar rascunho operacional
+- combos e estoque compartilham a mesma base de produto
 
 ---
 
-## Módulo: users
+## Modulo: finance
 
-**Responsabilidade:** perfil de usuário, configurações de workspace e ownership.
+**Responsabilidade:** KPIs, comparativos e analytics financeiros.
 
-**Comportamento:**
+**Comportamento atual:**
 
-- Cada usuário OWNER define o `companyOwnerId` do workspace
-- Configurações de perfil (nome, endereço, cidade da empresa)
-- Geocodificação do endereço disparada no cadastro/atualização
-
----
-
-## Módulo: consent
-
-**Responsabilidade:** conformidade com LGPD — consentimento de cookies e documentos legais.
-
-**Comportamento:**
-
-- Documentos legais são versionados (versão controlada por `CONSENT_VERSION` no `.env`)
-- Aceite de documento registrado com data, versão e usuário
-- Preferências de cookies armazenadas por usuário autenticado
-- Bootstrap automatico: verifica e cria versão de documento na inicialização da API
+- resumo financeiro com cache curto
+- rankings por produto e vendedor
+- composicao por periodo e moeda
+- consumo fortemente dependente das tabelas de pedido, comanda e caixa
 
 ---
 
-## Módulo: currency
+## Modulo: employees
 
-**Responsabilidade:** cotações de moeda em tempo real com cache e fallback.
+**Responsabilidade:** equipe, acesso STAFF e folha operacional.
 
-**Integrações:**
+**Endpoints relevantes:**
 
-- AwesomeAPI — cotações BRL/USD/EUR
-- Cache Redis TTL 300s (5 minutos)
-- Stale cache até 6 horas em caso de falha da API externa
-- Valores de fallback configuráveis no `.env` (`EXCHANGE_RATES_FALLBACK_USD_BRL`, `EXCHANGE_RATES_FALLBACK_EUR_BRL`)
+- `GET /employees`
+- `POST /employees`
+- `PATCH /employees/:employeeId`
+- `POST /employees/:employeeId/access`
+- `PATCH /employees/:employeeId/access/password`
+- `DELETE /employees/:employeeId/access`
+- `DELETE /employees/:employeeId`
+- `POST /employees/:employeeId/restore`
 
----
+**Comportamento atual:**
 
-## Módulo: geocoding
-
-**Responsabilidade:** geocodificar endereços para o mapa de vendas.
-
-**Integração:** Nominatim (OpenStreetMap) — gratuito, sem API key obrigatória.
-
-**Comportamento:**
-
-- Cache Redis TTL 86400s (24 horas) — endereços não mudam frequentemente
-- Timeout curto (1800ms) para não bloquear o fluxo de cadastro
-- Falha na geocodificação não impede o cadastro (`REGISTRATION_GEOCODING_STRICT=false`)
+- o owner cria o funcionario e o backend emite credenciais temporarias
+- acesso do STAFF e representado por `User` sintetico vinculado ao `Employee`
+- revogacao e desativacao propagam refresh/revogacao de sessao
 
 ---
 
-## Módulo: mailer
+## Modulo: consent
 
-**Responsabilidade:** envio de e-mails transacionais.
+**Responsabilidade:** conformidade LGPD para documentos e cookies.
 
-**Integração:** Brevo (ex-Sendinblue) — plano gratuito tem 300 e-mails/mês.
+**Comportamento atual:**
 
-**E-mails enviados:**
-
-- Verificação de e-mail no cadastro
-- Código de recuperação de senha
-- Alertas de login suspeito (configurável)
-
-**Comportamento:**
-
-- Templates HTML com fallback texto plano
-- Timeout de dispatch configurável para não bloquear o fluxo principal
-- Se Brevo não estiver configurado, e-mails falham silenciosamente em dev
+- documentos versionados
+- aceite com trilha de data/versao/usuario
+- preferencias de cookies por usuario
 
 ---
 
-## Módulo: market-intelligence
+## Modulo: currency
 
-**Responsabilidade:** geração de insight executivo com Gemini AI.
+**Responsabilidade:** cotacoes com cache e fallback.
 
-**Integração:** Google Gemini 2.5 Flash.
+**Comportamento atual:**
 
-**Comportamento:**
-
-- Resumo estruturado gerado com base nos dados do workspace (financeiro, produtos, equipe)
-- Cache Redis TTL 900s (15 minutos)
-- Rate limit: 6 requisições por 60 minutos por workspace
-- Endpoint protegido com CSRF e sessão
-- Timeout configurável (`GEMINI_TIMEOUT_MS=15000`)
+- consulta online com stale cache
+- fallback configuravel por ambiente
 
 ---
 
-## Módulo: monitoring
+## Modulo: geocoding
 
-**Responsabilidade:** health check e observabilidade básica.
+**Responsabilidade:** geocodificar enderecos para vendas e mapas.
 
-**Endpoints:**
+**Comportamento atual:**
 
-- `GET /health` — retorna estado de DB e Redis
-  - `{ status: "ok", db: "ok", redis: "ok" }` quando tudo funciona
-  - Estado degradado quando algum serviço está indisponível mas o sistema ainda responde
+- timeout curto
+- falha de geocodificacao nao deve bloquear o fluxo principal quando o ambiente estiver em modo permissivo
 
 ---
 
-## Módulo: cache
+## Modulo: notifications
 
-**Responsabilidade:** abstração do Redis compartilhada por todos os módulos.
+**Responsabilidade:** fronteira unica de notificacao externa e preferencias.
 
-**Comportamento:**
+**Endpoints relevantes:**
 
-- `CacheService` é global — injetável em qualquer módulo
-- Graceful degradation: se Redis estiver indisponível, operações de cache são silenciosas
-- Métodos principais: `get`, `set`, `del`, `delByPrefix`
-- Prefixos de cache por domínio evitam colisões entre módulos
+- `POST /notifications/telegram/link-token`
+- `GET /notifications/telegram/status`
+- `DELETE /notifications/telegram/link`
+- `GET /notifications/telegram/preferences`
+- `POST /notifications/telegram/preferences`
+- `POST /notifications/telegram/webhook`
+- `GET /notifications/telegram/health`
+- `GET /notifications/preferences/workspace`
+- `POST /notifications/preferences/workspace`
+- `GET /notifications/preferences/me`
+- `POST /notifications/preferences/me`
 
-**Prefixos de cache:**
+**Comportamento atual:**
 
-| Dado            | Prefixo                                      | TTL    |
-| --------------- | -------------------------------------------- | ------ |
-| Finance summary | `finance:summary:{userId}`                   | 120s   |
-| Products list   | `products:list:{userId}`                     | 300s   |
-| Employees list  | `employees:list:{userId}`                    | 600s   |
-| Orders summary  | `orders:summary:{userId}`                    | 90s    |
-| Operations live | `operations:live:{userId}:{date}`            | 30s    |
-| Gemini insight  | `gemini:insight:{userId}:{currency}:{focus}` | 900s   |
-| Exchange rates  | `currency:rates`                             | 300s   |
-| Geocoding       | `geocoding:{query}`                          | 86400s |
+- Telegram ja esta em operacao
+- preferencias existem em nivel de workspace e usuario
+- webhook inbound valida `x-telegram-bot-api-secret-token`
+- email e webhook generico permanecem como extensoes da mesma fronteira
+
+---
+
+## Modulo: market-intelligence
+
+**Responsabilidade:** insight executivo sintetizado com IA.
+
+**Comportamento atual:**
+
+- cache curto por workspace
+- uso controlado por rate limit
+- depende de dados operacionais e financeiros, nao substitui relatorios transacionais
+
+---
+
+## Modulo: intelligence-platform
+
+**Responsabilidade:** boundary de ferramentas e politicas para fluxos inteligentes.
+
+**Comportamento atual:**
+
+- nao concentra transacao core
+- resolve permissao de tools por papel
+- integra com `notifications`, `market-intelligence` e superficies assistidas
+
+---
+
+## Modulo: monitoring
+
+**Responsabilidade:** audit log e observabilidade compartilhada.
+
+**Comportamento atual:**
+
+- `AuditLogService` centraliza trilha de eventos sensiveis
+- Sentry, OpenTelemetry e logs estruturados atravessam varios modulos a partir dessa base
+
+---
+
+## Modulo: health
+
+**Responsabilidade:** probes operacionais do runtime.
+
+**Endpoints relevantes:**
+
+- `GET /health`
+- `GET /health/ready`
+- `GET /health/live`
+
+Na borda publica esses endpoints saem sob o prefixo global: `/api/v1/health`, `/api/v1/health/ready` e `/api/v1/health/live`.
+
+---
+
+## Cache compartilhado
+
+`CacheService` fica fora de `modules/`, mas e parte estrutural do sistema. Chaves relevantes:
+
+| Dado | Chave |
+| --- | --- |
+| Finance summary | `finance:summary:{userId}` |
+| Products list | `products:list:{userId}:{scope}` |
+| Employees list | `employees:list:{userId}` |
+| Orders summary | `orders:summary:{userId}` |
+| Operations live | `operations:live:{workspaceOwnerUserId}:{businessDate}:{mode}:{scope}` |
+| Operations kitchen | `operations:kitchen:{workspaceOwnerUserId}:{businessDate}:{scope}` |
+| Operations summary | `operations:summary:{workspaceOwnerUserId}:{businessDate}:{scope}` |
+| Gemini insight | `gemini:insight:{userId}:{currency}:{focus}` |
+| Notification idempotency | `notifications:delivery:{workspaceOwnerUserId}:{idempotencyKey}` |
+
+---
+
+## Notas de manutencao
+
+- `operations` e `operations-realtime` continuam sendo a area mais sensivel para drift documental.
+- `DOCS_DESK_IMPERIAL.md` e docs de `release/` nao sao fonte primaria para esta camada.
+- Ao atualizar contratos, conferir sempre:
+  - controller real
+  - schemas Zod / DTOs
+  - gateway/types do realtime
+  - guards (`SessionGuard`, `CsrfGuard`, `AdminPinGuard`)

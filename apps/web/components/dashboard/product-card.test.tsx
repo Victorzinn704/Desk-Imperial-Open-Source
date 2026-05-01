@@ -53,11 +53,11 @@ describe('ProductCard', () => {
     render(
       <ProductCard
         busy={false}
+        product={makeProduct({ active: false })}
         onArchive={vi.fn()}
         onDelete={onDelete}
         onEdit={vi.fn()}
         onRestore={vi.fn()}
-        product={makeProduct({ active: false })}
       />,
     )
 
@@ -73,11 +73,11 @@ describe('ProductCard', () => {
     render(
       <ProductCard
         busy={false}
+        product={makeProduct({ active: true })}
         onArchive={vi.fn()}
         onDelete={vi.fn()}
         onEdit={vi.fn()}
         onRestore={vi.fn()}
-        product={makeProduct({ active: true })}
       />,
     )
 

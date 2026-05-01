@@ -1,18 +1,45 @@
-import type { OperationsLiveResponse, ComandaRecord } from '@contracts/contracts'
-import { calcSubtotal, type Mesa, type Comanda, type Garcom } from './pdv-types'
+import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
+import { calcSubtotal, type Comanda, type Garcom, isEndedComandaStatus, type Mesa } from './pdv-types'
 import { normalizeTableLabel } from './normalize-table-label'
 
 const GARCOM_CORES = ['#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa', '#fbbf24', '#e879f9', '#2dd4bf']
 
 export const DEFAULT_TABLE_LABELS = [...Array.from({ length: 12 }, (_, index) => String(index + 1)), 'VIP']
 
+const pdvComandasCache = new WeakMap<OperationsLiveResponse, Comanda[]>()
+const pdvMesasCache = new WeakMap<OperationsLiveResponse, Mesa[]>()
+const pdvGarconsCache = new WeakMap<OperationsLiveResponse, Garcom[]>()
+const employeeMapsCache = new WeakMap<
+  OperationsLiveResponse,
+  { empMap: Map<string, string>; comandaOwnerName: Map<string, string> }
+>()
+
+function hasEmployeeId<T extends { employeeId?: string | null }>(employee: T): employee is T & { employeeId: string } {
+  return typeof employee.employeeId === 'string' && employee.employeeId.length > 0
+}
+
+function collectOperationGroups(snapshot: OperationsLiveResponse | undefined) {
+  if (!snapshot) {
+    return []
+  }
+
+  const employeeGroups = Array.isArray(snapshot.employees) ? snapshot.employees : []
+  const unassignedGroups = snapshot.unassigned ? [snapshot.unassigned] : []
+
+  return [...employeeGroups, ...unassignedGroups]
+}
+
 export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): Comanda[] {
   if (!snapshot) {
     return []
   }
 
-  const groups = [...snapshot.employees, snapshot.unassigned]
-  return groups
+  const cached = pdvComandasCache.get(snapshot)
+  if (cached) {
+    return cached
+  }
+
+  const comandas = collectOperationGroups(snapshot)
     .flatMap((group) =>
       group.comandas.map((c) => ({
         ...toPdvComanda(c),
@@ -21,6 +48,9 @@ export function buildPdvComandas(snapshot: OperationsLiveResponse | undefined): 
       })),
     )
     .sort((left, right) => right.abertaEm.getTime() - left.abertaEm.getTime())
+
+  pdvComandasCache.set(snapshot, comandas)
+  return comandas
 }
 
 export function toPdvComanda(comanda: ComandaRecord): Comanda {
@@ -30,6 +60,8 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     mesa: comanda.tableLabel,
     clienteNome: comanda.customerName ?? undefined,
     clienteDocumento: comanda.customerDocument ?? undefined,
+    participantCount: comanda.participantCount,
+    notes: comanda.notes ?? undefined,
     itens: comanda.items.map((item) => {
       const quantidade = Math.max(1, toFiniteNumber(item.quantity) ?? 1)
       return {
@@ -45,6 +77,16 @@ export function toPdvComanda(comanda: ComandaRecord): Comanda {
     abertaEm: new Date(comanda.openedAt),
     subtotalBackend: typeof comanda.subtotalAmount === 'number' ? comanda.subtotalAmount : undefined,
     totalBackend: typeof comanda.totalAmount === 'number' ? comanda.totalAmount : undefined,
+    paidAmount: typeof comanda.paidAmount === 'number' ? comanda.paidAmount : undefined,
+    remainingAmount: typeof comanda.remainingAmount === 'number' ? comanda.remainingAmount : undefined,
+    paymentStatus: comanda.paymentStatus,
+    payments: (comanda.payments ?? []).map((payment) => ({
+      id: payment.id,
+      method: payment.method,
+      amount: payment.amount,
+      note: payment.note ?? undefined,
+      paidAt: new Date(payment.paidAt),
+    })),
   }
 }
 
@@ -53,77 +95,119 @@ export function buildPdvGarcons(snapshot: OperationsLiveResponse | undefined): G
     return []
   }
 
-  return snapshot.employees
-    .filter((employee) => employee.employeeId)
+  const cached = pdvGarconsCache.get(snapshot)
+  if (cached) {
+    return cached
+  }
+
+  const garcons = collectOperationGroups(snapshot)
+    .filter(hasEmployeeId)
     .map((employee, index) => ({
-      id: employee.employeeId!,
+      id: employee.employeeId,
       nome: employee.displayName,
       cor: GARCOM_CORES[index % GARCOM_CORES.length],
     }))
+
+  pdvGarconsCache.set(snapshot, garcons)
+  return garcons
+}
+
+function buildEmployeeMaps(snapshot: OperationsLiveResponse | undefined) {
+  if (snapshot) {
+    const cached = employeeMapsCache.get(snapshot)
+    if (cached) {
+      return cached
+    }
+  }
+
+  const empMap = new Map<string, string>()
+  const comandaOwnerName = new Map<string, string>()
+
+  if (!snapshot) {
+    return { empMap, comandaOwnerName }
+  }
+
+  for (const emp of collectOperationGroups(snapshot)) {
+    if (emp.employeeId) {
+      empMap.set(emp.employeeId, emp.displayName)
+    }
+    if ((emp as Record<string, unknown>).userId) {
+      empMap.set((emp as Record<string, unknown>).userId as string, emp.displayName)
+    }
+    for (const c of emp.comandas) {
+      comandaOwnerName.set(c.id, emp.displayName)
+    }
+  }
+
+  const maps = { empMap, comandaOwnerName }
+  employeeMapsCache.set(snapshot, maps)
+  return maps
+}
+
+function resolveGarcomNome(
+  empMap: Map<string, string>,
+  comandaOwnerName: Map<string, string>,
+  gId: string | undefined,
+  comanda?: { id: string },
+) {
+  const fromMap = gId ? empMap.get(gId) : undefined
+  if (fromMap) {
+    return fromMap
+  }
+  return comanda ? comandaOwnerName.get(comanda.id) : undefined
+}
+
+function buildMesasFromComandas(
+  snapshot: OperationsLiveResponse | undefined,
+  empMap: Map<string, string>,
+  comandaOwnerName: Map<string, string>,
+): Mesa[] {
+  const activeRecords = collectComandas(snapshot).filter((comanda) => isOpenOperationsStatus(comanda.status))
+  const labels = [...new Set([...DEFAULT_TABLE_LABELS, ...activeRecords.map((comanda) => comanda.tableLabel)])]
+  return labels.map((label) => {
+    const currentComanda = activeRecords.find((comanda) => comanda.tableLabel === label)
+    const gId = currentComanda?.currentEmployeeId ?? undefined
+    return {
+      id: label,
+      numero: label,
+      capacidade: label === 'VIP' ? 10 : 4,
+      status: currentComanda ? 'ocupada' : 'livre',
+      comandaId: currentComanda?.id,
+      garcomId: gId,
+      garcomNome: resolveGarcomNome(empMap, comandaOwnerName, gId, currentComanda),
+    }
+  })
 }
 
 export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mesa[] {
-  // Build employee name map — index by ALL available IDs for maximum match
-  const empMap = new Map<string, string>()
-  // Also build comanda → employee name map from group ownership
-  const comandaOwnerName = new Map<string, string>()
-
   if (snapshot) {
-    for (const emp of snapshot.employees) {
-      if (emp.employeeId) empMap.set(emp.employeeId, emp.displayName)
-      // Also index by userId if different from employeeId
-      if ((emp as Record<string, unknown>).userId) {
-        empMap.set((emp as Record<string, unknown>).userId as string, emp.displayName)
-      }
-      // Map each comanda in this group to the employee name
-      for (const c of emp.comandas) {
-        comandaOwnerName.set(c.id, emp.displayName)
-      }
+    const cached = pdvMesasCache.get(snapshot)
+    if (cached) {
+      return cached
     }
   }
 
-  function resolveGarcomNome(gId: string | undefined, comanda?: { id: string }) {
-    if (gId) {
-      const fromMap = empMap.get(gId)
-      if (fromMap) return fromMap
-    }
-    if (comanda) {
-      const fromOwner = comandaOwnerName.get(comanda.id)
-      if (fromOwner) return fromOwner
-    }
-    return undefined
-  }
+  const { empMap, comandaOwnerName } = buildEmployeeMaps(snapshot)
 
   if (!snapshot?.mesas?.length) {
-    // fallback: derive from active comandas if mesas not yet seeded in DB
-    const activeRecords = collectComandas(snapshot).filter((comanda) => isOpenOperationsStatus(comanda.status))
-    const labels = [...new Set([...DEFAULT_TABLE_LABELS, ...activeRecords.map((comanda) => comanda.tableLabel)])]
-    return labels.map((label) => {
-      const currentComanda = activeRecords.find((comanda) => comanda.tableLabel === label)
-      const gId = currentComanda?.currentEmployeeId ?? undefined
-      return {
-        id: label,
-        numero: label,
-        capacidade: label === 'VIP' ? 10 : 4,
-        status: currentComanda ? 'ocupada' : 'livre',
-        comandaId: currentComanda?.id,
-        garcomId: gId,
-        garcomNome: resolveGarcomNome(gId, currentComanda),
-      }
-    })
+    const mesas = buildMesasFromComandas(snapshot, empMap, comandaOwnerName)
+    if (snapshot) {
+      pdvMesasCache.set(snapshot, mesas)
+    }
+    return mesas
   }
 
-  // Build active comandas map by normalized tableLabel for cross-reference
   const activeComandas = collectComandas(snapshot).filter((c) => isOpenOperationsStatus(c.status))
   const comandaByTable = new Map<string, (typeof activeComandas)[0]>()
   for (const c of activeComandas) {
-    if (c.tableLabel) comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
+    if (c.tableLabel) {
+      comandaByTable.set(normalizeTableLabel(c.tableLabel), c)
+    }
   }
 
-  return snapshot.mesas
+  const mesas = snapshot.mesas
     .filter((mesa) => mesa.active)
     .map((mesa) => {
-      // Cross-reference: match by normalized label
       const matchedComanda = comandaByTable.get(normalizeTableLabel(mesa.label))
       const isOccupied = mesa.status === 'ocupada' || Boolean(matchedComanda)
       const gId = mesa.currentEmployeeId ?? matchedComanda?.currentEmployeeId ?? undefined
@@ -134,12 +218,15 @@ export function buildPdvMesas(snapshot: OperationsLiveResponse | undefined): Mes
         status: (isOccupied ? 'ocupada' : mesa.status) as Mesa['status'],
         comandaId: mesa.comandaId ?? matchedComanda?.id ?? undefined,
         garcomId: gId,
-        garcomNome: resolveGarcomNome(gId, matchedComanda),
+        garcomNome: resolveGarcomNome(empMap, comandaOwnerName, gId, matchedComanda),
       }
     })
+
+  pdvMesasCache.set(snapshot, mesas)
+  return mesas
 }
 
-export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada'>) {
+export function toOperationsStatus(status: Exclude<Comanda['status'], 'fechada' | 'cancelada'>) {
   switch (status) {
     case 'em_preparo':
       return 'IN_PREPARATION' as const
@@ -164,7 +251,7 @@ function collectComandas(snapshot: OperationsLiveResponse | undefined) {
     return [] as ComandaRecord[]
   }
 
-  return [...snapshot.employees, snapshot.unassigned].flatMap((group) => group.comandas)
+  return collectOperationGroups(snapshot).flatMap((group) => group.comandas)
 }
 
 function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
@@ -173,8 +260,9 @@ function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
       return 'em_preparo'
     case 'READY':
       return 'pronta'
-    case 'CLOSED':
     case 'CANCELLED':
+      return 'cancelada'
+    case 'CLOSED':
       return 'fechada'
     case 'OPEN':
     default:
@@ -183,7 +271,8 @@ function mapComandaStatus(status: ComandaRecord['status']): Comanda['status'] {
 }
 
 function isOpenOperationsStatus(status: ComandaRecord['status']) {
-  return status === 'OPEN' || status === 'IN_PREPARATION' || status === 'READY'
+  const mappedStatus = mapComandaStatus(status)
+  return !isEndedComandaStatus(mappedStatus)
 }
 
 function toPercent(amount: number, subtotal: number) {

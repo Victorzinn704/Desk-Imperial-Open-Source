@@ -1,15 +1,19 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const localApiOrigin = 'http://localhost:4000'
+const isProduction = process.env.NODE_ENV === 'production'
 const faroCollectorOrigin = resolveCollectorOrigin(process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL)
 const observabilityConnectOrigins = [faroCollectorOrigin].filter(Boolean).join(' ')
+const developmentScriptSources = isProduction ? '' : " 'unsafe-eval'"
+const qzTrayConnectOrigins = resolveQzTrayConnectOrigins(process.env.NEXT_PUBLIC_QZ_TRAY_CONNECT_ORIGINS)
 
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(), interest-cohort=()' },
   {
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload',
@@ -18,11 +22,12 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
+      `script-src 'self' 'unsafe-inline'${developmentScriptSources} https://static.cloudflareinsights.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.basemaps.cartocdn.com",
-      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
+      "img-src 'self' data: blob: https://images.unsplash.com https://images.pexels.com https://*.openfoodfacts.org https://*.basemaps.cartocdn.com",
+      `connect-src 'self' ${localApiOrigin} ws://localhost:4000 ${qzTrayConnectOrigins} https://api.deskimperial.online wss://api.deskimperial.online https://app.deskimperial.online https://*.basemaps.cartocdn.com ${observabilityConnectOrigins}`,
+      "frame-src 'self' https://widget.api-futebol.com.br",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -37,6 +42,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.openfoodfacts.org',
       },
     ],
     // Otimização mobile: formatos modernos e qualidade balanceada
@@ -67,7 +80,19 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG?.trim() || 'desk-imperial',
+  project: process.env.SENTRY_PROJECT_WEB?.trim() || process.env.SENTRY_PROJECT?.trim() || 'javascript-nextjs',
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  tunnelRoute: '/sentry-tunnel',
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  errorHandler: (error) => {
+    console.warn('[Sentry/Next build]', error.message)
+  },
+})
 
 function resolveCollectorOrigin(value: string | undefined) {
   if (!value?.trim()) {
@@ -92,4 +117,32 @@ function resolveCollectorOrigin(value: string | undefined) {
   } catch {
     return ''
   }
+}
+
+function resolveQzTrayConnectOrigins(value: string | undefined) {
+  const hosts = ['localhost', 'localhost.qz.io', '127.0.0.1']
+  const securePorts = [8181, 8282, 8383, 8484]
+  const insecurePorts = [8182, 8283, 8384, 8485]
+  const defaults = [
+    ...hosts.flatMap((host) => securePorts.map((port) => `wss://${host}:${port}`)),
+    ...hosts.flatMap((host) => insecurePorts.map((port) => `ws://${host}:${port}`)),
+  ]
+
+  const lanIp = process.env.NEXT_PUBLIC_QZ_TRAY_LAN_IP?.trim()
+  const lanOrigins = lanIp
+    ? [...securePorts.map((port) => `wss://${lanIp}:${port}`), ...insecurePorts.map((port) => `ws://${lanIp}:${port}`)]
+    : []
+
+  return [...defaults, ...lanOrigins, ...parseConfiguredOrigins(value)].join(' ')
+}
+
+function parseConfiguredOrigins(value: string | undefined) {
+  if (!value?.trim()) {
+    return []
+  }
+
+  return value
+    .split(/[\s,]+/)
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.startsWith('ws://') || origin.startsWith('wss://'))
 }

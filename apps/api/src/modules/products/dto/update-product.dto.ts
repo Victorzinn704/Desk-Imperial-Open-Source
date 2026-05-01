@@ -6,15 +6,18 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  Matches,
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
   MinLength,
   ValidateNested,
 } from 'class-validator'
 import { ProductComboItemDto } from './product-combo-item.dto'
+import { normalizeProductBarcodeInput } from '../products-barcode.util'
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Produto Alpha' })
@@ -23,6 +26,18 @@ export class UpdateProductDto {
   @MinLength(2)
   @MaxLength(120)
   name?: string
+
+  @ApiPropertyOptional({
+    example: '7891234567890',
+    description: 'EAN/código de barras do produto. Envie vazio/null para remover.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => normalizeProductBarcodeInput(value))
+  @IsString()
+  @Matches(/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/, {
+    message: 'O código de barras precisa ter 8, 12, 13 ou 14 dígitos.',
+  })
+  barcode?: string | null
 
   @ApiPropertyOptional({ example: 'Coca-Cola' })
   @IsOptional()
@@ -70,6 +85,34 @@ export class UpdateProductDto {
   @IsString()
   @MaxLength(280)
   description?: string
+
+  @ApiPropertyOptional({ example: '350ml', description: 'Leitura de quantidade vinda do catálogo externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsString()
+  @MaxLength(64)
+  quantityLabel?: string | null
+
+  @ApiPropertyOptional({ example: '269ml', description: 'Porção/medida de consumo do catálogo externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsString()
+  @MaxLength(64)
+  servingSize?: string | null
+
+  @ApiPropertyOptional({ example: 'https://images.openfoodfacts.org/images/products/789/123/456/7890/front_pt.3.400.jpg' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUrl({ require_protocol: true })
+  @MaxLength(500)
+  imageUrl?: string | null
+
+  @ApiPropertyOptional({ example: 'open_food_facts', description: 'Origem do enriquecimento externo.' })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsString()
+  @MaxLength(80)
+  catalogSource?: string | null
 
   @ApiPropertyOptional({ example: true, description: 'Define se este produto funciona como combo.' })
   @IsOptional()

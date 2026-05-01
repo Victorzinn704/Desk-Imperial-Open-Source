@@ -3,7 +3,12 @@ import type { ConfigService } from '@nestjs/config'
 import { CurrencyCode, UserRole, UserStatus } from '@prisma/client'
 import * as argon2 from 'argon2'
 import { AuthService } from '../src/modules/auth/auth.service'
-import { makeOwnerAuthContext } from './helpers/auth-context.factory'
+import { AuthSessionService } from '../src/modules/auth/auth-session.service'
+import { AuthLoginService } from '../src/modules/auth/auth-login.service'
+import { AuthRegistrationService } from '../src/modules/auth/auth-registration.service'
+import { AuthPasswordService } from '../src/modules/auth/auth-password.service'
+import { AuthEmailVerificationService } from '../src/modules/auth/auth-email-verification.service'
+import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
 
 jest.mock('argon2', () => ({
@@ -122,21 +127,27 @@ function createSetup(options: SetupOptions = {}) {
     assertPasswordResetCodeAllowed: jest.fn(async () => {}),
     assertEmailVerificationAllowed: jest.fn(async () => {}),
     assertEmailVerificationCodeAllowed: jest.fn(async () => {}),
-    recordPasswordResetAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
-      count: 1,
-      firstAttemptAt: Date.now(),
-      lockedUntil: null,
-    })),
-    recordPasswordResetCodeAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
-      count: 1,
-      firstAttemptAt: Date.now(),
-      lockedUntil: null,
-    })),
-    recordEmailVerificationAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
-      count: 1,
-      firstAttemptAt: Date.now(),
-      lockedUntil: null,
-    })),
+    recordPasswordResetAttempt: jest.fn(
+      async (): Promise<RateLimitStateMock> => ({
+        count: 1,
+        firstAttemptAt: Date.now(),
+        lockedUntil: null,
+      }),
+    ),
+    recordPasswordResetCodeAttempt: jest.fn(
+      async (): Promise<RateLimitStateMock> => ({
+        count: 1,
+        firstAttemptAt: Date.now(),
+        lockedUntil: null,
+      }),
+    ),
+    recordEmailVerificationAttempt: jest.fn(
+      async (): Promise<RateLimitStateMock> => ({
+        count: 1,
+        firstAttemptAt: Date.now(),
+        lockedUntil: null,
+      }),
+    ),
     recordEmailVerificationCodeAttempt: jest.fn(async () => ({
       count: 1,
       firstAttemptAt: Date.now(),
@@ -158,18 +169,116 @@ function createSetup(options: SetupOptions = {}) {
     set: jest.fn(async () => {}),
     get: jest.fn(async (): Promise<any> => null),
     del: jest.fn(async () => {}),
+    delByPrefix: jest.fn(async () => {}),
   }
 
-  const service = new AuthService(
+  const session = {
+    createSession: jest.fn(async () => ({
+      token: 'mock-token',
+      expiresAt: new Date(Date.now() + 86400000),
+      sessionId: 'session-1',
+      evaluationAccess: null,
+    })),
+    cacheAuthSession: jest.fn(async () => {}),
+    validateSessionToken: jest.fn(async () => null),
+    forgetSessionCache: jest.fn(async () => {}),
+    refreshWorkspaceSessionCaches: jest.fn(async () => {}),
+    invalidateWorkspaceDerivedCaches: jest.fn(async () => {}),
+    setSessionCookies: jest.fn(),
+    setCsrfCookie: jest.fn(),
+    getSessionCookieName: jest.fn(() => 'dev-session'),
+    getCsrfCookieName: jest.fn(() => 'dev-csrf'),
+    buildCsrfToken: jest.fn(() => 'mock-csrf'),
+    getSessionCookieBaseOptions: jest.fn(() => ({})),
+    getCsrfCookieBaseOptions: jest.fn(() => ({})),
+  }
+
+  const registration = {
+    register: jest.fn(async () => ({
+      success: true,
+      requiresEmailVerification: true,
+      email: 'test@test.com',
+      deliveryMode: 'email',
+      message: 'ok',
+    })),
+  }
+
+  const login = {
+    login: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+    loginDemo: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+  }
+
+  const password = {
+    requestPasswordReset: jest.fn(async () => ({ success: true, message: 'ok' })),
+    resetPassword: jest.fn(async () => ({ success: true, message: 'ok' })),
+  }
+
+  const emailVerification = {
+    requestEmailVerification: jest.fn(async () => ({ success: true, message: 'ok' })),
+    verifyEmail: jest.fn(async () => ({ success: true, message: 'ok' })),
+    sendEmailVerificationCode: jest.fn(async () => ({ deliveryMode: 'email' })),
+  }
+
+  const sessionService = new AuthSessionService(
     prisma as any,
     config as unknown as ConfigService,
-    consent as any,
-    geocoding as any,
+    demo as any,
+    cache as any,
+  )
+  const emailVerificationService = new AuthEmailVerificationService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+  )
+  const consentSvc = {
+    recordLegalAcceptances: jest.fn(async () => {}),
+    updateCookiePreferences: jest.fn(async () => {}),
+    getVersion: jest.fn(() => '2026.03'),
+  }
+  const geocodingSvc = { geocodeAddressLocation: jest.fn(async () => null) }
+  const registrationService = new AuthRegistrationService(
+    prisma as any,
+    config as unknown as ConfigService,
+    consentSvc as any,
+    geocodingSvc as any,
+    mailer as any,
+    audit as any,
+    emailVerificationService,
+  )
+  const passwordService = new AuthPasswordService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+    sessionService,
+    demo as any,
+  )
+  const loginService = new AuthLoginService(
+    prisma as any,
+    config as unknown as ConfigService,
     mailer as any,
     audit as any,
     rateLimit as any,
     demo as any,
-    cache as any,
+    sessionService,
+    emailVerificationService,
+  )
+
+  const service = new AuthService(
+    prisma as any,
+    config as unknown as ConfigService,
+    mailer as any,
+    audit as any,
+    rateLimit as any,
+    demo as any,
+    sessionService,
+    registrationService,
+    loginService,
+    passwordService,
+    emailVerificationService,
   )
 
   return {
@@ -181,6 +290,9 @@ function createSetup(options: SetupOptions = {}) {
     rateLimit,
     demo,
     cache,
+    sessionService,
+    passwordService,
+    emailVerificationService,
   }
 }
 
@@ -194,7 +306,11 @@ describe('AuthService session and recovery flows', () => {
   it('retorna sessao em cache sem consultar banco', async () => {
     const { service, prisma, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-cached' })
-    cache.get.mockResolvedValue({ tokenHash: 'cached-hash', auth })
+    cache.get.mockResolvedValue({
+      tokenHash: 'cached-hash',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      auth,
+    })
 
     const result = await service.validateSessionToken('raw-token')
 
@@ -281,6 +397,64 @@ describe('AuthService session and recovery flows', () => {
     expect(cache.set).toHaveBeenCalledTimes(2)
   })
 
+  it('reconstroi sessao STAFF usando loginUser vinculado quando session.user esta vazio', async () => {
+    const { service, prisma, cache } = createSetup()
+    cache.get.mockResolvedValue(null)
+    prisma.session.findUnique.mockResolvedValue({
+      id: 'session-staff-rebuild',
+      tokenHash: 'token-hash-staff-rebuild',
+      expiresAt: new Date(Date.now() + 30 * 60_000),
+      revokedAt: null,
+      lastSeenAt: new Date(Date.now() - 16 * 60_000),
+      user: null,
+      employee: {
+        id: 'emp-1',
+        active: true,
+        employeeCode: 'VD-001',
+        displayName: 'Marina Vendas',
+        loginUser: {
+          id: 'staff-user-1',
+        },
+      },
+      workspaceOwner: {
+        id: 'owner-1',
+        companyOwnerId: null,
+        fullName: 'Owner One',
+        companyName: 'Empresa Imperial',
+        companyStreetLine1: 'Rua A',
+        companyStreetNumber: '123',
+        companyAddressComplement: null,
+        companyDistrict: 'Centro',
+        companyCity: 'Sao Paulo',
+        companyState: 'SP',
+        companyPostalCode: '01000-000',
+        companyCountry: 'Brasil',
+        companyLatitude: -23.55,
+        companyLongitude: -46.63,
+        hasEmployees: true,
+        employeeCount: 5,
+        email: 'owner@empresa.com',
+        emailVerifiedAt: new Date('2026-01-01T00:00:00.000Z'),
+        preferredCurrency: CurrencyCode.BRL,
+        status: UserStatus.ACTIVE,
+        cookiePreference: { analytics: true, marketing: false },
+      },
+    })
+
+    const result = await service.validateSessionToken('staff-session-token')
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        role: 'STAFF',
+        userId: 'staff-user-1',
+        actorUserId: 'staff-user-1',
+        workspaceOwnerUserId: 'owner-1',
+        employeeId: 'emp-1',
+        employeeCode: 'VD-001',
+      }),
+    )
+  })
+
   it('logout revoga sessao, limpa cookies e invalida cache', async () => {
     const { service, prisma, demo, audit, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-logout' })
@@ -301,7 +475,8 @@ describe('AuthService session and recovery flows', () => {
     )
     expect(response.clearCookie).toHaveBeenCalledTimes(3)
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.logout.succeeded' }))
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    // invalidateWorkspaceDerivedCaches calls cache.del 5 times (finance, pillars, products x2, orders)
+    expect(cache.del).toHaveBeenCalledTimes(5)
   })
 
   it('getCurrentUser emite csrf cookie e retorna payload de sessao', async () => {
@@ -318,11 +493,15 @@ describe('AuthService session and recovery flows', () => {
     expect(result.csrfToken).toMatch(/^[0-9a-f]{64}$/)
   })
 
-  it('updateProfile persiste dados, audita evento e limpa cache da sessao', async () => {
+  it('updateProfile persiste dados, audita evento e invalida caches do workspace', async () => {
     const { service, prisma, audit, cache } = createSetup()
     const auth = makeOwnerAuthContext({ sessionId: 'session-profile' })
     const context = makeRequestContext()
-    cache.get.mockResolvedValue({ tokenHash: 'profile-token' })
+    prisma.session.findMany.mockResolvedValue([
+      { id: 'session-profile', tokenHash: 'profile-token' },
+      { id: 'session-other', tokenHash: 'profile-other' },
+    ])
+    prisma.session.findUnique.mockResolvedValue({ tokenHash: 'profile-token' })
     prisma.user.update.mockResolvedValue({
       id: auth.userId,
       companyOwnerId: null,
@@ -369,7 +548,58 @@ describe('AuthService session and recovery flows', () => {
       }),
     )
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.profile.updated' }))
-    expect(cache.del).toHaveBeenCalledTimes(2)
+    // refreshWorkspaceSessionCaches limpa as sessoes do workspace e o update invalida caches derivados
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:profile-token')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-profile')
+    expect(cache.del).toHaveBeenCalledWith('finance:summary:owner-1')
+    expect(cache.del).toHaveBeenCalledWith('finance:pillars:owner-1')
+  })
+
+  it('updateProfile rejeita sessao STAFF', async () => {
+    const { service, prisma } = createSetup()
+    const auth = makeStaffAuthContext({ sessionId: 'session-staff-profile' })
+
+    await expect(
+      service.updateProfile(
+        auth,
+        {
+          fullName: 'Nome indevido',
+          companyName: 'Empresa indevida',
+          preferredCurrency: CurrencyCode.BRL,
+        },
+        makeRequestContext(),
+      ),
+    ).rejects.toThrow('Apenas o dono da empresa pode atualizar o perfil.')
+
+    expect(prisma.user.update).not.toHaveBeenCalled()
+  })
+
+  it('revokeEmployeeSessions revoga as sessoes do funcionario e limpa cache', async () => {
+    const { service, prisma, cache, demo } = createSetup()
+    prisma.session.findMany.mockResolvedValue([
+      { id: 'session-employee-1', tokenHash: 'employee-token-1' },
+      { id: 'session-employee-2', tokenHash: 'employee-token-2' },
+    ])
+
+    await service.revokeEmployeeSessions('employee-1')
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          employeeId: 'employee-1',
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: expect.any(Date),
+        },
+      }),
+    )
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:employee-token-1')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-employee-1')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:token:employee-token-2')
+    expect(cache.del).toHaveBeenCalledWith('auth:session:id:session-employee-2')
+    expect(demo.closeGrantForSession).toHaveBeenCalledWith('session-employee-1')
+    expect(demo.closeGrantForSession).toHaveBeenCalledWith('session-employee-2')
   })
 
   it('requestPasswordReset retorna mensagem generica quando usuario nao existe', async () => {
@@ -424,9 +654,7 @@ describe('AuthService session and recovery flows', () => {
 
     expect(result.success).toBe(true)
     expect(mailer.sendPasswordResetEmail).toHaveBeenCalledTimes(1)
-    expect(audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'auth.password-reset.preview_enabled' }),
-    )
+    expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.password-reset.preview_enabled' }))
   })
 
   it('requestEmailVerification retorna mensagem generica quando email ja esta verificado', async () => {
@@ -443,8 +671,7 @@ describe('AuthService session and recovery flows', () => {
 
     expect(result).toEqual({
       success: true,
-      message:
-        'Se o email estiver cadastrado e pendente de confirmacao, enviaremos um novo codigo em instantes.',
+      message: 'Se o email estiver cadastrado e pendente de confirmacao, enviaremos um novo codigo em instantes.',
     })
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.email-verification.requested' }))
   })
@@ -457,8 +684,7 @@ describe('AuthService session and recovery flows', () => {
 
     expect(result).toEqual({
       success: true,
-      message:
-        'Se o email estiver cadastrado e pendente de confirmacao, enviaremos um novo codigo em instantes.',
+      message: 'Se o email estiver cadastrado e pendente de confirmacao, enviaremos um novo codigo em instantes.',
     })
     expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'auth.email-verification.requested' }))
   })
@@ -575,6 +801,7 @@ describe('AuthService session and recovery flows', () => {
         tokenHash: 'token-hash-1',
       },
     ])
+    prisma.session.findUnique.mockResolvedValue({ tokenHash: 'token-hash-1' })
     mockArgon2Verify.mockResolvedValue(false)
     mockArgon2Hash.mockResolvedValue('new-password-hash')
 
@@ -627,9 +854,9 @@ describe('AuthService session and recovery flows', () => {
   })
 
   it('sendPasswordChangedNotice envia notificacao e audita entrega', async () => {
-    const { service, mailer, audit } = createSetup()
+    const { passwordService, mailer, audit } = createSetup()
 
-    await (service as any).sendPasswordChangedNotice(
+    await (passwordService as any).sendPasswordChangedNotice(
       {
         id: 'user-1',
         email: 'owner@empresa.com',

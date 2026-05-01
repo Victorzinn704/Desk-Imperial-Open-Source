@@ -1,0 +1,9 @@
+[Unit]
+Description=Desk Imperial pgBadger report
+After=docker.service wg-quick@wg0.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/desk-imperial
+ExecStart=/usr/bin/env bash /opt/desk-imperial/infra/scripts/oracle-runner-bootstrap.sh pgbadger

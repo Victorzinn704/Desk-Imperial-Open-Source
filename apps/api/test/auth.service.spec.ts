@@ -20,8 +20,13 @@
 
 import { BadRequestException, ConflictException } from '@nestjs/common'
 import type { ConfigService } from '@nestjs/config'
-import { UserRole, UserStatus, CurrencyCode } from '@prisma/client'
+import { CurrencyCode, UserRole, UserStatus } from '@prisma/client'
 import { AuthService } from '../src/modules/auth/auth.service'
+import { AuthSessionService } from '../src/modules/auth/auth-session.service'
+import { AuthLoginService } from '../src/modules/auth/auth-login.service'
+import { AuthRegistrationService } from '../src/modules/auth/auth-registration.service'
+import { AuthPasswordService } from '../src/modules/auth/auth-password.service'
+import { AuthEmailVerificationService } from '../src/modules/auth/auth-email-verification.service'
 import * as argon2 from 'argon2'
 import { makeRequestContext } from './helpers/request-context.factory'
 
@@ -145,7 +150,7 @@ function makeMockGeocoding(result: Record<string, unknown> | null = null) {
     precision: 'rooftop',
   }
   return {
-    geocodeAddressLocation: jest.fn(async () => (result === null ? null : result ?? successResult)),
+    geocodeAddressLocation: jest.fn(async () => (result === null ? null : (result ?? successResult))),
   }
 }
 
@@ -234,6 +239,74 @@ function makeMockDemoAccess() {
   }
 }
 
+function makeMockSession(configService?: any) {
+  return {
+    createSession: jest.fn(async () => ({
+      token: 'mock-token',
+      expiresAt: new Date(Date.now() + 86400000),
+      sessionId: 'session-1',
+      evaluationAccess: null,
+    })),
+    cacheAuthSession: jest.fn(async () => {}),
+    validateSessionToken: jest.fn(async () => null),
+    forgetSessionCache: jest.fn(async () => {}),
+    disconnectTrackedSessions: jest.fn(async () => {}),
+    refreshWorkspaceSessionCaches: jest.fn(async () => {}),
+    invalidateWorkspaceDerivedCaches: jest.fn(async () => {}),
+    setSessionCookies: jest.fn(),
+    setCsrfCookie: jest.fn(),
+    getSessionCookieName: jest.fn(() => {
+      const env = configService?.get?.('NODE_ENV')
+      return env === 'production' ? '__Host-partner_session' : 'partner_session'
+    }),
+    getCsrfCookieName: jest.fn(() => {
+      const env = configService?.get?.('NODE_ENV')
+      return env === 'production' ? '__Host-partner_csrf' : 'partner_csrf'
+    }),
+    buildCsrfToken: jest.fn((sessionId: string) => {
+      const { createHmac } = require('node:crypto')
+      const secret = configService?.get?.('CSRF_SECRET') || 'test-csrf-secret'
+      return createHmac('sha256', secret).update(`csrf:${sessionId}`).digest('hex')
+    }),
+    getSessionCookieBaseOptions: jest.fn(() => ({})),
+    getCsrfCookieBaseOptions: jest.fn(() => ({})),
+  }
+}
+
+function makeMockRegistration() {
+  return {
+    register: jest.fn(async () => ({
+      success: true,
+      requiresEmailVerification: true,
+      email: 'test@test.com',
+      deliveryMode: 'email',
+      message: 'ok',
+    })),
+  }
+}
+
+function makeMockLogin() {
+  return {
+    login: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+    loginDemo: jest.fn(async () => ({ user: {}, csrfToken: 'mock', session: { expiresAt: new Date() } })),
+  }
+}
+
+function makeMockPassword() {
+  return {
+    requestPasswordReset: jest.fn(async () => ({ success: true, message: 'ok' })),
+    resetPassword: jest.fn(async () => ({ success: true, message: 'ok' })),
+  }
+}
+
+function makeMockEmailVerification() {
+  return {
+    requestEmailVerification: jest.fn(async () => ({ success: true, message: 'ok' })),
+    verifyEmail: jest.fn(async () => ({ success: true, message: 'ok' })),
+    sendEmailVerificationCode: jest.fn(async () => ({ deliveryMode: 'email' })),
+  }
+}
+
 /** Constrói uma instância real do AuthService com todos os colaboradores mockados. */
 function buildService(
   overrides: {
@@ -245,17 +318,65 @@ function buildService(
     consent?: any
     rateLimit?: any
     demo?: any
+    session?: any
+    registration?: any
+    login?: any
+    password?: any
+    emailVerification?: any
   } = {},
 ) {
+  const config = overrides.config ?? (makeMockConfig() as unknown as ConfigService)
+  const prisma = overrides.prisma ?? makeMockPrisma()
+  const mailer = overrides.mailer ?? makeMockMailer()
+  const audit = overrides.audit ?? makeMockAuditLog()
+  const rateLimit = overrides.rateLimit ?? makeMockRateLimit()
+  const demo = overrides.demo ?? makeMockDemoAccess()
+
+  const consent = {
+    recordLegalAcceptances: jest.fn(async () => {}),
+    updateCookiePreferences: jest.fn(async () => {}),
+    getVersion: jest.fn(() => '2026.03'),
+  }
+  const geocoding = {
+    geocodeAddressLocation: jest.fn(async () => null),
+  }
+
+  const sessionService =
+    overrides.session ??
+    new AuthSessionService(prisma, config, demo, {
+      disconnectSessions: jest.fn(),
+    } as any)
+  const emailVerificationService =
+    overrides.emailVerification ?? new AuthEmailVerificationService(prisma, config, mailer, audit, rateLimit)
+  const registrationService =
+    overrides.registration ??
+    new AuthRegistrationService(
+      prisma,
+      config,
+      consent as any,
+      geocoding as any,
+      mailer,
+      audit,
+      emailVerificationService,
+    )
+  const passwordService =
+    overrides.password ?? new AuthPasswordService(prisma, config, mailer, audit, rateLimit, sessionService, demo)
+  const loginService =
+    overrides.login ??
+    new AuthLoginService(prisma, config, mailer, audit, rateLimit, demo, sessionService, emailVerificationService)
+
   return new AuthService(
-    overrides.prisma ?? makeMockPrisma(),
-    overrides.config ?? (makeMockConfig() as unknown as ConfigService),
-    overrides.consent ?? makeMockConsent(),
-    overrides.geocoding ?? makeMockGeocoding(),
-    overrides.mailer ?? makeMockMailer(),
-    overrides.audit ?? makeMockAuditLog(),
-    overrides.rateLimit ?? makeMockRateLimit(),
-    overrides.demo ?? makeMockDemoAccess(),
+    prisma,
+    config,
+    mailer,
+    audit,
+    rateLimit,
+    demo,
+    sessionService,
+    registrationService,
+    loginService,
+    passwordService,
+    emailVerificationService,
   )
 }
 
@@ -658,5 +779,85 @@ describe('AuthService — isolamento de cookie names por ambiente', () => {
   it('o nome da sessão e o do CSRF token são sempre diferentes (sem colisão)', () => {
     const service = buildService()
     expect(service.getSessionCookieName()).not.toBe(service.getCsrfCookieName())
+  })
+})
+
+describe('AuthService.logout()', () => {
+  it('revoga a sessao, limpa cache e derruba sockets rastreados', async () => {
+    const prisma = {
+      session: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+      },
+    }
+    const session = makeMockSession()
+    const audit = makeMockAuditLog()
+    const demo = {
+      ...makeMockDemoAccess(),
+      closeGrantForSession: jest.fn(async () => {}),
+    }
+    const response = {
+      clearCookie: jest.fn(),
+    }
+    const service = buildService({
+      prisma,
+      session,
+      audit,
+      demo,
+    })
+
+    await service.logout(
+      {
+        userId: 'owner-1',
+        actorUserId: 'owner-1',
+        sessionId: 'session-1',
+        role: 'OWNER',
+        workspaceOwnerUserId: 'owner-1',
+        companyOwnerUserId: 'owner-1',
+        employeeId: null,
+        employeeCode: null,
+        email: 'owner@deskimperial.online',
+        fullName: 'Owner',
+        companyName: 'Desk Imperial',
+        companyLocation: {
+          streetLine1: null,
+          streetNumber: null,
+          addressComplement: null,
+          district: null,
+          city: null,
+          state: null,
+          postalCode: null,
+          country: null,
+          latitude: null,
+          longitude: null,
+          precision: 'city',
+        },
+        workforce: { hasEmployees: false, employeeCount: 0 },
+        emailVerified: true,
+        preferredCurrency: CurrencyCode.BRL,
+        status: UserStatus.ACTIVE,
+        evaluationAccess: null,
+        cookiePreferences: { necessary: true, analytics: false, marketing: false },
+      },
+      response as any,
+      makeRequestContext(),
+    )
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith({
+      where: { id: 'session-1', revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    })
+    expect(session.forgetSessionCache).toHaveBeenCalledWith('session-1')
+    expect(session.disconnectTrackedSessions).toHaveBeenCalledWith(['session-1'])
+    expect(session.refreshWorkspaceSessionCaches).toHaveBeenCalledWith('owner-1')
+    expect(session.invalidateWorkspaceDerivedCaches).toHaveBeenCalledWith('owner-1')
+    expect(demo.closeGrantForSession).toHaveBeenCalledWith('session-1')
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'auth.logout.succeeded',
+        resource: 'session',
+        resourceId: 'session-1',
+      }),
+    )
+    expect(response.clearCookie).toHaveBeenCalled()
   })
 })

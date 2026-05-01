@@ -3,7 +3,7 @@ import nextTypeScript from 'eslint-config-next/typescript'
 
 const config = [
   {
-    ignores: ['coverage/**'],
+    ignores: ['coverage/**', 'components/charts/**', '.next/**', 'node_modules/**'],
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,
@@ -14,6 +14,94 @@ const config = [
       },
     },
   },
+
+  // --- Code Size & Complexity (all TS/TSX) ---
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: {
+      'max-lines': [
+        'warn',
+        {
+          max: 300,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      'max-lines-per-function': [
+        'warn',
+        {
+          max: 50,
+          skipComments: true,
+          skipBlankLines: true,
+        },
+      ],
+      complexity: ['warn', 15],
+      'max-depth': ['error', 4],
+      'max-params': ['warn', 5],
+      'max-nested-callbacks': ['error', 3],
+
+      // --- Import Organization ---
+      'sort-imports': [
+        'warn',
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true,
+          ignoreMemberSort: false,
+          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+          allowSeparatedGroups: true,
+        },
+      ],
+      'no-duplicate-imports': 'error',
+
+      // --- Code Quality ---
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'no-nested-ternary': 'warn',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      curly: ['error', 'all'],
+      'default-case': 'error',
+      'no-return-await': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-throw-literal': 'error',
+
+      // --- TypeScript ---
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'inline-type-imports',
+        },
+      ],
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-require-imports': 'error',
+      '@typescript-eslint/prefer-as-const': 'warn',
+
+      // --- React ---
+      'react-hooks/exhaustive-deps': 'error',
+      'react/self-closing-comp': ['warn', { component: true, html: true }],
+      'react/jsx-sort-props': [
+        'warn',
+        {
+          callbacksLast: true,
+          shorthandFirst: true,
+          noSortAlphabetically: false,
+        },
+      ],
+    },
+  },
+
+  // --- Restricted Imports (heavy libs) ---
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     rules: {
@@ -42,6 +130,8 @@ const config = [
       ],
     },
   },
+
+  // --- Exceptions for lazy-loaded components ---
   {
     files: [
       'components/staff-mobile/mobile-order-builder.tsx',
@@ -56,6 +146,7 @@ const config = [
       'components/operations/operations-executive-grid.tsx',
       'components/operations/operations-timeline.tsx',
       'components/calendar/**/*.{ts,tsx,mts,cts}',
+      'components/charts/**/*.{ts,tsx,mts,cts}',
       'components/shared/lazy-components.tsx',
       'apps/web/components/dashboard/finance-chart.tsx',
       'apps/web/components/dashboard/chart-responsive-container.tsx',
@@ -67,6 +158,7 @@ const config = [
       'apps/web/components/operations/operations-executive-grid.tsx',
       'apps/web/components/operations/operations-timeline.tsx',
       'apps/web/components/calendar/**/*.{ts,tsx,mts,cts}',
+      'apps/web/components/charts/**/*.{ts,tsx,mts,cts}',
       'apps/web/components/shared/lazy-components.tsx',
     ],
     rules: {
@@ -74,12 +166,17 @@ const config = [
       'react-hooks/incompatible-library': 'off',
     },
   },
+
+  // --- Test Files (relaxed) ---
   {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/consistent-type-imports': 'error',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'max-nested-callbacks': 'off',
+      'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
     },
   },
 ]

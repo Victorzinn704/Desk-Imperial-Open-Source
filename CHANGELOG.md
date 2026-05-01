@@ -30,6 +30,18 @@ Versioning segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - `README.md` reescrito com stack completa, funcionalidades, testes e links de documentação
 - `package.json` raiz renomeado de `partner-portal-monorepo` para `desk-imperial`
 
+### Refatoracao
+
+- **Modulo auth dividido em 6 arquivos** — `auth.service.ts` (303 → orquestrador) delega para:
+  - `auth-session.service.ts` — sessao, cache, cookies, CSRF, validacao de token
+  - `auth-login.service.ts` — login owner/staff, login demo, resolucao de atores
+  - `auth-registration.service.ts` — cadastro de usuario, geocodificacao, consentimento
+  - `auth-password.service.ts` — solicitacao e execucao de reset de senha
+  - `auth-email-verification.service.ts` — emissao e validacao de codigo OTP de email
+  - `auth-shared.util.ts` — selects, helpers e utilitarios compartilhados
+- **ESLint Fase 1 completa** — 165 errors API e ~100 errors Web reduzidos a 0 errors
+- **Relatorio de candidatos a refatoracao** — `docs/architecture/refactoring-candidates-report.md` com ranking de 12 arquivos por linhas, complexidade e severidade
+
 ### Removido
 
 - `packages/ui` — scaffold vazio sem código implementado

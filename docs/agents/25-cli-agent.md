@@ -35,23 +35,27 @@ CLI é a camada de controle do sistema. Comandos errados podem destruir dados, d
 ## Categorias de operação CLI
 
 ### Scripts de desenvolvimento
+
 - Instalar dependências, rodar servidor local, executar build
 - Gerar código (migrations, scaffolding, tipos)
 - Executar linters, typechecks e testes
 
 ### Scripts de banco de dados
+
 - Rodar migrations (`migrate deploy`, `migrate dev`)
 - Seeding de dados de desenvolvimento
 - Reset de banco local
 - **NUNCA executar reset em banco de staging ou produção sem confirmação explícita**
 
 ### Scripts de deploy e infra
+
 - Build de imagem Docker
 - Push para registry
-- Deploy via CLI da plataforma (Railway, etc.)
+- Deploy via CLI da plataforma (Railway, Vercel, etc.)
 - Verificação de health após deploy
 
 ### Scripts de diagnóstico
+
 - Verificar logs em tempo real
 - Inspecionar variáveis de ambiente ativas
 - Checar status de serviços e containers
@@ -80,3 +84,27 @@ O agente deve conhecer os conceitos independente do gerenciador de pacotes:
 - Comandos executados registrados com propósito no handoff
 - Nenhum efeito colateral inesperado em outros serviços
 - Ambiente retornou ao estado esperado (ou melhor)
+
+## Convenção Playwright CLI (Copilot, Codex e Claude)
+
+- Ferramenta padrão para automação de navegador: `playwright-cli`.
+- Se não houver comando global disponível, usar `npx playwright-cli`.
+- Instalação de skills para agentes: `playwright-cli install --skills`.
+
+### Sessões por agente
+
+- Copilot: `desk-imperial-copilot`
+- Codex: `desk-imperial-codex`
+- Claude: `desk-imperial-claude`
+
+Use sessão explícita por comando com `-s=<nome-da-sessao>` para evitar conflitos.
+
+### Wrapper recomendado (Windows)
+
+Use o script `scripts/playwright-agent.ps1` para aplicar sessão automaticamente:
+
+```powershell
+./scripts/playwright-agent.ps1 -Agent copilot -- open https://example.com
+./scripts/playwright-agent.ps1 -Agent codex -- snapshot --depth=4
+./scripts/playwright-agent.ps1 -Agent claude -- close
+```

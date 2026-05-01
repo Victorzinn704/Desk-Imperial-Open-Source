@@ -28,6 +28,7 @@ import type { FinanceService } from '../src/modules/finance/finance.service'
 import type { CreateProductDto } from '../src/modules/products/dto/create-product.dto'
 import type { UpdateProductDto } from '../src/modules/products/dto/update-product.dto'
 import type { ListProductsQueryDto } from '../src/modules/products/dto/list-products.query'
+import { buildComboItemsPayload } from '../src/modules/products/products-combo.utils'
 import * as productsImportUtil from '../src/modules/products/products-import.util'
 import { makeAuthContext } from './helpers/auth-context.factory'
 import { makeRequestContext } from './helpers/request-context.factory'
@@ -82,6 +83,7 @@ function makeProduct(overrides: object = {}) {
     id: 'product-1',
     userId: 'user-1',
     name: 'Produto Teste',
+    barcode: null,
     brand: 'Marca Teste',
     category: 'Categoria Teste',
     packagingClass: 'Classe Teste',
@@ -91,6 +93,10 @@ function makeProduct(overrides: object = {}) {
     isCombo: false,
     comboDescription: null,
     description: 'Descrição teste',
+    quantityLabel: null,
+    servingSize: null,
+    imageUrl: null,
+    catalogSource: null,
     unitCost: 10.0,
     unitPrice: 20.0,
     currency: CurrencyCode.BRL,
@@ -169,7 +175,13 @@ beforeEach(() => {
   requestContext = makeRequestContext()
 
   // Defaults
-  mockPrisma.$transaction.mockImplementation(async (callback) => callback(mockPrisma))
+  mockPrisma.$transaction.mockImplementation(async (input) => {
+    if (typeof input === 'function') {
+      return input(mockPrisma)
+    }
+
+    return Promise.all(input)
+  })
   mockPrisma.product.findUniqueOrThrow.mockResolvedValue(makeProduct())
   mockPrisma.productComboItem.findMany.mockResolvedValue([])
   mockCurrencyService.getSnapshot.mockResolvedValue(makeCurrencySnapshot())
@@ -250,6 +262,7 @@ describe('ProductsService', () => {
           where: expect.objectContaining({
             OR: expect.arrayContaining([
               { name: { contains: 'Coca', mode: 'insensitive' } },
+              { barcode: { contains: 'Coca', mode: 'insensitive' } },
               { brand: { contains: 'Coca', mode: 'insensitive' } },
               { category: { contains: 'Coca', mode: 'insensitive' } },
               { packagingClass: { contains: 'Coca', mode: 'insensitive' } },
@@ -388,6 +401,49 @@ describe('ProductsService', () => {
       expect(result.product).toBeDefined()
     })
 
+    it('deve criar produto com barcode normalizado', async () => {
+      const dto = makeCreateProductDto({
+        barcode: '789.1234.5678-90',
+      })
+      mockPrisma.product.create.mockResolvedValue(makeProduct({ ...dto, barcode: '7891234567890' }))
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          barcode: '7891234567890',
+        }),
+      })
+    })
+
+    it('deve persistir metadados do catalogo externo', async () => {
+      const dto = makeCreateProductDto({
+        barcode: '7891234567890',
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/brahma.jpg',
+        catalogSource: 'open_food_facts',
+      })
+      mockPrisma.product.create.mockResolvedValue(
+        makeProduct({
+          ...dto,
+          barcode: '7891234567890',
+        }),
+      )
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          barcode: '7891234567890',
+          quantityLabel: '350ml',
+          servingSize: '269ml',
+          imageUrl: 'https://images.example/brahma.jpg',
+          catalogSource: 'open_food_facts',
+        }),
+      })
+    })
+
     it('deve sanitizar texto e rejeitar HTML', async () => {
       const dto = makeCreateProductDto({
         name: '<script>alert("xss")</script>Produto',
@@ -413,10 +469,7 @@ describe('ProductsService', () => {
     })
 
     it('deve permitir campos opcionais vazios', async () => {
-      const dto = makeCreateProductDto({
-        brand: undefined,
-        description: undefined,
-      })
+      const dto = makeCreateProductDto()
 
       mockPrisma.product.create.mockResolvedValue(makeProduct())
 
@@ -425,11 +478,42 @@ describe('ProductsService', () => {
       expect(mockPrisma.product.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
+            barcode: null,
             brand: null,
             description: null,
+            quantityLabel: '1 und',
+            catalogSource: 'manual',
           }),
         }),
       )
+    })
+
+    it('deve derivar base canônica para produto manual novo quando o catálogo não vier preenchido', async () => {
+      const dto = makeCreateProductDto({
+        name: 'Heineken 350ml',
+        measurementUnit: 'ML',
+        measurementValue: 350,
+      })
+
+      mockPrisma.product.create.mockResolvedValue(
+        makeProduct({
+          ...dto,
+          brand: 'Heineken',
+          quantityLabel: '350ml',
+          catalogSource: 'manual',
+        }),
+      )
+
+      await productsService.createForUser(mockContext, dto, requestContext)
+
+      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: 'Heineken 350ml',
+          brand: 'Heineken',
+          quantityLabel: '350ml',
+          catalogSource: 'manual',
+        }),
+      })
     })
 
     it('deve lançar ConflictException em caso de duplicate name', async () => {
@@ -685,6 +769,69 @@ describe('ProductsService', () => {
       )
     })
 
+    it('deve permitir remover barcode na atualizacao', async () => {
+      const existingProduct = makeProduct({ barcode: '7891234567890' })
+      const updateDto: UpdateProductDto = {
+        barcode: null,
+      }
+
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
+      mockPrisma.product.update.mockResolvedValue({
+        ...existingProduct,
+        barcode: null,
+      })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({
+        ...existingProduct,
+        barcode: null,
+      })
+
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({
+          barcode: null,
+        }),
+      })
+    })
+
+    it('deve atualizar metadados do catalogo externo', async () => {
+      const existingProduct = makeProduct({
+        quantityLabel: '350ml',
+        servingSize: '269ml',
+        imageUrl: 'https://images.example/old.jpg',
+        catalogSource: 'open_food_facts',
+      })
+      const updateDto: UpdateProductDto = {
+        quantityLabel: '473ml',
+        servingSize: '330ml',
+        imageUrl: 'https://images.example/new.jpg',
+        catalogSource: 'manual_review',
+      }
+
+      mockPrisma.product.findFirst = jest.fn().mockResolvedValue(existingProduct)
+      mockPrisma.product.update.mockResolvedValue({
+        ...existingProduct,
+        ...updateDto,
+      })
+      mockPrisma.product.findUniqueOrThrow.mockResolvedValue({
+        ...existingProduct,
+        ...updateDto,
+      })
+
+      await productsService.updateForUser(mockContext, 'product-1', updateDto, requestContext)
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({
+          quantityLabel: '473ml',
+          servingSize: '330ml',
+          imageUrl: 'https://images.example/new.jpg',
+          catalogSource: 'manual_review',
+        }),
+      })
+    })
+
     it('deve lançar NotFoundException se produto não existir', async () => {
       mockPrisma.product.findFirst = jest.fn().mockResolvedValue(null)
 
@@ -922,6 +1069,72 @@ describe('ProductsService', () => {
     })
   })
 
+  describe('bulkRestockForUser', () => {
+    it('reabastece em massa produtos abaixo da meta operacional', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([
+        makeProduct({ id: 'product-low', name: 'Coca 350', stock: 3, lowStockThreshold: 8 }),
+        makeProduct({ id: 'product-zero', name: 'Agua', stock: 0, lowStockThreshold: null }),
+        makeProduct({ id: 'product-ok', name: 'Whisky', stock: 80, lowStockThreshold: 10 }),
+      ])
+      mockPrisma.product.update.mockImplementation(({ where, data }) =>
+        Promise.resolve(
+          makeProduct({
+            id: where.id,
+            stock: data.stock,
+          }),
+        ),
+      )
+
+      const result = await productsService.bulkRestockForUser(
+        mockContext,
+        { mode: 'low_stock', targetStock: 24 },
+        requestContext,
+      )
+
+      expect(mockPrisma.product.update).toHaveBeenCalledTimes(2)
+      expect(result.summary.updatedCount).toBe(2)
+      expect(result.products).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'product-low', nextStock: 24 }),
+          expect.objectContaining({ id: 'product-zero', nextStock: 24 }),
+        ]),
+      )
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'product.bulk_restocked',
+          metadata: expect.objectContaining({ updatedCount: 2, targetStock: 24 }),
+        }),
+      )
+    })
+
+    it('usa multiplicador do threshold quando a meta do alerta pede mais estoque', async () => {
+      mockPrisma.product.findMany.mockResolvedValue([
+        makeProduct({ id: 'product-threshold', name: 'Batata', stock: 12, lowStockThreshold: 20 }),
+      ])
+      mockPrisma.product.update.mockResolvedValue(makeProduct({ id: 'product-threshold', stock: 40 }))
+
+      const result = await productsService.bulkRestockForUser(
+        mockContext,
+        { mode: 'all_active', targetStock: 24 },
+        requestContext,
+      )
+
+      expect(mockPrisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-threshold' },
+        data: { stock: 40 },
+      })
+      expect(result.products[0]).toEqual(expect.objectContaining({ nextStock: 40 }))
+    })
+
+    it('bloqueia reabastecimento em massa para STAFF', async () => {
+      const staffContext = makeAuthContext({ role: 'STAFF' })
+
+      await expect(
+        productsService.bulkRestockForUser(staffContext, { mode: 'low_stock', targetStock: 24 }, requestContext),
+      ).rejects.toThrow('Apenas o dono pode reabastecer produtos em massa.')
+    })
+  })
+
   describe('importForUser', () => {
     const makeCsvFile = (content: string) => ({
       buffer: Buffer.from(content),
@@ -952,7 +1165,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, makeCsvFile(invalidCsvContent), requestContext)
 
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].message).toContain('nome valido')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('nome valido')
     })
 
     it('deve rejeitar arquivo vazio', async () => {
@@ -980,7 +1195,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, invalidCurrencyCsv, requestContext)
 
       expect(result.errors).toHaveLength(1)
-      expect(result.errors[0].message).toContain('moeda')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('moeda')
     })
 
     it('deve sanitizar dados antes de upsert', async () => {
@@ -994,7 +1211,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, csvWithHtml, requestContext)
 
       expect(result.summary.failedCount).toBe(1)
-      expect(result.errors[0].message).toContain('HTML')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('HTML')
     })
 
     it('deve registrar audit log de importação', async () => {
@@ -1043,6 +1262,31 @@ describe('ProductsService', () => {
       expect(result.summary.createdCount).toBe(1)
     })
 
+    it('deve derivar base canônica no upsert de importação quando o CSV não traz metadados externos', async () => {
+      const csv = makeCsvFile(`name,category,packagingClass,measurementUnit,measurementValue,unitsPerPackage,description,unitCost,unitPrice,currency,stock
+    Brahma 350ml,Cervejas,Lata,ML,350,1,Desc,4.50,6.90,BRL,12`)
+
+      mockPrisma.product.findUnique.mockResolvedValue(null)
+      mockPrisma.product.upsert.mockResolvedValue(makeProduct())
+
+      await productsService.importForUser(mockContext, csv, requestContext)
+
+      expect(mockPrisma.product.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({
+            brand: 'Brahma',
+            quantityLabel: '350ml',
+            catalogSource: 'manual',
+          }),
+          update: expect.objectContaining({
+            brand: 'Brahma',
+            quantityLabel: '350ml',
+            catalogSource: 'manual',
+          }),
+        }),
+      )
+    })
+
     it('deve usar mensagem padrao quando erro da linha nao e instancia de Error', async () => {
       mockPrisma.product.findUnique.mockResolvedValue(null)
       mockPrisma.product.upsert.mockRejectedValue('falha-inesperada')
@@ -1050,7 +1294,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, makeCsvFile(validCsvContent), requestContext)
 
       expect(result.summary.failedCount).toBe(2)
-      expect(result.errors[0].message).toContain('Falha inesperada ao importar a linha')
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain('Falha inesperada ao importar a linha')
     })
 
     it('deve ajustar requiresKitchen no update do upsert conforme categoria', async () => {
@@ -1063,8 +1309,12 @@ describe('ProductsService', () => {
 
       await productsService.importForUser(mockContext, csv, requestContext)
 
-      expect(mockPrisma.product.upsert.mock.calls[0][0].update.requiresKitchen).toBeUndefined()
-      expect(mockPrisma.product.upsert.mock.calls[1][0].update.requiresKitchen).toBe(true)
+      const firstUpsertCall = mockPrisma.product.upsert.mock.calls[0]
+      const secondUpsertCall = mockPrisma.product.upsert.mock.calls[1]
+      expect(firstUpsertCall).toBeDefined()
+      expect(secondUpsertCall).toBeDefined()
+      expect(firstUpsertCall?.[0].update.requiresKitchen).toBeUndefined()
+      expect(secondUpsertCall?.[0].update.requiresKitchen).toBe(true)
     })
 
     it.each([
@@ -1097,7 +1347,9 @@ describe('ProductsService', () => {
       const result = await productsService.importForUser(mockContext, csv, requestContext)
 
       expect(result.summary.failedCount).toBe(1)
-      expect(result.errors[0].message).toContain(expected)
+      const firstError = result.errors[0]
+      expect(firstError).toBeDefined()
+      expect(firstError?.message).toContain(expected)
     })
 
     it('deve aplicar validacoes defensivas quando parser retorna dados inconsistentes', async () => {
@@ -1199,37 +1451,17 @@ describe('ProductsService', () => {
   })
 
   describe('combo internals', () => {
-    type ComboPayloadInput = {
-      productId: string
-      quantityPackages: number
-      quantityUnits: number
-    }
-
-    const getBuildComboItemsPayload = () => {
-      const internals = productsService as unknown as {
-        buildComboItemsPayload: (
-          transaction: unknown,
-          workspaceUserId: string,
-          comboProductId: string,
-          normalizedItems: ComboPayloadInput[],
-        ) => Promise<unknown>
-      }
-
-      return internals.buildComboItemsPayload
-    }
-
     it('deve rejeitar payload interno de combo vazio', async () => {
-      const buildComboItemsPayload = getBuildComboItemsPayload()
-
-      await expect(buildComboItemsPayload(mockPrisma, 'user-1', 'combo-1', [])).rejects.toThrow(BadRequestException)
+      await expect(buildComboItemsPayload(mockPrisma as never, 'user-1', 'combo-1', [])).rejects.toThrow(
+        BadRequestException,
+      )
     })
 
     it('deve rejeitar payload interno com total de unidades <= 0', async () => {
-      const buildComboItemsPayload = getBuildComboItemsPayload()
       mockPrisma.product.findMany.mockResolvedValue([{ id: 'component-1', unitsPerPackage: 6 }])
 
       await expect(
-        buildComboItemsPayload(mockPrisma, 'user-1', 'combo-1', [
+        buildComboItemsPayload(mockPrisma as never, 'user-1', 'combo-1', [
           {
             productId: 'component-1',
             quantityPackages: 0,

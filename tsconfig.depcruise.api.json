@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/api/src/*"],
+      "@contracts/contracts": ["packages/types/src/index"]
+    }
+  },
+  "include": [
+    "apps/api/src/**/*.ts",
+    "apps/api/test/**/*.ts",
+    "packages/types/src/**/*.ts"
+  ]
+}

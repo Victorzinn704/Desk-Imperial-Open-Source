@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import {
   PASSWORD_MIN_LENGTH,
-  STRONG_PASSWORD_REGEX,
   sanitizeDocument,
-  validateCpf,
+  STRONG_PASSWORD_REGEX,
   validateCnpj,
+  validateCpf,
 } from '@contracts/contracts'
 
 export const currencyCodeSchema = z.enum(['BRL', 'USD', 'EUR'])
@@ -18,17 +18,19 @@ export const loginSchema = z
     password: z.string(),
   })
   .superRefine((values, context) => {
-    const minimumLength = values.loginMode === 'STAFF' ? 6 : 8
-    const passwordMessage =
-      values.loginMode === 'STAFF'
-        ? 'O PIN do funcionário precisa ter pelo menos 6 caracteres.'
-        : 'A senha da empresa precisa ter pelo menos 8 caracteres.'
-
-    if (values.password.length < minimumLength) {
+    if (values.loginMode === 'STAFF') {
+      if (!/^\d{8}$/.test(values.password)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['password'],
+          message: 'A senha do funcionário precisa ter exatamente 8 dígitos numéricos.',
+        })
+      }
+    } else if (values.password.length < 8) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['password'],
-        message: passwordMessage,
+        message: 'A senha da empresa precisa ter pelo menos 8 caracteres.',
       })
     }
 
@@ -54,7 +56,7 @@ export const loginSchema = z
 
     if (!values.employeeCode || values.employeeCode.trim().length < 2) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['employeeCode'],
         message: 'Informe o ID do funcionário.',
       })
@@ -82,7 +84,7 @@ export const registerSchema = z
   .object({
     fullName: z.string().trim().min(3, 'Digite seu nome completo.').max(120, 'O nome está longo demais.'),
     companyName: z.string().trim().max(160, 'O nome da empresa está longo demais.').optional().or(z.literal('')),
-    email: z.string().trim().email('Digite um e-mail válido.'),
+    email: z.string().trim().email({ message: 'Digite um e-mail válido.' }),
     companyStreetLine1: z
       .string()
       .trim()
@@ -164,6 +166,20 @@ export const resetPasswordSchema = z
 export const productSchema = z
   .object({
     name: z.string().trim().min(2, 'Digite um nome de produto válido.').max(120, 'O nome ficou longo demais.'),
+    barcode: z.preprocess(
+      (value) => {
+        if (value === null || value === undefined) {
+          return undefined
+        }
+
+        const normalized = String(value).replace(/\D/g, '')
+        return normalized.length > 0 ? normalized : undefined
+      },
+      z
+        .string()
+        .regex(/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/, 'O código de barras precisa ter 8, 12, 13 ou 14 dígitos.')
+        .optional(),
+    ),
     brand: z.string().trim().max(80, 'A marca ficou longa demais.').optional().or(z.literal('')),
     category: z.string().trim().min(2, 'Informe uma categoria.').max(80, 'A categoria ficou longa demais.'),
     packagingClass: z
@@ -277,17 +293,11 @@ export const profileSchema = z.object({
 })
 
 export const employeeSchema = z.object({
-  employeeCode: z
-    .string()
-    .trim()
-    .min(2, 'Informe um ID de funcionário.')
-    .max(32, 'O ID do funcionário ficou longo demais.'),
   displayName: z
     .string()
     .trim()
     .min(3, 'Digite o nome do funcionário.')
     .max(120, 'O nome do funcionário ficou longo demais.'),
-  temporaryPassword: z.string().regex(/^\d{6}$/, 'O PIN precisa ter exatamente 6 dígitos numéricos.'),
 })
 
 export const orderItemSchema = z.object({
@@ -354,10 +364,10 @@ export type OrderFormValues = z.output<typeof orderSchema>
 export function getPasswordStrength(password: string) {
   let score = 0
 
-  if (password.length >= 8) score += 1
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
-  if (/\d/.test(password)) score += 1
-  if (/[^A-Za-z\d]/.test(password)) score += 1
+  if (password.length >= 8) {score += 1}
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {score += 1}
+  if (/\d/.test(password)) {score += 1}
+  if (/[^A-Za-z\d]/.test(password)) {score += 1}
 
   if (score <= 1) {
     return { score: 1, label: 'Fraca' }

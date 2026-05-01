@@ -1,423 +1,313 @@
 # Banco de Dados — Desk Imperial
 
-**Versão:** 1.0  
-**Última atualização:** 2026-04-01  
-**ORM:** Prisma  
-**Banco:** PostgreSQL 16+ (Neon serverless em produção)
+**Versao:** 1.1  
+**Ultima atualizacao:** 2026-05-01  
+**ORM:** Prisma 6  
+**Banco:** PostgreSQL 17 na Ampere da Lohana, com PgBouncer e acesso privado por WireGuard
 
 ---
 
-## Visão geral
+## Visao geral
 
-O banco tem 22 modelos organizados em grupos funcionais:
+O banco atual do Desk Imperial tem duas camadas distintas:
 
-| Grupo               | Modelos                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------- |
-| Identidade e acesso | User, Session, Employee                                                               |
-| Operações           | CashSession, CashMovement, CashClosure, Mesa, Comanda, ComandaItem, ComandaAssignment |
-| Vendas              | Order, OrderItem                                                                      |
-| Portfólio           | Product, ProductComboItem                                                             |
-| Financeiro          | (derivado de Order e Comanda)                                                         |
-| Conformidade        | ConsentDocument, UserConsent, UserCookiePreference                                    |
-| Auditoria           | AuditLog                                                                              |
-| Configurações       | WorkspacePreference                                                                   |
+1. `public` — schema transacional usado por API, web, auth, operacao e notificacoes.
+2. `bi` — schema analitico com views e materialized views usadas por Metabase e leitura gerencial.
 
-**Princípio central:** cada entidade de negócio é filtrada por `companyOwnerId` (o `id` do usuário OWNER do workspace).
+O runtime versionado do projeto nao usa mais Neon como estado atual. O caminho canonico hoje e:
 
----
+- app/web na Oracle `vm-free-01`
+- observabilidade e Metabase na Oracle `vm-free-02`
+- PostgreSQL 17 + PgBouncer na Ampere da Lohana
+- trafego servidor-servidor pela malha WireGuard
 
-## Entidades
+Referencias internas:
 
-### User
-
-Representa o dono do negócio (OWNER) ou um colaborador com acesso ao sistema.
-
-| Campo                       | Tipo          | Descrição                                                 |
-| --------------------------- | ------------- | --------------------------------------------------------- |
-| `id`                        | String (UUID) | Identificador único                                       |
-| `email`                     | String        | E-mail único — usado no login                             |
-| `name`                      | String        | Nome do usuário                                           |
-| `passwordHash`              | String        | Hash argon2id da senha                                    |
-| `role`                      | Enum          | `OWNER` ou `STAFF`                                        |
-| `companyName`               | String?       | Nome do negócio (OWNER)                                   |
-| `companyCity`               | String?       | Cidade do negócio                                         |
-| `companyAddress`            | String?       | Endereço completo                                         |
-| `companyLat` / `companyLng` | Float?        | Coordenadas geocodificadas                                |
-| `emailVerified`             | Boolean       | Se o e-mail foi verificado                                |
-| `emailVerificationCode`     | String?       | Código temporário de verificação                          |
-| `passwordResetToken`        | String?       | Token de reset de senha (hashed)                          |
-| `adminPinHash`              | String?       | Hash do Admin PIN                                         |
-| `adminPinLockedUntil`       | DateTime?     | Timestamp de bloqueio do PIN                              |
-| `adminPinAttempts`          | Int           | Tentativas incorretas consecutivas                        |
-| `companyOwnerId`            | String?       | FK para o OWNER do workspace (STAFF aponta para seu dono) |
-| `createdAt` / `updatedAt`   | DateTime      | Timestamps                                                |
-
-**Relações:**
-
-- `companyOwner` → User (STAFF aponta para seu OWNER)
-- `staff[]` → User[] (OWNER tem lista de funcionários)
-- `sessions[]` → Session[]
+- [infra/oracle/README.md](../../infra/oracle/README.md)
+- [infra/oracle/db/README.md](../../infra/oracle/db/README.md)
+- [apps/api/prisma/schema.prisma](../../apps/api/prisma/schema.prisma)
 
 ---
 
-### Session
+## Mapa atual dos modelos
 
-Armazena sessões autenticadas.
+O schema Prisma atual tem **26 modelos**:
 
-| Campo               | Tipo          | Descrição                                 |
-| ------------------- | ------------- | ----------------------------------------- |
-| `id`                | String (UUID) | Identificador único                       |
-| `userId`            | String        | FK para User                              |
-| `token`             | String        | Token de sessão (hashed)                  |
-| `expiresAt`         | DateTime      | Expiração da sessão                       |
-| `createdAt`         | DateTime      | Criação                                   |
-| `ipAddress`         | String?       | IP de origem                              |
-| `userAgent`         | String?       | User agent do cliente                     |
-| `demoAccessGrantId` | String?       | FK para DemoAccessGrant se for conta demo |
+| Grupo | Modelos |
+| --- | --- |
+| Identidade e acesso | `User`, `Session`, `DemoAccessGrant`, `PasswordResetToken`, `OneTimeCode`, `ConsentDocument`, `UserConsent`, `CookiePreference`, `AuditLog` |
+| Notificacoes | `TelegramAccount`, `TelegramLinkToken`, `NotificationPreference`, `UserNotificationPreference` |
+| Catalogo | `Product`, `ProductComboItem` |
+| Operacao | `Employee`, `CashSession`, `CashMovement`, `CashClosure`, `Mesa`, `Comanda`, `ComandaItem`, `ComandaAssignment`, `ComandaPayment` |
+| Vendas | `Order`, `OrderItem` |
 
----
-
-### Employee
-
-Representa um funcionário do workspace com dados de folha de pagamento.
-
-| Campo                     | Tipo          | Descrição                                 |
-| ------------------------- | ------------- | ----------------------------------------- |
-| `id`                      | String (UUID) | Identificador único                       |
-| `companyOwnerId`          | String        | FK para User (OWNER do workspace)         |
-| `userId`                  | String?       | FK para User se o funcionário tiver login |
-| `name`                    | String        | Nome do funcionário                       |
-| `role`                    | String?       | Cargo                                     |
-| `salarioBase`             | Decimal       | Salário fixo mensal                       |
-| `percentualVendas`        | Decimal       | Comissão percentual sobre vendas          |
-| `active`                  | Boolean       | Se está ativo                             |
-| `createdAt` / `updatedAt` | DateTime      | Timestamps                                |
-
-**Nota:** `salarioBase` e `percentualVendas` são armazenados como `Decimal(10,2)` — precisão monetária garantida.
+O documento antigo falava em 22 modelos e em uma migracao "em curso" do Neon. Isso driftou.
 
 ---
 
-### CashSession
+## Chaves de isolamento
 
-Representa uma sessão de caixa aberta por um operador.
+O projeto nao usa uma unica chave para tudo. Hoje existem tres eixos principais:
 
-| Campo            | Tipo          | Descrição                          |
-| ---------------- | ------------- | ---------------------------------- |
-| `id`             | String (UUID) | Identificador único                |
-| `companyOwnerId` | String        | Workspace                          |
-| `operatorId`     | String        | FK para Employee                   |
-| `openedAt`       | DateTime      | Quando o caixa foi aberto          |
-| `closedAt`       | DateTime?     | Quando foi fechado (null = aberto) |
-| `openingBalance` | Decimal       | Valor de abertura                  |
-| `closingBalance` | Decimal?      | Valor de fechamento                |
-| `status`         | Enum          | `OPEN` ou `CLOSED`                 |
+### 1. `userId`
 
----
+Usado em entidades centradas no dono do workspace ou em ownership direto:
 
-### CashMovement
+- `Product`
+- `Order`
+- `Employee.userId`
+- `Market intelligence` e caches correlatos
 
-Registra entradas e saídas do caixa.
+### 2. `companyOwnerId`
 
-| Campo            | Tipo          | Descrição             |
-| ---------------- | ------------- | --------------------- |
-| `id`             | String (UUID) | Identificador único   |
-| `cashSessionId`  | String        | FK para CashSession   |
-| `companyOwnerId` | String        | Workspace             |
-| `type`           | Enum          | `INCOME` ou `EXPENSE` |
-| `amount`         | Decimal       | Valor da movimentação |
-| `description`    | String?       | Descrição             |
-| `createdAt`      | DateTime      | Timestamp             |
+Usado na malha operacional multi-tenant do workspace:
 
----
+- `CashSession`
+- `CashMovement`
+- `CashClosure`
+- `Mesa`
+- `Comanda`
+- `ComandaAssignment`
+- `ComandaPayment`
 
-### CashClosure
+### 3. `workspaceOwnerUserId`
 
-Registro do fechamento diário do caixa.
+Usado quando a sessao ou notificacao precisa apontar para o workspace efetivo:
 
-| Campo            | Tipo          | Descrição                    |
-| ---------------- | ------------- | ---------------------------- |
-| `id`             | String (UUID) | Identificador único          |
-| `companyOwnerId` | String        | Workspace                    |
-| `businessDate`   | String        | Data de negócio (YYYY-MM-DD) |
-| `closedAt`       | DateTime      | Quando foi fechado           |
-| `totalRevenue`   | Decimal       | Receita total do dia         |
-| `totalCost`      | Decimal       | Custo total                  |
-| `totalProfit`    | Decimal       | Lucro total                  |
+- `Session.workspaceOwnerUserId`
+- `TelegramAccount.workspaceOwnerUserId`
+- `TelegramLinkToken.workspaceOwnerUserId`
+- `NotificationPreference.workspaceOwnerUserId`
+
+Conclusao pratica: dizer que "tudo filtra por `companyOwnerId`" hoje e incompleto.
 
 ---
 
-### Mesa
+## Entidades centrais
 
-Representa uma mesa ou ponto de atendimento do negócio.
+### `User`
 
-| Campo            | Tipo          | Descrição                           |
-| ---------------- | ------------- | ----------------------------------- |
-| `id`             | String (UUID) | Identificador único                 |
-| `companyOwnerId` | String        | Workspace                           |
-| `label`          | String        | Nome/número da mesa                 |
-| `capacity`       | Int?          | Capacidade de pessoas               |
-| `posX` / `posY`  | Float?        | Posição na planta do salão          |
-| `status`         | Enum          | `AVAILABLE`, `OCCUPIED`, `RESERVED` |
-| `active`         | Boolean       | Se está ativa                       |
+Representa OWNER ou STAFF com conta autenticavel.
 
----
+Destaques atuais do modelo:
 
-### Comanda
+- `fullName`
+- `role`
+- `status`
+- `preferredCurrency`
+- endereco da empresa fragmentado em campos proprios
+- `companyLatitude` / `companyLongitude`
+- `emailVerifiedAt`
+- `passwordChangedAt`
+- `adminPinHash`
+- relacao de workspace entre OWNER e membros por `companyOwnerId`
 
-Comanda de atendimento — a entidade central do PDV.
+O modelo antigo baseado em `emailVerified: boolean` e `emailVerificationCode` ja nao reflete o schema real.
 
-| Campo               | Tipo          | Descrição                                   |
-| ------------------- | ------------- | ------------------------------------------- |
-| `id`                | String (UUID) | Identificador único                         |
-| `companyOwnerId`    | String        | Workspace                                   |
-| `mesaId`            | String?       | Mesa vinculada (opcional)                   |
-| `currentEmployeeId` | String?       | Funcionário responsável                     |
-| `customerName`      | String?       | Nome do cliente                             |
-| `customerDocument`  | String?       | CPF ou CNPJ validado                        |
-| `status`            | Enum          | `OPEN`, `IN_PREPARATION`, `READY`, `CLOSED` |
-| `discount`          | Decimal       | Desconto aplicado                           |
-| `surcharge`         | Decimal       | Acréscimo aplicado                          |
-| `openedAt`          | DateTime      | Abertura                                    |
-| `closedAt`          | DateTime?     | Fechamento                                  |
-| `total`             | Decimal       | Valor total calculado                       |
+### `Session`
 
-**Índice de performance:** `@@index([companyOwnerId, openedAt])` — otimiza o snapshot ao vivo que filtra por workspace + janela de data.
+Sessao autenticada do portal.
 
-**Relações:**
+Destaques atuais:
 
-- `items[]` → ComandaItem[]
-- `assignments[]` → ComandaAssignment[]
+- `tokenHash` em vez de token plaintext
+- `expiresAt`, `lastSeenAt`, `revokedAt`
+- `workspaceOwnerUserId`
+- `employeeId` opcional para STAFF
+- `demoAccessGrant` opcional
 
----
+Essa sessao e a base de auth HTTP e tambem do realtime.
 
-### ComandaItem
+### `Product`
 
-Item dentro de uma comanda.
+Catalogo operacional do workspace.
 
-| Campo           | Tipo          | Descrição                                        |
-| --------------- | ------------- | ------------------------------------------------ |
-| `id`            | String (UUID) | Identificador único                              |
-| `comandaId`     | String        | FK para Comanda                                  |
-| `productId`     | String        | FK para Product                                  |
-| `quantity`      | Int           | Quantidade                                       |
-| `unitPrice`     | Decimal       | Preço unitário no momento da venda               |
-| `kitchenStatus` | Enum          | `QUEUED`, `IN_PREPARATION`, `READY`, `DELIVERED` |
-| `notes`         | String?       | Observações do item                              |
+Campos que ganharam peso no runtime atual:
 
----
+- `barcode`
+- `brand`
+- `packagingClass`
+- `measurementUnit`
+- `measurementValue`
+- `unitsPerPackage`
+- `quantityLabel`
+- `servingSize`
+- `imageUrl`
+- `catalogSource`
+- `requiresKitchen`
+- `lowStockThreshold`
 
-### Order
+Isso sustenta:
 
-Pedido formal com validação de estoque e cálculo de lucro.
+- cadastro rapido mobile
+- lookup por EAN
+- enriquecimento via Open Food Facts
+- smart draft com Gemini
+- combinacao de custo, preco e estoque no mesmo modelo
 
-| Campo                         | Tipo          | Descrição                           |
-| ----------------------------- | ------------- | ----------------------------------- |
-| `id`                          | String (UUID) | Identificador único                 |
-| `companyOwnerId`              | String        | Workspace                           |
-| `employeeId`                  | String?       | Funcionário que fez a venda         |
-| `customerId`                  | String?       | Referência ao cliente               |
-| `customerDocument`            | String?       | CPF/CNPJ                            |
-| `customerCity`                | String?       | Cidade do cliente (para o mapa)     |
-| `customerLat` / `customerLng` | Float?        | Coordenadas geocodificadas          |
-| `status`                      | Enum          | `PENDING`, `CONFIRMED`, `CANCELLED` |
-| `currency`                    | Enum          | `BRL`, `USD`, `EUR`                 |
-| `discount`                    | Decimal       | Desconto total                      |
-| `total`                       | Decimal       | Valor total                         |
-| `totalCost`                   | Decimal       | Custo total                         |
-| `totalProfit`                 | Decimal       | Lucro calculado                     |
-| `createdAt`                   | DateTime      | Timestamp                           |
+### `Employee`
 
----
+Funcionario operacional e, opcionalmente, conta de login acoplada.
 
-### OrderItem
+Destaques:
 
-Item dentro de um pedido.
+- `loginUserId` opcional
+- `employeeCode`
+- `displayName`
+- `passwordHash` opcional
+- `salarioBase`
+- `percentualVendas`
+- relacoes com caixa, vendas, comandas e sessoes
 
-| Campo       | Tipo          | Descrição                               |
-| ----------- | ------------- | --------------------------------------- |
-| `id`        | String (UUID) | Identificador único                     |
-| `orderId`   | String        | FK para Order                           |
-| `productId` | String        | FK para Product                         |
-| `quantity`  | Int           | Quantidade vendida                      |
-| `unitPrice` | Decimal       | Preço unitário                          |
-| `unitCost`  | Decimal       | Custo unitário (para cálculo de margem) |
+### `CashSession`, `CashClosure`, `Comanda`, `ComandaPayment`
 
----
+Esses modelos formam o coracao operacional do produto.
 
-### Product
+Pontos importantes:
 
-Produto do portfólio.
+- `CashSession` guarda data de negocio, caixa aberto/fechado, valores esperados e realizados
+- `CashClosure` consolida o fechamento por dia e workspace
+- `Comanda` guarda totais monetarios separados (`subtotal`, `discount`, `serviceFee`, `total`)
+- `ComandaPayment` separa pagamento operacional da comanda, com metodo, status e relacao opcional com caixa
 
-| Campo                     | Tipo          | Descrição               |
-| ------------------------- | ------------- | ----------------------- |
-| `id`                      | String (UUID) | Identificador único     |
-| `companyOwnerId`          | String        | Workspace               |
-| `name`                    | String        | Nome                    |
-| `category`                | String?       | Categoria               |
-| `description`             | String?       | Descrição               |
-| `unitPrice`               | Decimal       | Preço de venda          |
-| `unitCost`                | Decimal       | Custo (para margem)     |
-| `currency`                | Enum          | `BRL`, `USD`, `EUR`     |
-| `unit`                    | String?       | Unidade (ex: kg, un, L) |
-| `stockQuantity`           | Int           | Quantidade em estoque   |
-| `isCombo`                 | Boolean       | Se é um combo           |
-| `comboDescription`        | String?       | Descrição do combo      |
-| `active`                  | Boolean       | Se está ativo no PDV    |
-| `createdAt` / `updatedAt` | DateTime      | Timestamps              |
+O runtime atual nao depende mais de inferir tudo so a partir de `Order`.
 
-**Relações:**
+### `Order` e `OrderItem`
 
-- `comboItems[]` → ProductComboItem[] (se for combo)
+Persistem a camada de venda formal e analytics comercial.
+
+Destaques:
+
+- `Order.comandaId` opcional e unico
+- buyer metadata (`buyerType`, `buyerDocument`, cidade/estado/pais, geolocalizacao)
+- `employeeId`, `sellerCode`, `sellerName`
+- `channel`
+- totais de receita, custo, lucro e itens
+
+### `TelegramAccount` e preferencias de notificacao
+
+O banco ja sustenta o bot oficial:
+
+- vinculo de usuario/conta via `TelegramAccount`
+- deeplink temporario via `TelegramLinkToken`
+- preferencias do workspace via `NotificationPreference`
+- preferencias do usuario via `UserNotificationPreference`
+
+Esses modelos ja fazem parte do estado atual do produto, nao de uma trilha futura.
 
 ---
 
-### ProductComboItem
+## Precisao monetaria e consistencia
 
-Componente de um produto combo.
+Valores financeiros relevantes usam `Decimal` no schema Prisma:
 
-| Campo       | Tipo          | Descrição                           |
-| ----------- | ------------- | ----------------------------------- |
-| `id`        | String (UUID) | Identificador único                 |
-| `comboId`   | String        | FK para Product (o combo pai)       |
-| `productId` | String        | FK para Product (o item componente) |
-| `quantity`  | Int           | Quantidade do componente no combo   |
+- `Product.unitCost`
+- `Product.unitPrice`
+- `CashSession.*Amount`
+- `CashMovement.amount`
+- `CashClosure.*Amount`
+- `Comanda.*Amount`
+- `ComandaPayment.amount`
+- `Order.totalRevenue`
+- `Order.totalCost`
+- `Order.totalProfit`
 
----
-
-### ConsentDocument
-
-Versão de documento legal (termos de uso, política de privacidade).
-
-| Campo         | Tipo          | Descrição                            |
-| ------------- | ------------- | ------------------------------------ |
-| `id`          | String (UUID) | Identificador único                  |
-| `type`        | Enum          | `TERMS_OF_SERVICE`, `PRIVACY_POLICY` |
-| `version`     | String        | Versão do documento (ex: "2026.03")  |
-| `content`     | String        | Conteúdo do documento                |
-| `publishedAt` | DateTime      | Data de publicação                   |
-| `active`      | Boolean       | Se é a versão atual                  |
+Isso evita drift de ponto flutuante em caixa, fechamento e margem.
 
 ---
 
-### UserConsent
+## Indices relevantes no hot path
 
-Registro de aceite de documento legal por usuário.
+Os indices mais importantes hoje acompanham os filtros reais da aplicacao:
 
-| Campo        | Tipo          | Descrição               |
-| ------------ | ------------- | ----------------------- |
-| `id`         | String (UUID) | Identificador único     |
-| `userId`     | String        | FK para User            |
-| `documentId` | String        | FK para ConsentDocument |
-| `acceptedAt` | DateTime      | Quando aceitou          |
-| `ipAddress`  | String?       | IP de origem            |
+- `Session.tokenHash` unico
+- `Session.workspaceOwnerUserId + expiresAt`
+- `Product.userId + active`
+- `Product.userId + barcode` unico
+- `Employee.userId + employeeCode` unico
+- `CashSession.companyOwnerId + businessDate + status`
+- `CashClosure.companyOwnerId + businessDate` unico
+- `Comanda.companyOwnerId + status + openedAt`
+- `Comanda.companyOwnerId + cashSessionId + openedAt`
+- `Comanda.currentEmployeeId + status + openedAt`
+- `ComandaPayment.companyOwnerId + paidAt`
+- `TelegramAccount.telegramChatId + status`
+- `NotificationPreference.workspaceOwnerUserId + channel + eventType` unico
 
----
-
-### UserCookiePreference
-
-Preferências de cookies por usuário.
-
-| Campo       | Tipo          | Descrição                         |
-| ----------- | ------------- | --------------------------------- |
-| `id`        | String (UUID) | Identificador único               |
-| `userId`    | String        | FK para User (único)              |
-| `necessary` | Boolean       | Cookies necessários (sempre true) |
-| `analytics` | Boolean       | Cookies de analytics              |
-| `marketing` | Boolean       | Cookies de marketing              |
-| `updatedAt` | DateTime      | Última atualização                |
+Se a documentacao falar em indice generico por `openedAt` ou em filtro unico por `companyOwnerId`, ela ja fica curta demais para o estado atual.
 
 ---
 
-### AuditLog
+## Schema analitico `bi`
 
-Registro imutável de eventos críticos do sistema.
+O schema `bi` existe de fato e ja esta materializado por migration.
 
-| Campo            | Tipo          | Descrição                                        |
-| ---------------- | ------------- | ------------------------------------------------ |
-| `id`             | String (UUID) | Identificador único                              |
-| `userId`         | String?       | Usuário que gerou o evento                       |
-| `companyOwnerId` | String?       | Workspace relacionado                            |
-| `action`         | String        | Tipo de ação (ex: `LOGIN_SUCCESS`, `PIN_FAILED`) |
-| `metadata`       | JSON?         | Dados adicionais (campos sensíveis redigidos)    |
-| `ipAddress`      | String?       | IP de origem                                     |
-| `userAgent`      | String?       | User agent                                       |
-| `createdAt`      | DateTime      | Timestamp imutável                               |
+Objetivo:
 
-**Nota:** `AuditLog` não tem `updatedAt` — registros de auditoria são imutáveis por design.
+- tirar leitura pesada de cima do OLTP
+- alimentar Metabase e consultas gerenciais
+- manter agregados diarios fora do fluxo transacional quente
 
----
+Artefatos atuais:
 
-## Relacionamentos principais
+- `bi.sales_daily`
+- `bi.sales_by_channel_daily`
+- `bi.margin_daily`
+- `bi.products_performance_daily`
+- `bi.category_performance_daily`
+- `bi.employee_performance_daily`
+- `bi.cash_daily`
+- `bi.comandas_daily`
+- `bi.low_stock_snapshot`
 
-```
-User (OWNER)
-├── User[] staff (funcionários do workspace)
-├── CashSession[]
-├── Mesa[]
-├── Comanda[]
-├── Order[]
-├── Product[]
-├── Employee[]
-└── Session[]
+Referencias:
 
-Comanda
-├── ComandaItem[]
-│   └── Product
-└── ComandaAssignment[]
-    └── Employee
+- [apps/api/prisma/migrations/20260422093000_add_bi_schema/migration.sql](../../apps/api/prisma/migrations/20260422093000_add_bi_schema/migration.sql)
+- [apps/api/prisma/sql/refresh-bi.sql](../../apps/api/prisma/sql/refresh-bi.sql)
+- [infra/oracle/db/systemd/bi-refresh.timer](../../infra/oracle/db/systemd/bi-refresh.timer)
 
-Order
-└── OrderItem[]
-    └── Product
+### Refresh
 
-Product
-└── ProductComboItem[] (se isCombo=true)
-    └── Product (componentes)
-```
-
----
-
-## Decisões de design
-
-### Valores monetários
-
-Todos os valores monetários usam `Decimal(10,2)` via Prisma — nunca `Float`. Isso evita erros de precisão em cálculos financeiros.
-
-No frontend, os valores são convertidos para `number` após recebimento da API.
-
-### Isolamento por workspace
-
-Não existe uma tabela `Workspace` separada. O isolamento é feito pelo campo `companyOwnerId` em todas as entidades de negócio — que referencia o `id` do usuário OWNER.
-
-Isso simplifica o modelo mas exige que **toda query de negócio filtre por `companyOwnerId`**. Esse padrão é verificado nos testes de integração.
-
-### Índices de performance
-
-| Índice                       | Tabela  | Motivo                                                            |
-| ---------------------------- | ------- | ----------------------------------------------------------------- |
-| `(companyOwnerId, openedAt)` | Comanda | Query do snapshot ao vivo — filtra por workspace + janela de data |
-| `(companyOwnerId)`           | Order   | Queries financeiras por workspace                                 |
-
-### Soft delete
-
-Produtos e funcionários usam `active: Boolean` em vez de deleção real. Isso preserva histórico de vendas sem quebrar integridade referencial.
-
----
-
-## Migrations
-
-As migrations ficam em `apps/api/prisma/migrations/`.
-
-Para criar uma nova migration em desenvolvimento:
+Local/manual:
 
 ```bash
-npm --workspace @partner/api run prisma:migrate:dev -- --name nome-da-migration
+npm --workspace @partner/api run prisma:refresh:bi
 ```
 
-Para aplicar migrations em produção:
+Runtime Oracle/Ampere:
+
+- script operacional do host: `infra/oracle/db/scripts/refresh-bi.sh`
+- timer systemd: `infra/oracle/db/systemd/bi-refresh.timer`
+
+---
+
+## Operacao de banco
+
+### Desenvolvimento local
 
 ```bash
+npm run db:up
 npm --workspace @partner/api run prisma:migrate:deploy
+npm run seed
 ```
 
-**Atenção:** migrations em produção usam `migrate:deploy`, não `migrate:dev`. O Railway aplica as migrations automaticamente no deploy via `railway-start.sh`.
+### Runtime Oracle
+
+- a API sobe com `prisma migrate deploy` antes do processo principal
+- `DATABASE_URL` aponta para o PgBouncer privado
+- `DIRECT_URL` aponta para o PostgreSQL direto da Ampere
+
+Referencias:
+
+- [infra/oracle/docker/api.Dockerfile](../../infra/oracle/docker/api.Dockerfile)
+- [infra/oracle/compose.yaml](../../infra/oracle/compose.yaml)
+
+---
+
+## Guardrails de evolucao
+
+1. Nao documentar Neon como banco atual do projeto.
+2. Nao reduzir o banco a "22 modelos" ou a uma lista estatica sem conferir o schema.
+3. Nao tratar `companyOwnerId` como chave unica universal; o runtime usa `userId`, `companyOwnerId` e `workspaceOwnerUserId` conforme a entidade.
+4. Nao tratar Telegram, BI ou preferencias de notificacao como backlog futuro; isso ja esta no schema produtivo.
+5. Toda mudanca neste documento precisa ser cruzada com `schema.prisma`, migrations recentes e runtime Oracle/Ampere.

@@ -1,0 +1,203 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]:
+              - heading "PDV — Comandas" [level=1] [ref=e125]
+              - paragraph [ref=e126]: Kanban de pedidos em tempo real
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - img [ref=e129]
+                - textbox "Buscar comanda..." [ref=e132]
+              - button [ref=e133] [cursor=pointer]:
+                - img [ref=e134]
+              - button "Nova Comanda" [ref=e136] [cursor=pointer]:
+                - img [ref=e137]
+                - text: Nova Comanda
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - paragraph [ref=e140]: "3"
+              - paragraph [ref=e141]: Abertas
+            - generic [ref=e142]:
+              - paragraph [ref=e143]: "2"
+              - paragraph [ref=e144]: Em Preparo
+            - generic [ref=e145]:
+              - paragraph [ref=e146]: "2"
+              - paragraph [ref=e147]: Prontas
+            - generic [ref=e148]:
+              - paragraph [ref=e149]: "29"
+              - paragraph [ref=e150]: Fechadas hoje
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - paragraph [ref=e154]: Aberta
+                - generic [ref=e155]: "3"
+              - generic [ref=e156]:
+                - generic [ref=e157] [cursor=pointer]:
+                  - generic [ref=e158]: "Mesa 3 · #1048"
+                  - generic [ref=e159]: Carlos M. · 2 itens
+                  - generic [ref=e160]:
+                    - generic [ref=e161]: R$ 58,00
+                    - generic [ref=e162]: ⏱ 5min
+                - generic [ref=e163] [cursor=pointer]:
+                  - generic [ref=e164]: "Delivery · #1047"
+                  - generic [ref=e165]: Fernanda L. · 4 itens
+                  - generic [ref=e166]:
+                    - generic [ref=e167]: R$ 124,00
+                    - generic [ref=e168]: ⏱ 12min
+                - generic [ref=e169] [cursor=pointer]:
+                  - generic [ref=e170]: "Mesa 7 · #1046"
+                  - generic [ref=e171]: Ricardo B. · 1 itens
+                  - generic [ref=e172]:
+                    - generic [ref=e173]: R$ 32,50
+                    - generic [ref=e174]: ⏱ 18min
+                - button "Adicionar" [ref=e175] [cursor=pointer]:
+                  - img [ref=e176]
+                  - text: Adicionar
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - paragraph [ref=e179]: Em Preparo
+                - generic [ref=e180]: "2"
+              - generic [ref=e181]:
+                - generic [ref=e182] [cursor=pointer]:
+                  - generic [ref=e183]: "Mesa 2 · #1045"
+                  - generic [ref=e184]: Ana P. · 3 itens
+                  - generic [ref=e185]:
+                    - generic [ref=e186]: R$ 97,00
+                    - generic [ref=e187]: ⏱ 22min
+                - generic [ref=e188] [cursor=pointer]:
+                  - generic [ref=e189]: "Mesa 9 · #1044"
+                  - generic [ref=e190]: Bruno S. · 5 itens
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: R$ 186,50
+                    - generic [ref=e193]: ⏱ 30min
+                - button "Adicionar" [ref=e194] [cursor=pointer]:
+                  - img [ref=e195]
+                  - text: Adicionar
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - paragraph [ref=e198]: Pronta
+                - generic [ref=e199]: "2"
+              - generic [ref=e200]:
+                - generic [ref=e201] [cursor=pointer]:
+                  - generic [ref=e202]: "Mesa 5 · #1043"
+                  - generic [ref=e203]: Juliana K. · 4 itens
+                  - generic [ref=e204]:
+                    - generic [ref=e205]: R$ 134,00
+                    - generic [ref=e206]: ⏱ 38min
+                - generic [ref=e207] [cursor=pointer]:
+                  - generic [ref=e208]: "Mesa 11 · #1042"
+                  - generic [ref=e209]: Marcos T. · 2 itens
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: R$ 76,00
+                    - generic [ref=e212]: ⏱ 41min
+                - button "Adicionar" [ref=e213] [cursor=pointer]:
+                  - img [ref=e214]
+                  - text: Adicionar
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - paragraph [ref=e217]: Fechada
+                - generic [ref=e218]: "3"
+              - generic [ref=e219]:
+                - generic [ref=e220] [cursor=pointer]:
+                  - generic [ref=e221]: "Mesa 4 · #1041"
+                  - generic [ref=e222]: Camila R. · 6 itens
+                  - generic [ref=e223]:
+                    - generic [ref=e224]: R$ 228,00
+                    - generic [ref=e225]: ⏱ 55min
+                - generic [ref=e226] [cursor=pointer]:
+                  - generic [ref=e227]: "Retirada · #1040"
+                  - generic [ref=e228]: Paulo N. · 3 itens
+                  - generic [ref=e229]:
+                    - generic [ref=e230]: R$ 89,50
+                    - generic [ref=e231]: ⏱ 62min
+                - generic [ref=e232] [cursor=pointer]:
+                  - generic [ref=e233]: "Mesa 1 · #1039"
+                  - generic [ref=e234]: Sandra F. · 5 itens
+                  - generic [ref=e235]:
+                    - generic [ref=e236]: R$ 176,50
+                    - generic [ref=e237]: ⏱ 70min
+                - button "Adicionar" [ref=e238] [cursor=pointer]:
+                  - img [ref=e239]
+                  - text: Adicionar
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e245] [cursor=pointer]:
+    - img [ref=e246]

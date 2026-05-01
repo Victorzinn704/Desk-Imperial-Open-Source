@@ -11,7 +11,7 @@
  *   ✅ resolveBusinessDate()      — parseamento e normalização de data operacional
  *   ✅ buildBusinessDateWindow()  — janela de tempo do dia operacional (midnight–midnight)
  *   ✅ formatBusinessDateKey()    — serialização canônica YYYY-MM-DD para cache keys
- *   ✅ toNumber()                 — conversão segura de Prisma Decimal → number
+ *   ✅ toNumberOrZero()           — conversão segura de Prisma Decimal → number (null/undefined → 0)
  *   ✅ resolveBuyerTypeFromDocument() — CPF vs CNPJ pelo número de dígitos
  *   ✅ isOpenComandaStatus()      — predicado de status de comanda ativa
  *   ✅ buildCashUpdatedPayload()  — agregação de movimentos de caixa para WebSocket
@@ -27,9 +27,9 @@ import {
   formatBusinessDateKey,
   invalidateOperationsLiveCache,
   isOpenComandaStatus,
-  resolveBuyerTypeFromDocument,
   resolveBusinessDate,
-  toNumber,
+  resolveBuyerTypeFromDocument,
+  toNumberOrZero,
 } from '../src/modules/operations/operations-domain.utils'
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -200,40 +200,40 @@ describe('invalidateOperationsLiveCache()', () => {
 })
 
 // ═════════════════════════════════════════════════════════════════════════════
-// toNumber()
+// toNumberOrZero()
 // ─────────────────────────────────────────────────────────────────────────────
 // O Prisma retorna campos Decimal como objetos { toNumber(): number } quando
 // o tipo no schema é Decimal. Em queries brutas ou após $queryRaw o tipo pode
-// ser um number primitivo. toNumber() normaliza ambos os casos.
+// ser um number primitivo. toNumberOrZero() normaliza ambos os casos.
 //
 // Também trata null/undefined, que ocorrem em campos opcionais como
 // differenceAmount (só calculado ao fechar o caixa).
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('toNumber()', () => {
+describe('toNumberOrZero()', () => {
   it('retorna o number primitivo diretamente quando o input já é number', () => {
-    expect(toNumber(42.5)).toBe(42.5)
-    expect(toNumber(0)).toBe(0)
-    expect(toNumber(-10)).toBe(-10)
+    expect(toNumberOrZero(42.5)).toBe(42.5)
+    expect(toNumberOrZero(0)).toBe(0)
+    expect(toNumberOrZero(-10)).toBe(-10)
   })
 
   it('chama .toNumber() em objetos Decimal do Prisma', () => {
     // Simula o objeto Decimal retornado pelo Prisma ORM
     const decimal = { toNumber: () => 199.99 }
-    expect(toNumber(decimal)).toBe(199.99)
+    expect(toNumberOrZero(decimal)).toBe(199.99)
   })
 
   it('retorna 0 para null (ex: differenceAmount antes do fechamento)', () => {
-    expect(toNumber(null)).toBe(0)
+    expect(toNumberOrZero(null)).toBe(0)
   })
 
   it('retorna 0 para undefined (ex: campo opcional não preenchido)', () => {
-    expect(toNumber(undefined)).toBe(0)
+    expect(toNumberOrZero(undefined)).toBe(0)
   })
 
   it('preserva precisão decimal corretamente', () => {
     const decimal = { toNumber: () => 1234.56 }
-    expect(toNumber(decimal)).toBeCloseTo(1234.56)
+    expect(toNumberOrZero(decimal)).toBeCloseTo(1234.56)
   })
 })
 
@@ -424,14 +424,14 @@ describe('buildCashUpdatedPayload()', () => {
 // buildComandaUpdatedPayload()
 // ─────────────────────────────────────────────────────────────────────────────
 // Serializa o estado de uma comanda para o evento WebSocket "comanda:updated".
-// O status é traduzido para string em português usado no frontend (kanban do PDV).
+// O status agora usa os mesmos valores EN do contrato REST (ComandaStatus).
 //
 // Mapeamento de status:
-//   OPEN           → 'ABERTA'
-//   IN_PREPARATION → 'EM_PREPARO'
-//   READY          → 'PRONTA'
-//   CLOSED         → 'FECHADA'
-//   CANCELLED      → 'FECHADA' (simplificado para o kanban)
+//   OPEN           → 'OPEN'
+//   IN_PREPARATION → 'IN_PREPARATION'
+//   READY          → 'READY'
+//   CLOSED         → 'CLOSED'
+//   CANCELLED      → 'CLOSED' (simplificado para o kanban)
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('buildComandaUpdatedPayload()', () => {
@@ -450,11 +450,11 @@ describe('buildComandaUpdatedPayload()', () => {
   }
 
   it.each([
-    [ComandaStatus.OPEN, 'ABERTA'],
-    [ComandaStatus.IN_PREPARATION, 'EM_PREPARO'],
-    [ComandaStatus.READY, 'PRONTA'],
-    [ComandaStatus.CLOSED, 'FECHADA'],
-  ])('mapeia status %s → "%s" (rótulo do kanban)', (status, expected) => {
+    [ComandaStatus.OPEN, 'OPEN'],
+    [ComandaStatus.IN_PREPARATION, 'IN_PREPARATION'],
+    [ComandaStatus.READY, 'READY'],
+    [ComandaStatus.CLOSED, 'CLOSED'],
+  ])('mapeia status %s → "%s" (contrato EN unificado)', (status, expected) => {
     const payload = buildComandaUpdatedPayload(makeComanda(status))
     expect(payload.status).toBe(expected)
   })

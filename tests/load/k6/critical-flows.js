@@ -54,7 +54,7 @@ export const options = {
 }
 
 export function healthScenario() {
-  const response = http.get(`${baseUrl}/api/health`)
+  const response = http.get(`${baseUrl}/api/v1/health`)
   healthDuration.add(response.timings.duration)
 
   check(response, {
@@ -66,7 +66,7 @@ export function healthScenario() {
 }
 
 export function authLoginScenario() {
-  const response = http.post(`${baseUrl}/api/auth/login`, loginPayload, jsonHeaders)
+  const response = http.post(`${baseUrl}/api/v1/auth/login`, loginPayload, jsonHeaders)
   authLoginDuration.add(response.timings.duration)
 
   check(response, {

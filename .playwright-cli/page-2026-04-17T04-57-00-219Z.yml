@@ -1,0 +1,289 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - link "Desk Imperial" [ref=e6] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e8]
+          - generic [ref=e12]: Desk Imperial
+        - button "Recolher" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - button "Fechar" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+      - navigation [ref=e20]:
+        - generic [ref=e21]:
+          - paragraph [ref=e22]: Operação
+          - link "Overview" [ref=e23] [cursor=pointer]:
+            - /url: /design-lab/overview
+            - img [ref=e25]
+            - generic [ref=e30]: Overview
+          - link "PDV / Comandas" [ref=e31] [cursor=pointer]:
+            - /url: /design-lab/pdv
+            - img [ref=e33]
+            - generic [ref=e37]: PDV / Comandas
+          - link "Salão" [ref=e38] [cursor=pointer]:
+            - /url: /design-lab/salao
+            - img [ref=e40]
+            - generic [ref=e45]: Salão
+        - generic [ref=e46]:
+          - paragraph [ref=e47]: Gestão
+          - link "Financeiro" [ref=e48] [cursor=pointer]:
+            - /url: /design-lab/financeiro
+            - img [ref=e50]
+            - generic [ref=e52]: Financeiro
+          - link "Calendário" [ref=e53] [cursor=pointer]:
+            - /url: /design-lab/calendario
+            - img [ref=e55]
+            - generic [ref=e57]: Calendário
+          - link "Portfólio" [ref=e58] [cursor=pointer]:
+            - /url: /design-lab/portfolio
+            - img [ref=e60]
+            - generic [ref=e64]: Portfólio
+        - generic [ref=e65]:
+          - paragraph [ref=e66]: Equipe
+          - link "Funcionários" [ref=e67] [cursor=pointer]:
+            - /url: /design-lab/equipe
+            - img [ref=e69]
+            - generic [ref=e74]: Funcionários
+          - link "Folha de Pagamento" [ref=e75] [cursor=pointer]:
+            - /url: /design-lab/payroll
+            - img [ref=e77]
+            - generic [ref=e80]: Folha de Pagamento
+      - generic [ref=e81]:
+        - link "Configurações" [ref=e82] [cursor=pointer]:
+          - /url: /design-lab/overview
+          - img [ref=e84]
+          - generic [ref=e87]: Configurações
+        - generic [ref=e88]:
+          - generic [ref=e89]: VI
+          - generic [ref=e90]:
+            - generic [ref=e91]: Victor Imperial
+            - generic [ref=e92]: Admin
+          - button "Sair" [ref=e93] [cursor=pointer]:
+            - img [ref=e94]
+    - generic [ref=e97]:
+      - banner [ref=e98]:
+        - generic [ref=e99]:
+          - button "Abrir menu" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - textbox "Buscar..." [ref=e106]
+            - generic [ref=e107]: ⌘K
+        - generic [ref=e108]:
+          - button "Modo claro" [ref=e109] [cursor=pointer]:
+            - img [ref=e110]
+          - button "3" [ref=e116] [cursor=pointer]:
+            - img [ref=e117]
+            - generic: "3"
+          - generic [ref=e120]: VI
+      - main [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - heading "Folha de Pagamento" [level=1] [ref=e124]
+            - paragraph [ref=e125]: Abril 2026 — 8 funcionários
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - img [ref=e129]
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: Total Folha
+                - paragraph [ref=e133]: R$ 18.189,40
+            - generic [ref=e134]:
+              - img [ref=e136]
+              - generic [ref=e141]:
+                - paragraph [ref=e142]: Salários Base
+                - paragraph [ref=e143]: R$ 17.700
+            - generic [ref=e144]:
+              - img [ref=e146]
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: Comissões
+                - paragraph [ref=e151]: R$ 1.055
+            - generic [ref=e152]:
+              - img [ref=e154]
+              - generic [ref=e157]:
+                - paragraph [ref=e158]: Funcionários
+                - paragraph [ref=e159]: "8"
+          - generic [ref=e160]:
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - generic [ref=e163]: JS
+                - generic [ref=e164]:
+                  - paragraph [ref=e165]: João Silva
+                  - paragraph [ref=e166]: Garçom
+              - generic [ref=e167]:
+                - generic [ref=e168]:
+                  - generic [ref=e169]: Salário base
+                  - generic [ref=e170]: R$ 1.800
+                - generic [ref=e171]:
+                  - generic [ref=e172]: Comissão (2.5%)
+                  - generic [ref=e173]: R$ 312,00
+                - generic [ref=e174]:
+                  - generic [ref=e175]: Bônus
+                  - generic [ref=e176]: R$ 200,00
+                - generic [ref=e177]:
+                  - generic [ref=e178]: Descontos
+                  - generic [ref=e179]: "- R$ 144,00"
+                - generic [ref=e180]:
+                  - generic [ref=e181]: Total líquido
+                  - generic [ref=e182]: R$ 2.168,00
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - generic [ref=e185]: AC
+                - generic [ref=e186]:
+                  - paragraph [ref=e187]: Ana Costa
+                  - paragraph [ref=e188]: Garçom
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - generic [ref=e191]: Salário base
+                  - generic [ref=e192]: R$ 1.800
+                - generic [ref=e193]:
+                  - generic [ref=e194]: Comissão (2.5%)
+                  - generic [ref=e195]: R$ 273,00
+                - generic [ref=e196]:
+                  - generic [ref=e197]: Bônus
+                  - generic [ref=e198]: R$ 0,00
+                - generic [ref=e199]:
+                  - generic [ref=e200]: Descontos
+                  - generic [ref=e201]: "- R$ 144,00"
+                - generic [ref=e202]:
+                  - generic [ref=e203]: Total líquido
+                  - generic [ref=e204]: R$ 1.929,00
+            - generic [ref=e205]:
+              - generic [ref=e206]:
+                - generic [ref=e207]: PA
+                - generic [ref=e208]:
+                  - paragraph [ref=e209]: Pedro Alves
+                  - paragraph [ref=e210]: Garçom
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e213]: Salário base
+                  - generic [ref=e214]: R$ 1.600
+                - generic [ref=e215]:
+                  - generic [ref=e216]: Comissão (2%)
+                  - generic [ref=e217]: R$ 196,80
+                - generic [ref=e218]:
+                  - generic [ref=e219]: Bônus
+                  - generic [ref=e220]: R$ 0,00
+                - generic [ref=e221]:
+                  - generic [ref=e222]: Descontos
+                  - generic [ref=e223]: "- R$ 128,00"
+                - generic [ref=e224]:
+                  - generic [ref=e225]: Total líquido
+                  - generic [ref=e226]: R$ 1.668,80
+          - generic [ref=e227]:
+            - generic [ref=e228]:
+              - generic [ref=e229]:
+                - heading "Detalhamento — Abril 2026" [level=2] [ref=e230]
+                - paragraph [ref=e231]: Salário + Comissão + Bônus − Descontos
+              - button "Exportar PDF" [ref=e232] [cursor=pointer]
+            - table [ref=e233]:
+              - rowgroup [ref=e234]:
+                - row "Funcionário Cargo Salário Base Comissão Bônus Descontos Total Líquido Status" [ref=e235]:
+                  - columnheader "Funcionário" [ref=e236]
+                  - columnheader "Cargo" [ref=e237]
+                  - columnheader "Salário Base" [ref=e238]
+                  - columnheader "Comissão" [ref=e239]
+                  - columnheader "Bônus" [ref=e240]
+                  - columnheader "Descontos" [ref=e241]
+                  - columnheader "Total Líquido" [ref=e242]
+                  - columnheader "Status" [ref=e243]
+              - rowgroup [ref=e244]:
+                - row "JS João Silva Garçom R$ 1.800 R$ 312 R$ 200 - R$ 144 R$ 2.168,00 Processado" [ref=e245]:
+                  - cell "JS João Silva" [ref=e246]:
+                    - generic [ref=e247]:
+                      - generic [ref=e248]: JS
+                      - generic [ref=e249]: João Silva
+                  - cell "Garçom" [ref=e250]
+                  - cell "R$ 1.800" [ref=e251]
+                  - cell "R$ 312" [ref=e252]
+                  - cell "R$ 200" [ref=e253]
+                  - cell "- R$ 144" [ref=e254]
+                  - cell "R$ 2.168,00" [ref=e255]
+                  - cell "Processado" [ref=e256]
+                - row "AC Ana Costa Garçom R$ 1.800 R$ 273 — - R$ 144 R$ 1.929,00 Processado" [ref=e257]:
+                  - cell "AC Ana Costa" [ref=e258]:
+                    - generic [ref=e259]:
+                      - generic [ref=e260]: AC
+                      - generic [ref=e261]: Ana Costa
+                  - cell "Garçom" [ref=e262]
+                  - cell "R$ 1.800" [ref=e263]
+                  - cell "R$ 273" [ref=e264]
+                  - cell "—" [ref=e265]
+                  - cell "- R$ 144" [ref=e266]
+                  - cell "R$ 1.929,00" [ref=e267]
+                  - cell "Processado" [ref=e268]
+                - row "PA Pedro Alves Garçom R$ 1.600 R$ 197 — - R$ 128 R$ 1.668,80 Pendente" [ref=e269]:
+                  - cell "PA Pedro Alves" [ref=e270]:
+                    - generic [ref=e271]:
+                      - generic [ref=e272]: PA
+                      - generic [ref=e273]: Pedro Alves
+                  - cell "Garçom" [ref=e274]
+                  - cell "R$ 1.600" [ref=e275]
+                  - cell "R$ 197" [ref=e276]
+                  - cell "—" [ref=e277]
+                  - cell "- R$ 128" [ref=e278]
+                  - cell "R$ 1.668,80" [ref=e279]
+                  - cell "Pendente" [ref=e280]
+                - row "CR Camila Reis Caixa R$ 2.000 R$ 130 R$ 150 - R$ 160 R$ 2.119,60 Processado" [ref=e281]:
+                  - cell "CR Camila Reis" [ref=e282]:
+                    - generic [ref=e283]:
+                      - generic [ref=e284]: CR
+                      - generic [ref=e285]: Camila Reis
+                  - cell "Caixa" [ref=e286]
+                  - cell "R$ 2.000" [ref=e287]
+                  - cell "R$ 130" [ref=e288]
+                  - cell "R$ 150" [ref=e289]
+                  - cell "- R$ 160" [ref=e290]
+                  - cell "R$ 2.119,60" [ref=e291]
+                  - cell "Processado" [ref=e292]
+                - row "BL Bruno Lima Garçom R$ 1.600 R$ 144 — - R$ 128 R$ 1.616,00 Pendente" [ref=e293]:
+                  - cell "BL Bruno Lima" [ref=e294]:
+                    - generic [ref=e295]:
+                      - generic [ref=e296]: BL
+                      - generic [ref=e297]: Bruno Lima
+                  - cell "Garçom" [ref=e298]
+                  - cell "R$ 1.600" [ref=e299]
+                  - cell "R$ 144" [ref=e300]
+                  - cell "—" [ref=e301]
+                  - cell "- R$ 128" [ref=e302]
+                  - cell "R$ 1.616,00" [ref=e303]
+                  - cell "Pendente" [ref=e304]
+                - row "FG Fernanda Gomes Gerente R$ 4.500 — R$ 500 - R$ 360 R$ 4.640,00 Processado" [ref=e305]:
+                  - cell "FG Fernanda Gomes" [ref=e306]:
+                    - generic [ref=e307]:
+                      - generic [ref=e308]: FG
+                      - generic [ref=e309]: Fernanda Gomes
+                  - cell "Gerente" [ref=e310]
+                  - cell "R$ 4.500" [ref=e311]
+                  - cell "—" [ref=e312]
+                  - cell "R$ 500" [ref=e313]
+                  - cell "- R$ 360" [ref=e314]
+                  - cell "R$ 4.640,00" [ref=e315]
+                  - cell "Processado" [ref=e316]
+                - row "RB Ricardo Barros Cozinheiro R$ 2.200 — — - R$ 176 R$ 2.024,00 Em Revisão" [ref=e317]:
+                  - cell "RB Ricardo Barros" [ref=e318]:
+                    - generic [ref=e319]:
+                      - generic [ref=e320]: RB
+                      - generic [ref=e321]: Ricardo Barros
+                  - cell "Cozinheiro" [ref=e322]
+                  - cell "R$ 2.200" [ref=e323]
+                  - cell "—" [ref=e324]
+                  - cell "—" [ref=e325]
+                  - cell "- R$ 176" [ref=e326]
+                  - cell "R$ 2.024,00" [ref=e327]
+                  - cell "Em Revisão" [ref=e328]
+                - row "SF Sandra Freitas Cozinheiro R$ 2.200 — — - R$ 176 R$ 2.024,00 Processado" [ref=e329]:
+                  - cell "SF Sandra Freitas" [ref=e330]:
+                    - generic [ref=e331]:
+                      - generic [ref=e332]: SF
+                      - generic [ref=e333]: Sandra Freitas
+                  - cell "Cozinheiro" [ref=e334]
+                  - cell "R$ 2.200" [ref=e335]
+                  - cell "—" [ref=e336]
+                  - cell "—" [ref=e337]
+                  - cell "- R$ 176" [ref=e338]
+                  - cell "R$ 2.024,00" [ref=e339]
+                  - cell "Processado" [ref=e340]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e346] [cursor=pointer]:
+    - img [ref=e347]

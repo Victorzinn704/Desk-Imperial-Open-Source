@@ -1,34 +1,57 @@
 import { memo } from 'react'
+import { getSalaoToneStyle, type SalaoTone } from '../theme'
 
 interface KpiCardProps {
   label: string
   value: string | number
-  color: string
+  tone: SalaoTone
   isHighlight?: boolean
   total?: number
+  hint?: string
 }
 
-export const KpiCard = memo(function KpiCard({ label, value, color, isHighlight, total }: KpiCardProps) {
+export const KpiCard = memo(function KpiCard({ label, value, tone, isHighlight, total, hint }: KpiCardProps) {
   const percentage = total && typeof value === 'number' ? Math.round((value / total) * 100) : null
+  const toneStyle = getSalaoToneStyle(tone)
+  const toneLabel =
+    tone === 'accent'
+      ? 'ritmo'
+      : tone === 'success'
+        ? 'estavel'
+        : tone === 'warning'
+          ? 'atencao'
+          : tone === 'danger'
+            ? 'pressao'
+            : 'apoio'
 
   return (
     <div
-      className={`flex flex-1 flex-col justify-center rounded-2xl px-5 py-3 transition-all ${isHighlight ? 'bg-[rgba(255,255,255,0.03)] shadow-inner' : 'hover:bg-[rgba(255,255,255,0.02)]'}`}
+      className={`flex min-h-[128px] flex-1 flex-col justify-between rounded-2xl border px-4 py-4 transition-colors ${
+        isHighlight
+          ? 'border-[var(--border-strong)] bg-[var(--surface-soft)]'
+          : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-soft)]'
+      }`}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</p>
         <span
-          className="size-2 rounded-full shadow-[0_0_10px_currentColor]"
-          style={{ backgroundColor: color, color: color }}
-        />
-        <p className="text-[10px] uppercase tracking-widest text-[var(--text-soft)]">{label}</p>
+          className="inline-flex min-w-[72px] justify-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
+          style={toneStyle}
+        >
+          {toneLabel}
+        </span>
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+      <div className="space-y-1.5">
+        <p className="text-2xl font-semibold tabular-nums tracking-tight text-[var(--text-primary)]">{value}</p>
+        {hint ? <p className="text-xs leading-5 text-[var(--text-soft)]">{hint}</p> : null}
+      </div>
+      <div className="flex items-center justify-between gap-2">
         {percentage !== null && (
-          <p className="text-xs font-medium" style={{ color: `${color}99` }}>
-            {percentage}%
+          <p className="text-xs font-medium text-[var(--text-soft)]">
+            {percentage}% do total
           </p>
         )}
+        {isHighlight ? <p className="text-xs font-medium text-[var(--text-soft)]">leitura principal</p> : null}
       </div>
     </div>
   )

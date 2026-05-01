@@ -1,0 +1,35 @@
+version: "1.0"
+linter: jetbrains/qodana-js:latest
+
+profile:
+  name: qodana.recommended
+
+# Fail se qualquer issue nova for introduzida (novo código apenas)
+failThreshold: 0
+
+exclude:
+  - name: All
+    paths:
+      - node_modules
+      - dist
+      - .next
+      - coverage
+      - .turbo
+      - prisma/migrations
+      - apps/web/public
+      - playwright-report
+      - test-results
+      - infra
+      - docs
+      - scripts
+
+include:
+  - name: All
+    paths:
+      - apps/api/src
+      - apps/web/app
+      - apps/web/components
+      - apps/web/lib
+      - apps/web/hooks
+      - apps/web/providers
+      - packages/types/src

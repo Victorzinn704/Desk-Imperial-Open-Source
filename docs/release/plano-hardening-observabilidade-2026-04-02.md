@@ -20,8 +20,8 @@ O problema nao e falta de stack. O problema e maturidade desigual entre as camad
 
 - backend e audit trail estao mais maduros
 - dashboards e alertas existem, mas ainda estao muito focados em infraestrutura
-- Faro no browser esta integrado no codigo, mas o caminho de ingestao ainda nao esta fechado dentro do stack local do repositorio
-- Alertmanager sobe, mas ainda nao entrega alerta para nenhum destino real
+- Faro no browser esta integrado no codigo e agora pode usar o receiver oficial do Alloy dentro do stack local
+- Alertmanager sobe com fallback local, mas ainda precisa de `ALERTMANAGER_WEBHOOK_URL` para entregar alerta a um destino real
 
 ---
 
@@ -41,13 +41,13 @@ O problema nao e falta de stack. O problema e maturidade desigual entre as camad
 
 Diagnostico:
 
-- o frontend ja envia sinais via Faro, mas o repositorio ainda nao provisiona um collector browser-to-backend completo no stack OSS local.
+- o frontend ja envia sinais via Faro, e o repositorio agora provisiona um receiver browser-to-backend oficial via Alloy no stack OSS local.
 
 Evidencia tecnica:
 
 - `apps/web/lib/observability/faro.ts` depende de `NEXT_PUBLIC_FARO_COLLECTOR_URL`
 - `.env.example` deixa `NEXT_PUBLIC_FARO_COLLECTOR_URL` vazio
-- `infra/docker/docker-compose.observability.yml` nao sobe nenhum servico dedicado a ingestao Faro
+- `infra/docker/docker-compose.observability.yml` expõe o receiver Faro do Alloy na porta `12347`
 
 Impacto no produto:
 
@@ -55,11 +55,9 @@ Impacto no produto:
 
 Recomendacao pratica:
 
-- definir um caminho oficial unico:
-  - opcao preferencial: receiver self-hosted compativel com Faro dentro da stack OSS
-  - fallback aceitavel: collector externo dedicado, com CSP e variaveis padronizadas
-- se a versao atual do Alloy suportar o receiver desejado com seguranca, incorporar isso ao stack local
-- se nao suportar com o desenho atual, subir um receiver/proxy dedicado e documentado
+- manter o receiver self-hosted compativel com Faro dentro da stack OSS como caminho oficial local
+- para producao, apontar `NEXT_PUBLIC_FARO_COLLECTOR_URL` para o collector HTTPS do ambiente alvo
+- se houver necessidade de outra topologia, documentar explicitamente a mudanca, sem perder a trilha oficial atual
 
 Prioridade:
 
@@ -75,7 +73,7 @@ Risco de nao agir:
 
 Diagnostico:
 
-- Alertmanager esta provisionado, mas sem canal de notificacao operacional.
+- Alertmanager esta provisionado, com fallback local, mas sem canal de notificacao operacional ate receber `ALERTMANAGER_WEBHOOK_URL`.
 
 Evidencia tecnica:
 
@@ -87,7 +85,7 @@ Impacto no produto:
 
 Recomendacao pratica:
 
-- configurar ao menos um destino de release:
+- configurar ao menos um destino de release via `ALERTMANAGER_WEBHOOK_URL`:
   - webhook corporativo
   - Slack
   - email tecnico
@@ -211,6 +209,7 @@ Risco de nao agir:
 Diagnostico:
 
 - `requestId`, Pino, OTel e Faro existem, mas a correlacao entre browser, API, logs e auditoria ainda nao esta tratada como fluxo oficial de suporte.
+- `requestId`, Pino, OTel e Faro existem, e a trilha browser agora pode consumir o receiver oficial do Alloy local, mas a correlacao entre browser, API, logs e auditoria ainda nao esta tratada como fluxo oficial de suporte.
 
 Evidencia tecnica:
 
@@ -306,6 +305,7 @@ Risco de nao agir:
 - OTel opt-in na API com sampling conservador
 - audit log em banco para acoes sensiveis
 - CSP validando origem do collector do frontend
+- receiver Faro local oficial no Alloy
 - hardening do Faro no cliente:
   - dedupe
   - throttle

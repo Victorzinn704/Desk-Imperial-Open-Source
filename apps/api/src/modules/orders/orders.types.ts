@@ -56,7 +56,9 @@ type OrderWithItems = Order & {
 }
 
 function maskDocument(doc: string | null): string | null {
-  if (!doc) return null
+  if (!doc) {
+    return null
+  }
   const digits = doc.replace(/\D/g, '')
   if (digits.length === 11) {
     // CPF: 161.***.**-98

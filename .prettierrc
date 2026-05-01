@@ -5,5 +5,9 @@
   "printWidth": 120,
   "tabWidth": 2,
   "arrowParens": "always",
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "jsxSingleQuote": false,
+  "quoteProps": "as-needed"
 }
