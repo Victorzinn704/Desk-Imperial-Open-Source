@@ -19,7 +19,9 @@ import {
   OPERATIONS_SUMMARY_QUERY_KEY,
 } from '@/lib/operations'
 
-const { useOperationsRealtimeMock } = vi.hoisted(() => ({
+const { useDashboardMutationsMock, useDashboardQueriesMock, useOperationsRealtimeMock } = vi.hoisted(() => ({
+  useDashboardMutationsMock: vi.fn(),
+  useDashboardQueriesMock: vi.fn(),
   useOperationsRealtimeMock: vi.fn(() => ({ status: 'connected' })),
 }))
 
@@ -31,6 +33,19 @@ vi.mock('@/lib/api', () => ({
   fetchOrders: vi.fn(),
   fetchProducts: vi.fn(),
   fetchFinanceSummary: vi.fn(),
+  fetchEmployees: vi.fn(),
+  fetchCurrentUser: vi.fn(),
+  fetchConsentOverview: vi.fn(),
+  fetchActivityFeed: vi.fn(),
+  updateProfile: vi.fn(),
+  updateCookiePreferences: vi.fn(),
+  fetchTelegramIntegrationStatus: vi.fn(),
+  createTelegramLinkToken: vi.fn(),
+  unlinkTelegramIntegration: vi.fn(),
+  fetchWorkspaceNotificationPreferences: vi.fn(),
+  updateWorkspaceNotificationPreferences: vi.fn(),
+  fetchUserNotificationPreferences: vi.fn(),
+  updateUserNotificationPreferences: vi.fn(),
   fetchComandaDetails: vi.fn(),
   logout: vi.fn(),
   openComanda: vi.fn(),
@@ -48,10 +63,20 @@ vi.mock('@/lib/api', () => ({
       this.status = status
     }
   },
+  USER_NOTIFICATION_PREFERENCES_QUERY_KEY: ['notifications', 'preferences', 'me'],
+  WORKSPACE_NOTIFICATION_PREFERENCES_QUERY_KEY: ['notifications', 'preferences', 'workspace'],
 }))
 
 vi.mock('../operations/use-operations-realtime', () => ({
   useOperationsRealtime: useOperationsRealtimeMock,
+}))
+
+vi.mock('@/components/dashboard/hooks/useDashboardQueries', () => ({
+  useDashboardQueries: () => useDashboardQueriesMock(),
+}))
+
+vi.mock('@/components/dashboard/hooks/useDashboardMutations', () => ({
+  useDashboardMutations: () => useDashboardMutationsMock(),
 }))
 
 // Mock do QueryClient
@@ -83,7 +108,15 @@ describe('OwnerMobileShell', () => {
     const mockFetchOrders = vi.mocked(api.fetchOrders)
     const mockFetchProducts = vi.mocked(api.fetchProducts)
     const mockFetchFinanceSummary = vi.mocked(api.fetchFinanceSummary)
+    const mockFetchEmployees = vi.mocked(api.fetchEmployees)
+    const mockFetchCurrentUser = vi.mocked(api.fetchCurrentUser)
+    const mockFetchConsentOverview = vi.mocked(api.fetchConsentOverview)
+    const mockFetchActivityFeed = vi.mocked(api.fetchActivityFeed)
+    const mockFetchTelegramIntegrationStatus = vi.mocked(api.fetchTelegramIntegrationStatus)
+    const mockFetchWorkspaceNotificationPreferences = vi.mocked(api.fetchWorkspaceNotificationPreferences)
+    const mockFetchUserNotificationPreferences = vi.mocked(api.fetchUserNotificationPreferences)
     const mockFetchComandaDetails = vi.mocked(api.fetchComandaDetails)
+    window.history.pushState({}, '', '/app/owner')
 
     const mockSnapshot = buildOperationsSnapshot({
       closure: {
@@ -138,7 +171,119 @@ describe('OwnerMobileShell', () => {
       ],
     })
 
+    const currentUserResponse = {
+      user: {
+        userId: 'owner-1',
+        sessionId: 'session-1',
+        role: 'OWNER',
+        workspaceOwnerUserId: 'owner-1',
+        companyOwnerUserId: null,
+        employeeId: null,
+        employeeCode: null,
+        fullName: 'Wilson Owner',
+        companyName: 'Desk Imperial',
+        companyLocation: {
+          streetLine1: null,
+          streetNumber: null,
+          addressComplement: null,
+          district: null,
+          city: null,
+          state: null,
+          postalCode: null,
+          country: null,
+          latitude: null,
+          longitude: null,
+          precision: 'city',
+        },
+        workforce: {
+          hasEmployees: true,
+          employeeCount: 2,
+        },
+        email: 'owner@desk.test',
+        emailVerified: true,
+        preferredCurrency: 'BRL',
+        status: 'ACTIVE',
+        evaluationAccess: null,
+        cookiePreferences: {
+          necessary: true,
+          analytics: false,
+          marketing: false,
+        },
+      },
+    } as Awaited<ReturnType<typeof api.fetchCurrentUser>>
+    const consentOverview = {
+      documents: [],
+      legalAcceptances: [],
+      cookiePreferences: {
+        necessary: true,
+        analytics: false,
+        marketing: false,
+      },
+    } as Awaited<ReturnType<typeof api.fetchConsentOverview>>
+
     mockFetchOperationsLive.mockResolvedValue(mockSnapshot)
+    mockFetchCurrentUser.mockResolvedValue(currentUserResponse)
+    mockFetchEmployees.mockResolvedValue({
+      items: [],
+    } as unknown as Awaited<ReturnType<typeof api.fetchEmployees>>)
+    mockFetchConsentOverview.mockResolvedValue(consentOverview)
+    mockFetchActivityFeed.mockResolvedValue([])
+    useDashboardQueriesMock.mockReturnValue({
+      sessionQuery: {
+        data: currentUserResponse,
+        error: null,
+      },
+      consentQuery: {
+        data: consentOverview,
+        isLoading: false,
+      },
+    })
+    useDashboardMutationsMock.mockReturnValue({
+      logoutMutation: { isPending: false, mutate: vi.fn() },
+      preferenceMutation: { error: null, isPending: false, mutate: vi.fn() },
+      updateProfileMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+    mockFetchTelegramIntegrationStatus.mockResolvedValue({
+      enabled: true,
+      workspaceEnabled: true,
+      restrictionReason: null,
+      botUsername: 'Desk_Imperial_bot',
+      deeplinkBase: 'https://t.me/Desk_Imperial_bot',
+      linked: false,
+      account: null,
+    })
+    mockFetchWorkspaceNotificationPreferences.mockResolvedValue({
+      preferences: [
+        {
+          channel: 'TELEGRAM',
+          eventType: 'operations.comanda.status_changed',
+          enabled: true,
+          inherited: true,
+        },
+        {
+          channel: 'TELEGRAM',
+          eventType: 'operations.kitchen_item.status_changed',
+          enabled: true,
+          inherited: true,
+        },
+      ],
+    })
+    mockFetchUserNotificationPreferences.mockResolvedValue({
+      preferences: [
+        {
+          channel: 'WEB_TOAST',
+          eventType: 'operations.comanda.status_changed',
+          enabled: true,
+          inherited: true,
+        },
+        {
+          channel: 'MOBILE_TOAST',
+          eventType: 'operations.comanda.status_changed',
+          enabled: true,
+          inherited: true,
+        },
+      ],
+    })
     mockFetchComandaDetails.mockResolvedValue({
       comanda: {
         id: 'c-2',
@@ -614,6 +759,17 @@ describe('OwnerMobileShell', () => {
       expect(screen.getByTestId('owner-kpi-comandas')).toHaveTextContent('2')
       expect(screen.getByText('Ranking garçons')).toBeInTheDocument()
     })
+  })
+
+  it('abre a configuração real quando a rota usa view=settings e panel', async () => {
+    window.history.pushState({}, '', '/app/owner?view=settings&panel=account')
+
+    renderWithClient(<OwnerMobileShell currentUser={mockUser} />)
+
+    expect(await screen.findByRole('heading', { name: 'Configurações do workspace' })).toBeInTheDocument()
+    expect(await screen.findByText('Telegram oficial')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gerar link do Telegram/i })).toBeInTheDocument()
+    expect(screen.queryByText('Operação do turno')).not.toBeInTheDocument()
   })
 
   it('permite fechar uma comanda aberta pelo mobile do owner', async () => {

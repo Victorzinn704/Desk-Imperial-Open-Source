@@ -23,8 +23,8 @@ vi.mock('next/navigation', () => ({
     replace: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => '',
-  useSearchParams: () => new URLSearchParams(''),
+  usePathname: () => window.location.pathname,
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }))
 
 // Mock do sonner (toast)

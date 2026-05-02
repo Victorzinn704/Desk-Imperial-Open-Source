@@ -1,4 +1,5 @@
 import type React from 'react'
+import type { DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
 import type { RealtimeStatus } from '@/components/operations/use-operations-realtime'
 import type { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
@@ -86,6 +87,7 @@ export function getPdvErrorMessage(
 }
 
 type ControllerBuildArgs = {
+  activeSettingsSection: DashboardSettingsSectionId
   activeTab: OwnerMobileTab
   currentUser: OwnerCurrentUser | null
   focusedComandaId: string | null
@@ -111,6 +113,7 @@ type ControllerBuildArgs = {
     topProdutos: { nome: string; qtd: number; valor: number }[]
   }
   mutations: ReturnType<typeof useOwnerMobileShellMutations>
+  navigateSettingsSection: (sectionId: DashboardSettingsSectionId) => void
   pdvView: OwnerPdvView
   pendingAction: PendingAction | null
   queries: ReturnType<typeof useOwnerMobileShellQueries>
@@ -125,6 +128,7 @@ type ControllerBuildArgs = {
   router: { push: (href: string) => void }
   screenError: string | null
   setActiveTab: (tab: OwnerMobileTab) => void
+  setActiveSettingsSection: (sectionId: DashboardSettingsSectionId) => void
   setFocusedComandaId: (id: string | null) => void
   setPdvView: (view: OwnerPdvView) => void
   setPendingAction: (action: PendingAction | null) => void
@@ -150,12 +154,14 @@ function buildControllerVisuals({
 }
 
 function buildControllerState({
+  activeSettingsSection,
   activeTab,
   focusedComandaId,
   pdvView,
   pendingAction,
   screenError,
   setActiveTab,
+  setActiveSettingsSection,
   setFocusedComandaId,
   setPdvView,
   setPendingAction,
@@ -163,23 +169,27 @@ function buildControllerState({
 }: Pick<
   ControllerBuildArgs,
   | 'activeTab'
+  | 'activeSettingsSection'
   | 'focusedComandaId'
   | 'pdvView'
   | 'pendingAction'
   | 'screenError'
   | 'setActiveTab'
+  | 'setActiveSettingsSection'
   | 'setFocusedComandaId'
   | 'setPdvView'
   | 'setPendingAction'
   | 'setScreenError'
 >) {
   return {
+    activeSettingsSection,
     activeTab,
     focusedComandaId,
     pdvView,
     pendingAction,
     screenError,
     setActiveTab,
+    setActiveSettingsSection,
     setFocusedComandaId,
     setPdvView,
     setPendingAction,
@@ -206,5 +216,6 @@ export function buildOwnerMobileShellControllerValue(args: ControllerBuildArgs) 
       args.mutations.createComandaPaymentMutation.isPending ||
       args.mutations.openCashSessionMutation.isPending,
     router: args.router,
+    navigateSettingsSection: args.navigateSettingsSection,
   }
 }

@@ -1,9 +1,9 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { buildDesignLabConfigHref } from '@/components/design-lab/design-lab-navigation'
+import { SettingsEnvironment } from '@/components/dashboard/environments/settings-environment'
+import type { DashboardSectionId } from '@/components/dashboard/dashboard-navigation'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
-import { OwnerAccountView } from './owner-account-view'
 import { OwnerCashView } from './owner-cash-view'
 import { OwnerFinanceView } from './owner-finance-view'
 import { buildOwnerMobileFullLabHref } from './owner-mobile-links'
@@ -19,8 +19,6 @@ const OWNER_QUICK_REGISTER_HREF = '/app/owner/cadastro-rapido'
 const FULL_DASHBOARD_HREF = buildOwnerMobileFullLabHref('/design-lab/overview')
 const FULL_CASH_HREF = buildOwnerMobileFullLabHref('/design-lab/caixa')
 const FULL_FINANCE_HREF = buildOwnerMobileFullLabHref('/design-lab/financeiro')
-const FULL_CONFIG_ACCOUNT_HREF = buildOwnerMobileFullLabHref(buildDesignLabConfigHref('account'))
-const FULL_CONFIG_SECURITY_HREF = buildOwnerMobileFullLabHref(buildDesignLabConfigHref('security'))
 
 function openFullLabSurface(href: string) {
   window.location.assign(href)
@@ -47,15 +45,15 @@ function OwnerTodayPanel({ controller }: Readonly<{ controller: OwnerMobileShell
       todayOrderCount={controller.todayOrderCount}
       todayRevenue={controller.executiveKpis.receitaRealizada}
       topProdutos={controller.topProdutos}
-      onOpenComandas={() => {
-        controller.setFocusedComandaId(null)
-        controller.setPendingAction(null)
-        controller.setActiveTab('comandas')
-      }}
       onOpenCash={() => {
         controller.setFocusedComandaId(null)
         controller.setPendingAction(null)
         controller.setActiveTab('caixa')
+      }}
+      onOpenComandas={() => {
+        controller.setFocusedComandaId(null)
+        controller.setPendingAction(null)
+        controller.setActiveTab('comandas')
       }}
       onOpenFullDashboard={() => openFullLabSurface(FULL_DASHBOARD_HREF)}
       onOpenKitchen={() => {
@@ -175,16 +173,51 @@ function OwnerFinancePanel({ controller }: Readonly<{ controller: OwnerMobileShe
   )
 }
 
+function navigateOwnerMobileSection(controller: OwnerMobileShellController, sectionId: DashboardSectionId) {
+  controller.setFocusedComandaId(null)
+  controller.setPendingAction(null)
+
+  if (sectionId === 'settings') {
+    controller.setActiveTab('conta')
+    return
+  }
+
+  if (sectionId === 'financeiro' || sectionId === 'map') {
+    controller.setActiveTab('financeiro')
+    return
+  }
+
+  if (sectionId === 'pdv' || sectionId === 'portfolio' || sectionId === 'salao') {
+    controller.setPdvView('mesas')
+    controller.setActiveTab('pdv')
+    return
+  }
+
+  if (sectionId === 'pedidos') {
+    controller.setActiveTab('comandas')
+    return
+  }
+
+  controller.setActiveTab('today')
+}
+
 function OwnerAccountPanel({ controller }: Readonly<{ controller: OwnerMobileShellController }>) {
   return (
-    <OwnerAccountView
-      companyName={controller.companyName}
-      displayName={controller.displayName}
-      onOpenDashboard={() => openFullLabSurface(FULL_DASHBOARD_HREF)}
-      onOpenQuickRegister={() => controller.router.push(OWNER_QUICK_REGISTER_HREF)}
-      onOpenSecurity={() => openFullLabSurface(FULL_CONFIG_SECURITY_HREF)}
-      onOpenSettings={() => openFullLabSurface(FULL_CONFIG_ACCOUNT_HREF)}
-    />
+    <div className="space-y-4 p-3 pb-[8.5rem]">
+      <SettingsEnvironment
+        activeSettingsSection={controller.activeSettingsSection}
+        presentation="legacy"
+        onNavigateSection={(sectionId) => navigateOwnerMobileSection(controller, sectionId)}
+        onSettingsSectionChange={controller.navigateSettingsSection}
+      />
+      <button
+        className="w-full rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text-primary)] transition active:bg-[var(--surface-muted)]"
+        type="button"
+        onClick={() => openFullLabSurface(FULL_DASHBOARD_HREF)}
+      >
+        Abrir painel completo
+      </button>
+    </div>
   )
 }
 

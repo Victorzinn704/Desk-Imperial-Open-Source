@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  dashboardDefaultSettingsSection,
+  type DashboardSettingsSectionId,
+  parseDashboardSettingsSectionParam,
+} from '@/components/dashboard/dashboard-navigation'
 import type { ComandaItem } from '@/components/pdv/pdv-types'
 import { normalizeTableLabel } from '@/components/pdv/normalize-table-label'
 import { buildPdvComandas, buildPdvMesas } from '@/components/pdv/pdv-operations'
@@ -164,12 +169,29 @@ async function submitNewComanda(
 
 const OWNER_TABS = new Set<OwnerMobileTab>(['today', 'comandas', 'pdv', 'caixa', 'financeiro', 'conta'])
 
-function resolveOwnerTab(value: string | null): OwnerMobileTab {
-  return value && OWNER_TABS.has(value as OwnerMobileTab) ? (value as OwnerMobileTab) : 'today'
+function resolveOwnerTab(tab: string | null, view: string | null): OwnerMobileTab {
+  if (view === 'settings') {
+    return 'conta'
+  }
+
+  return tab && OWNER_TABS.has(tab as OwnerMobileTab) ? (tab as OwnerMobileTab) : 'today'
 }
 
-function useOwnerMobileShellState(initialTab: OwnerMobileTab) {
+function resolveOwnerSettingsSection(value: string | null): DashboardSettingsSectionId {
+  return parseDashboardSettingsSectionParam(value) ?? dashboardDefaultSettingsSection
+}
+
+function buildOwnerSettingsHref(sectionId: DashboardSettingsSectionId) {
+  const params = new URLSearchParams()
+  params.set('view', 'settings')
+  params.set('panel', sectionId)
+
+  return `/app/owner?${params.toString()}`
+}
+
+function useOwnerMobileShellState(initialTab: OwnerMobileTab, initialSettingsSection: DashboardSettingsSectionId) {
   const [activeTab, setActiveTab] = useState<OwnerMobileTab>(initialTab)
+  const [activeSettingsSection, setActiveSettingsSection] = useState<DashboardSettingsSectionId>(initialSettingsSection)
   const [pdvView, setPdvView] = useState<OwnerPdvView>('mesas')
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const [screenError, setScreenError] = useState<string | null>(null)
@@ -177,11 +199,13 @@ function useOwnerMobileShellState(initialTab: OwnerMobileTab) {
 
   return {
     activeTab,
+    activeSettingsSection,
     focusedComandaId,
     pdvView,
     pendingAction,
     screenError,
     setActiveTab,
+    setActiveSettingsSection,
     setFocusedComandaId,
     setPdvView,
     setPendingAction,
@@ -242,9 +266,12 @@ export function useOwnerMobileShellController(currentUser: OwnerCurrentUser | nu
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
+  const viewParam = searchParams.get('view')
+  const panelParam = searchParams.get('panel')
   const queryClient = useQueryClient()
-  const initialTab = resolveOwnerTab(tabParam)
-  const shellState = useOwnerMobileShellState(initialTab)
+  const initialTab = resolveOwnerTab(tabParam, viewParam)
+  const initialSettingsSection = resolveOwnerSettingsSection(panelParam)
+  const shellState = useOwnerMobileShellState(initialTab, initialSettingsSection)
   const realtime = useRealtimeRefresh(Boolean(currentUser), queryClient, currentUser?.userId ?? null)
   const queries = useOwnerMobileShellQueries(currentUser, {
     activeTab: shellState.activeTab,
@@ -254,16 +281,30 @@ export function useOwnerMobileShellController(currentUser: OwnerCurrentUser | nu
   const mutations = useOwnerMobileShellMutations(queryClient, router)
   const metrics = useOwnerMetrics(queries)
   const handleSubmit = useOwnerHandleSubmit({ ...shellState, mutations, queryClient })
-  const { setActiveTab } = shellState
+  const { setActiveTab, setActiveSettingsSection } = shellState
 
   useEffect(() => {
-    setActiveTab(resolveOwnerTab(tabParam))
-  }, [setActiveTab, tabParam])
+    setActiveTab(resolveOwnerTab(tabParam, viewParam))
+  }, [setActiveTab, tabParam, viewParam])
+
+  useEffect(() => {
+    setActiveSettingsSection(resolveOwnerSettingsSection(panelParam))
+  }, [panelParam, setActiveSettingsSection])
+
+  const navigateSettingsSection = useCallback(
+    (sectionId: DashboardSettingsSectionId) => {
+      setActiveTab('conta')
+      setActiveSettingsSection(sectionId)
+      globalThis.history.pushState({}, '', buildOwnerSettingsHref(sectionId))
+    },
+    [setActiveSettingsSection, setActiveTab],
+  )
 
   return buildOwnerMobileShellControllerValue({
     currentUser,
     handleSubmit,
     metrics,
+    navigateSettingsSection,
     mutations,
     queries,
     realtime,
