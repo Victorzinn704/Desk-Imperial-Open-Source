@@ -206,66 +206,25 @@ export function useOperationsRealtime(
   const handleEvent = useCallback(
     (envelope?: OperationsRealtimeEnvelope) => {
       if (!envelope) {
-        queueOperationsRefresh()
-        queueKitchenRefresh()
-        queueSummaryRefresh()
+        queueRealtimeFallbackRefreshes({ queueOperationsRefresh, queueKitchenRefresh, queueSummaryRefresh })
         return
       }
 
-      // Reidratação em curso: bufferiza para drenar na ordem após o baseline REST resolver.
-      if (isSyncingRef.current) {
-        if (reidratationBufferRef.current.length < MAX_REIDRATATION_BUFFER) {
-          reidratationBufferRef.current.push(envelope)
-        } else {
-          recordOperationsRealtimeEnvelopeDropped({
-            event: envelope.event,
-            entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
-            reason: 'buffer-overflow',
-          })
-        }
+      if (bufferRealtimeEnvelopeDuringSync(envelope, isSyncingRef.current, reidratationBufferRef.current)) {
         return
       }
 
-      // Idempotência: se o envelope já foi aplicado nesta sessão, ignora a retransmissão.
-      if (envelope.id && processedEnvelopeIdsRef.current.has(envelope.id)) {
-        recordOperationsRealtimeEnvelopeDropped({
-          event: envelope.event,
-          entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
-          reason: 'duplicate-id',
-        })
+      if (dropDuplicateRealtimeEnvelope(envelope, processedEnvelopeIdsRef.current)) {
         return
       }
 
-      // C10: descarte precoce por businessDate divergente (virada de dia em sessão longa).
-      // O patcher já filtra internamente, mas descartar aqui evita rodar todos os patchers
-      // e ainda registra o drop para observabilidade em produção 24h.
-      const envelopeBusinessDate = asString(envelope.payload.businessDate)
-      if (envelopeBusinessDate) {
-        const liveSnapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
-        if (liveSnapshot?.businessDate && liveSnapshot.businessDate !== envelopeBusinessDate) {
-          recordOperationsRealtimeEnvelopeDropped({
-            event: envelope.event,
-            entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
-            reason: 'stale-business-date',
-          })
-          return
-        }
+      if (dropStaleBusinessDateEnvelope(queryClient, envelope)) {
+        return
       }
 
       const startedAt = now()
-      const entityKey = resolveRealtimeEnvelopeEntityKey(envelope)
-      const eventCreatedAtMs = parseRealtimeEnvelopeCreatedAt(envelope.createdAt)
-      const outOfOrderLastSeenAt = detectOperationsRealtimeEnvelopeOutOfOrder(entityKey, eventCreatedAtMs)
-      if (entityKey && eventCreatedAtMs != null && outOfOrderLastSeenAt != null) {
-        recordOperationsRealtimeEnvelopeOutOfOrder({
-          event: envelope.event,
-          entityKey,
-          eventCreatedAtMs,
-          lastSeenCreatedAtMs: outOfOrderLastSeenAt,
-        })
-      }
-
-      const isSelfEvent = Boolean(currentUserId && envelope.actorUserId && currentUserId === envelope.actorUserId)
+      const entityKey = recordRealtimeEnvelopeOrdering(envelope)
+      const isSelfEvent = isSelfRealtimeEnvelope(envelope, currentUserId)
 
       maybeNotifyRealtimeStatusChange(
         envelope,
@@ -279,61 +238,22 @@ export function useOperationsRealtime(
 
       const summarySyncedFromLive = patchResult.livePatched ? syncSummaryFromLive() : false
 
-      if (isSelfEvent) {
-        const satisfiedLive = patchResult.livePatched && !patchResult.liveNeedsRefresh
-        const satisfiedKitchen =
-          requiresKitchenRefresh(envelope) && patchResult.kitchenPatched && !patchResult.kitchenNeedsRefresh
-        const satisfiedSummary =
-          requiresSummaryRefresh(envelope.event) &&
-          (summarySyncedFromLive || (patchResult.summaryPatched && !patchResult.summaryNeedsRefresh))
+      settleSelfEventReconcile({ queryClient, envelope, isSelfEvent, patchResult, summarySyncedFromLive })
+      queueRealtimeRefreshesAfterPatch({
+        envelope,
+        patchResult,
+        summarySyncedFromLive,
+        queueOperationsRefresh,
+        queueKitchenRefresh,
+        queueSummaryRefresh,
+      })
+      recordNoApplicableSnapshotDrop(queryClient, envelope, entityKey, patchResult)
 
-        if (satisfiedLive || satisfiedKitchen || satisfiedSummary) {
-          settleScheduledOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
-            includeLive: satisfiedLive,
-            includeKitchen: satisfiedKitchen,
-            includeSummary: satisfiedSummary,
-          })
-        }
-      }
-
-      if (!patchResult.livePatched || patchResult.liveNeedsRefresh) {
-        queueOperationsRefresh()
-      }
-
-      if (requiresKitchenRefresh(envelope) && (!patchResult.kitchenPatched || patchResult.kitchenNeedsRefresh)) {
-        queueKitchenRefresh()
-      }
-
-      if (
-        requiresSummaryRefresh(envelope.event) &&
-        !summarySyncedFromLive &&
-        (!patchResult.summaryPatched || patchResult.summaryNeedsRefresh)
-      ) {
-        queueSummaryRefresh()
-      }
-
-      if (shouldRecordDroppedRealtimeEnvelope(queryClient, patchResult)) {
-        recordOperationsRealtimeEnvelopeDropped({
-          event: envelope.event,
-          entityKey,
-          reason: 'no-applicable-snapshot',
-        })
-      }
-
-      if (envelope.event === 'comanda.closed' && !isSelfEvent) {
+      if (shouldQueueCommercialRefresh(envelope, isSelfEvent)) {
         queueCommercialRefresh()
       }
 
-      if (envelope.id) {
-        processedEnvelopeIdsRef.current.add(envelope.id)
-        processedEnvelopeIdsOrderRef.current.push(envelope.id)
-        while (processedEnvelopeIdsOrderRef.current.length > MAX_PROCESSED_ENVELOPE_IDS) {
-          const evicted = processedEnvelopeIdsOrderRef.current.shift()
-          if (evicted) {
-            processedEnvelopeIdsRef.current.delete(evicted)
-          }
-        }
-      }
+      rememberProcessedRealtimeEnvelope(envelope, processedEnvelopeIdsRef.current, processedEnvelopeIdsOrderRef.current)
 
       recordRealtimeEnvelopeProcessing(envelope, isSelfEvent, startedAt, patchResult)
     },
@@ -362,11 +282,217 @@ export function useOperationsRealtime(
   return { status }
 }
 
+type RefreshQueues = {
+  queueOperationsRefresh: () => void
+  queueKitchenRefresh: () => void
+  queueSummaryRefresh: () => void
+}
+
+type PatchResult = ReturnType<typeof applyRealtimeEnvelope>
+
+function queueRealtimeFallbackRefreshes({
+  queueOperationsRefresh,
+  queueKitchenRefresh,
+  queueSummaryRefresh,
+}: RefreshQueues) {
+  queueOperationsRefresh()
+  queueKitchenRefresh()
+  queueSummaryRefresh()
+}
+
+function bufferRealtimeEnvelopeDuringSync(
+  envelope: OperationsRealtimeEnvelope,
+  isSyncing: boolean,
+  buffer: OperationsRealtimeEnvelope[],
+) {
+  if (!isSyncing) {
+    return false
+  }
+
+  // Reidratação em curso: bufferiza para drenar na ordem após o baseline REST resolver.
+  if (buffer.length < MAX_REIDRATATION_BUFFER) {
+    buffer.push(envelope)
+    return true
+  }
+
+  recordOperationsRealtimeEnvelopeDropped({
+    event: envelope.event,
+    entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+    reason: 'buffer-overflow',
+  })
+  return true
+}
+
+function dropDuplicateRealtimeEnvelope(envelope: OperationsRealtimeEnvelope, processedIds: Set<string>) {
+  if (!(envelope.id && processedIds.has(envelope.id))) {
+    return false
+  }
+
+  recordOperationsRealtimeEnvelopeDropped({
+    event: envelope.event,
+    entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+    reason: 'duplicate-id',
+  })
+  return true
+}
+
+function dropStaleBusinessDateEnvelope(queryClient: QueryClient, envelope: OperationsRealtimeEnvelope) {
+  const envelopeBusinessDate = asString(envelope.payload.businessDate)
+  if (!envelopeBusinessDate) {
+    return false
+  }
+
+  const liveSnapshot = queryClient.getQueryData<OperationsLiveResponse>(OPERATIONS_LIVE_COMPACT_QUERY_KEY)
+  if (!(liveSnapshot?.businessDate && liveSnapshot.businessDate !== envelopeBusinessDate)) {
+    return false
+  }
+
+  recordOperationsRealtimeEnvelopeDropped({
+    event: envelope.event,
+    entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+    reason: 'stale-business-date',
+  })
+  return true
+}
+
+function recordRealtimeEnvelopeOrdering(envelope: OperationsRealtimeEnvelope) {
+  const entityKey = resolveRealtimeEnvelopeEntityKey(envelope)
+  const eventCreatedAtMs = parseRealtimeEnvelopeCreatedAt(envelope.createdAt)
+  const outOfOrderLastSeenAt = detectOperationsRealtimeEnvelopeOutOfOrder(entityKey, eventCreatedAtMs)
+
+  if (entityKey && eventCreatedAtMs != null && outOfOrderLastSeenAt != null) {
+    recordOperationsRealtimeEnvelopeOutOfOrder({
+      event: envelope.event,
+      entityKey,
+      eventCreatedAtMs,
+      lastSeenCreatedAtMs: outOfOrderLastSeenAt,
+    })
+  }
+
+  return entityKey
+}
+
+function isSelfRealtimeEnvelope(envelope: OperationsRealtimeEnvelope, currentUserId: string | null) {
+  return Boolean(currentUserId && envelope.actorUserId && currentUserId === envelope.actorUserId)
+}
+
+function settleSelfEventReconcile({
+  queryClient,
+  envelope,
+  isSelfEvent,
+  patchResult,
+  summarySyncedFromLive,
+}: {
+  queryClient: QueryClient
+  envelope: OperationsRealtimeEnvelope
+  isSelfEvent: boolean
+  patchResult: PatchResult
+  summarySyncedFromLive: boolean
+}) {
+  if (!isSelfEvent) {
+    return
+  }
+
+  const satisfiedLive = patchResult.livePatched && !patchResult.liveNeedsRefresh
+  const satisfiedKitchen =
+    requiresKitchenRefresh(envelope) && patchResult.kitchenPatched && !patchResult.kitchenNeedsRefresh
+  const satisfiedSummary =
+    requiresSummaryRefresh(envelope.event) &&
+    (summarySyncedFromLive || (patchResult.summaryPatched && !patchResult.summaryNeedsRefresh))
+
+  if (!(satisfiedLive || satisfiedKitchen || satisfiedSummary)) {
+    return
+  }
+
+  settleScheduledOperationsWorkspaceReconcile(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+    includeLive: satisfiedLive,
+    includeKitchen: satisfiedKitchen,
+    includeSummary: satisfiedSummary,
+  })
+}
+
+function queueRealtimeRefreshesAfterPatch({
+  envelope,
+  patchResult,
+  summarySyncedFromLive,
+  queueOperationsRefresh,
+  queueKitchenRefresh,
+  queueSummaryRefresh,
+}: RefreshQueues & {
+  envelope: OperationsRealtimeEnvelope
+  patchResult: PatchResult
+  summarySyncedFromLive: boolean
+}) {
+  if (!patchResult.livePatched || patchResult.liveNeedsRefresh) {
+    queueOperationsRefresh()
+  }
+
+  if (requiresKitchenRefresh(envelope) && (!patchResult.kitchenPatched || patchResult.kitchenNeedsRefresh)) {
+    queueKitchenRefresh()
+  }
+
+  if (shouldRefreshSummaryAfterPatch(envelope, patchResult, summarySyncedFromLive)) {
+    queueSummaryRefresh()
+  }
+}
+
+function shouldRefreshSummaryAfterPatch(
+  envelope: OperationsRealtimeEnvelope,
+  patchResult: PatchResult,
+  summarySyncedFromLive: boolean,
+) {
+  return (
+    requiresSummaryRefresh(envelope.event) &&
+    !summarySyncedFromLive &&
+    (!patchResult.summaryPatched || patchResult.summaryNeedsRefresh)
+  )
+}
+
+function recordNoApplicableSnapshotDrop(
+  queryClient: QueryClient,
+  envelope: OperationsRealtimeEnvelope,
+  entityKey: string | null,
+  patchResult: PatchResult,
+) {
+  if (!shouldRecordDroppedRealtimeEnvelope(queryClient, patchResult)) {
+    return
+  }
+
+  recordOperationsRealtimeEnvelopeDropped({
+    event: envelope.event,
+    entityKey,
+    reason: 'no-applicable-snapshot',
+  })
+}
+
+function shouldQueueCommercialRefresh(envelope: OperationsRealtimeEnvelope, isSelfEvent: boolean) {
+  return envelope.event === 'comanda.closed' && !isSelfEvent
+}
+
+function rememberProcessedRealtimeEnvelope(
+  envelope: OperationsRealtimeEnvelope,
+  processedIds: Set<string>,
+  processedOrder: string[],
+) {
+  if (!envelope.id) {
+    return
+  }
+
+  processedIds.add(envelope.id)
+  processedOrder.push(envelope.id)
+  while (processedOrder.length > MAX_PROCESSED_ENVELOPE_IDS) {
+    const evicted = processedOrder.shift()
+    if (evicted) {
+      processedIds.delete(evicted)
+    }
+  }
+}
+
 function recordRealtimeEnvelopeProcessing(
   envelope: OperationsRealtimeEnvelope,
   isSelfEvent: boolean,
   startedAt: number,
-  patchResult: ReturnType<typeof applyRealtimeEnvelope>,
+  patchResult: PatchResult,
 ) {
   const durationMs = Math.max(0, now() - startedAt)
 
@@ -456,45 +582,57 @@ function maybeNotifyRealtimeStatusChange(
 }
 
 function resolveRealtimeStatusNotification(envelope: OperationsRealtimeEnvelope) {
-  switch (envelope.event) {
-    case 'comanda.updated': {
-      const previousStatus = mapComandaStatus(asString(envelope.payload.previousStatus))
-      const nextStatus = mapComandaStatus(asString(envelope.payload.status))
-      if (!(previousStatus && nextStatus) || previousStatus === nextStatus) {
-        return null
-      }
+  if (envelope.event === 'comanda.updated') {
+    return resolveComandaUpdatedNotification(envelope)
+  }
 
-      const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
-      return {
-        eventType: 'operations.comanda.status_changed' as const,
-        tone: nextStatus === 'READY' ? ('success' as const) : ('info' as const),
-        message: `${mesaLabel} mudou para ${formatComandaStatus(nextStatus)}.`,
-      }
-    }
-    case 'comanda.closed': {
-      const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
-      return {
-        eventType: 'operations.comanda.status_changed' as const,
-        tone: 'success' as const,
-        message: `${mesaLabel} foi fechada no PDV.`,
-      }
-    }
-    case 'kitchen.item.updated': {
-      const nextStatus = mapKitchenStatus(asString(envelope.payload.kitchenStatus))
-      if (!nextStatus) {
-        return null
-      }
+  if (envelope.event === 'comanda.closed') {
+    return resolveComandaClosedNotification(envelope)
+  }
 
-      const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
-      const productName = asString(envelope.payload.productName) ?? 'Item'
-      return {
-        eventType: 'operations.kitchen_item.status_changed' as const,
-        tone: nextStatus === 'READY' || nextStatus === 'DELIVERED' ? ('success' as const) : ('info' as const),
-        message: `${mesaLabel} · ${productName} -> ${formatKitchenStatus(nextStatus)}.`,
-      }
-    }
-    default:
-      return null
+  if (envelope.event === 'kitchen.item.updated') {
+    return resolveKitchenItemUpdatedNotification(envelope)
+  }
+
+  return null
+}
+
+function resolveComandaUpdatedNotification(envelope: OperationsRealtimeEnvelope) {
+  const previousStatus = mapComandaStatus(asString(envelope.payload.previousStatus))
+  const nextStatus = mapComandaStatus(asString(envelope.payload.status))
+  if (!(previousStatus && nextStatus) || previousStatus === nextStatus) {
+    return null
+  }
+
+  const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
+  return {
+    eventType: 'operations.comanda.status_changed' as const,
+    tone: nextStatus === 'READY' ? ('success' as const) : ('info' as const),
+    message: `${mesaLabel} mudou para ${formatComandaStatus(nextStatus)}.`,
+  }
+}
+
+function resolveComandaClosedNotification(envelope: OperationsRealtimeEnvelope) {
+  const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
+  return {
+    eventType: 'operations.comanda.status_changed' as const,
+    tone: 'success' as const,
+    message: `${mesaLabel} foi fechada no PDV.`,
+  }
+}
+
+function resolveKitchenItemUpdatedNotification(envelope: OperationsRealtimeEnvelope) {
+  const nextStatus = mapKitchenStatus(asString(envelope.payload.kitchenStatus))
+  if (!nextStatus) {
+    return null
+  }
+
+  const mesaLabel = asString(envelope.payload.mesaLabel) ?? 'Mesa'
+  const productName = asString(envelope.payload.productName) ?? 'Item'
+  return {
+    eventType: 'operations.kitchen_item.status_changed' as const,
+    tone: nextStatus === 'READY' || nextStatus === 'DELIVERED' ? ('success' as const) : ('info' as const),
+    message: `${mesaLabel} · ${productName} -> ${formatKitchenStatus(nextStatus)}.`,
   }
 }
 
