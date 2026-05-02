@@ -17,11 +17,7 @@ import {
 } from '@/components/design-lab/lab-primitives'
 import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
 import { useDashboardMutations } from '@/components/dashboard/hooks/useDashboardMutations'
-import {
-  dashboardSettingsNav,
-  type DashboardSectionId,
-  type DashboardSettingsSectionId,
-} from '@/components/dashboard/dashboard-navigation'
+import type { DashboardSectionId, DashboardSettingsSectionId } from '@/components/dashboard/dashboard-navigation'
 import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
 import { DashboardSettingsPanel } from '@/components/dashboard/dashboard-settings-panel'
 
@@ -53,8 +49,6 @@ export function SettingsEnvironment({
   const legalAcceptances = consentQuery.data?.legalAcceptances ?? []
   const documentTitles = new Map(consentQuery.data?.documents.map((doc) => [doc.key, doc.title]) ?? [])
   const profileMutationError = updateProfileMutation.error instanceof ApiError ? updateProfileMutation.error : undefined
-  const enabledCookiePreferences =
-    Number(Boolean(cookiePreferences?.analytics)) + Number(Boolean(cookiePreferences?.marketing))
 
   const handleLogout = () => {
     _logoutMutation.mutate(undefined, {
@@ -66,46 +60,9 @@ export function SettingsEnvironment({
     updateProfileMutation.mutate(values)
   }
 
-  const activeTabLabel =
-    {
-      account: 'Conta',
-      security: 'Segurança',
-      preferences: 'Preferências',
-      compliance: 'Compliance',
-      session: 'Sessão',
-    }[activeSettingsSection] ?? 'Conta'
-  const activeTabDescription =
-    dashboardSettingsNav.find((item) => item.id === activeSettingsSection)?.description ??
-    'Ajustes centrais da conta e do workspace.'
-
   return (
     <section className="space-y-6">
-      {presentation === 'lab' ? (
-        <LabPageHeader
-          description="Conta, segurança, preferências e conformidade do workspace num fluxo mais direto."
-          eyebrow="Conta e governança"
-          meta={
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 border-b border-dashed border-[var(--lab-border)] pb-3">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">aba ativa</span>
-                <LabStatusPill tone="info">{activeTabLabel}</LabStatusPill>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--lab-fg-muted)]">perfil</span>
-                <span className="text-sm font-medium text-[var(--lab-fg)]">{user.fullName}</span>
-              </div>
-              <p className="text-xs leading-5 text-[var(--lab-fg-soft)]">{activeTabDescription}</p>
-            </div>
-          }
-          title="Configuração do workspace"
-        >
-          <div className={`grid gap-3 ${LAB_RESPONSIVE_FOUR_UP_GRID}`}>
-            <LabMiniStat label="aba ativa" value={activeTabLabel} />
-            <LabMiniStat label="aceites" value={String(legalAcceptances.length)} />
-            <LabMiniStat label="cookies opcionais" value={`${enabledCookiePreferences}/2`} />
-          </div>
-        </LabPageHeader>
-      ) : (
+      {presentation === 'lab' ? null : (
         <DashboardSectionHeading
           description="Conta, segurança e conformidade."
           eyebrow="Conta e governança"
@@ -122,9 +79,9 @@ export function SettingsEnvironment({
         legalAcceptances={legalAcceptances}
         logoutBusy={_logoutMutation.isPending}
         preferenceMutation={preferenceMutation}
+        presentation={presentation}
         profileError={profileMutationError?.message}
         profileLoading={updateProfileMutation.isPending}
-        presentation={presentation}
         user={user}
         onLogout={handleLogout}
         onNavigateSection={onNavigateSection}

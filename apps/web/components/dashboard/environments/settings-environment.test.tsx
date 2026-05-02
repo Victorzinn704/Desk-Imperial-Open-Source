@@ -20,6 +20,12 @@ vi.mock('@/components/dashboard/hooks/useDashboardMutations', () => ({
   useDashboardMutations: () => mockUseDashboardMutations(),
 }))
 
+vi.mock('@/components/dashboard/dashboard-settings-panel', () => ({
+  DashboardSettingsPanel: ({ activeTab }: { activeTab: string }) => (
+    <div data-testid="dashboard-settings-panel">active tab: {activeTab}</div>
+  ),
+}))
+
 describe('SettingsEnvironment', () => {
   it('mostra preview travado quando nao ha sessao', () => {
     mockUseDashboardQueries.mockReturnValue({
@@ -42,9 +48,9 @@ describe('SettingsEnvironment', () => {
     render(
       <SettingsEnvironment
         activeSettingsSection="account"
+        presentation="lab"
         onNavigateSection={vi.fn()}
         onSettingsSectionChange={vi.fn()}
-        presentation="lab"
       />,
     )
 
@@ -75,9 +81,9 @@ describe('SettingsEnvironment', () => {
     render(
       <SettingsEnvironment
         activeSettingsSection="account"
+        presentation="lab"
         onNavigateSection={vi.fn()}
         onSettingsSectionChange={vi.fn()}
-        presentation="lab"
       />,
     )
 
@@ -85,5 +91,52 @@ describe('SettingsEnvironment', () => {
       screen.getAllByText('As configurações não estão disponíveis no momento. Tente novamente em instantes.'),
     ).not.toHaveLength(0)
     expect(screen.queryByText(/localhost:4000/i)).not.toBeInTheDocument()
+  })
+
+  it('remove o topo redundante no modo lab autenticado', () => {
+    mockUseDashboardQueries.mockReturnValue({
+      sessionQuery: {
+        data: {
+          user: {
+            cookiePreferences: {
+              analytics: false,
+              marketing: false,
+              necessary: true,
+            },
+          },
+        },
+        error: null,
+      },
+      consentQuery: {
+        data: {
+          cookiePreferences: {
+            analytics: false,
+            marketing: false,
+            necessary: true,
+          },
+          documents: [],
+          legalAcceptances: [],
+        },
+        isLoading: false,
+      },
+    })
+
+    mockUseDashboardMutations.mockReturnValue({
+      logoutMutation: { isPending: false, mutate: vi.fn() },
+      preferenceMutation: {},
+      updateProfileMutation: { isPending: false, error: null, mutate: vi.fn() },
+    })
+
+    render(
+      <SettingsEnvironment
+        activeSettingsSection="account"
+        presentation="lab"
+        onNavigateSection={vi.fn()}
+        onSettingsSectionChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('dashboard-settings-panel')).toHaveTextContent('active tab: account')
+    expect(screen.queryByRole('heading', { name: 'Configuração do workspace' })).not.toBeInTheDocument()
   })
 })
