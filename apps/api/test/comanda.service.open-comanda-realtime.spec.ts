@@ -155,6 +155,7 @@ describe('ComandaService - openComanda realtime', () => {
         productId: 'product-1',
         productName: 'Pizza',
         quantity: 2,
+        requiresKitchen: true,
         unitPrice: 10,
         totalAmount: 20,
         notes: 'Sem cebola',
@@ -208,6 +209,7 @@ describe('ComandaService - openComanda realtime', () => {
     )
 
     expect(realtimeService.publishComandaOpened).toHaveBeenCalledTimes(1)
+    expect(prisma.product.findMany).not.toHaveBeenCalled()
     expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
     expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledWith(
       expect.any(Object),

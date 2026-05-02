@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { CashClosureStatus, CurrencyCode, OrderStatus, type Prisma } from '@prisma/client'
 import { roundCurrency } from '../../common/utils/number-rounding.util'
 import { sanitizePlainText } from '../../common/utils/input-hardening.util'
+import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import type { PrismaService } from '../../database/prisma.service'
 import type { CurrencyService } from '../currency/currency.service'
 import { OPEN_COMANDA_STATUSES, resolveBuyerTypeFromDocument, toNumberOrZero } from './operations-domain.utils'
@@ -13,6 +14,16 @@ import {
 import type { ComandaDraftItemDto } from './operations.schemas'
 
 type TransactionClient = Prisma.TransactionClient
+
+export type ResolvedComandaDraftItem = {
+  productId: string | null
+  productName: string
+  quantity: number
+  unitPrice: number
+  totalAmount: number
+  notes: string | null
+  requiresKitchen: boolean
+}
 
 function resolveProductUnitCost(
   product: Parameters<typeof calculateEffectiveUnitCost>[0] | null | undefined,
@@ -63,16 +74,7 @@ export async function resolveComandaDraftItems(
   transaction: PrismaService | TransactionClient,
   workspaceOwnerUserId: string,
   items?: ComandaDraftItemDto[],
-): Promise<
-  Array<{
-    productId: string | null
-    productName: string
-    quantity: number
-    unitPrice: number
-    totalAmount: number
-    notes: string | null
-  }>
-> {
+): Promise<ResolvedComandaDraftItem[]> {
   if (!items?.length) {
     return []
   }
@@ -95,22 +97,17 @@ export async function resolveComandaDraftItems(
           active: true,
         },
         select: {
+          category: true,
           id: true,
           name: true,
+          requiresKitchen: true,
           unitPrice: true,
         },
       })
     : []
   const productById = new Map(products.map((product) => [product.id, product]))
 
-  const normalizedItems: Array<{
-    productId: string | null
-    productName: string
-    quantity: number
-    unitPrice: number
-    totalAmount: number
-    notes: string | null
-  }> = []
+  const normalizedItems: ResolvedComandaDraftItem[] = []
 
   for (const item of items) {
     normalizedItems.push(resolveSingleDraftItem(item, productById))
@@ -200,16 +197,12 @@ export async function assertDraftSelectionsStockAvailability(
 
 function resolveSingleDraftItem(
   item: ComandaDraftItemDto,
-  productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
-): {
-  productId: string | null
-  productName: string
-  quantity: number
-  unitPrice: number
-  totalAmount: number
-  notes: string | null
-} {
-  const { productId, productName, unitPrice } = item.productId
+  productById: Map<
+    string,
+    { category: string; id: string; name: string; requiresKitchen: boolean; unitPrice: unknown }
+  >,
+): ResolvedComandaDraftItem {
+  const { productId, productName, requiresKitchen, unitPrice } = item.productId
     ? resolveLinkedDraftItem(item, productById)
     : resolveManualDraftItem(item)
 
@@ -225,12 +218,16 @@ function resolveSingleDraftItem(
     unitPrice,
     totalAmount: roundCurrency(unitPrice * item.quantity),
     notes,
+    requiresKitchen,
   }
 }
 
 function resolveLinkedDraftItem(
   item: ComandaDraftItemDto,
-  productById: Map<string, { id: string; name: string; unitPrice: unknown }>,
+  productById: Map<
+    string,
+    { category: string; id: string; name: string; requiresKitchen: boolean; unitPrice: unknown }
+  >,
 ) {
   const product = productById.get(item.productId!)
   if (!product) {
@@ -239,6 +236,7 @@ function resolveLinkedDraftItem(
   return {
     productId: product.id as string | null,
     productName: product.name,
+    requiresKitchen: product.requiresKitchen || (product.category ? isKitchenCategory(product.category) : false),
     unitPrice: roundCurrency(item.unitPrice ?? toNumberOrZero(product.unitPrice as number)),
   }
 }
@@ -256,6 +254,7 @@ function resolveManualDraftItem(item: ComandaDraftItemDto) {
   return {
     productId: null as string | null,
     productName,
+    requiresKitchen: false,
     unitPrice: roundCurrency(item.unitPrice),
   }
 }

@@ -487,8 +487,10 @@ describe('OperationsHelpersService - branches', () => {
       product: {
         findMany: jest.fn().mockResolvedValue([
           {
+            category: 'pizza',
             id: 'prod-1',
             name: 'Pizza Casa',
+            requiresKitchen: true,
             unitPrice: 30,
           },
         ]),
@@ -517,6 +519,7 @@ describe('OperationsHelpersService - branches', () => {
         productId: 'prod-1',
         productName: 'Pizza Casa',
         quantity: 2,
+        requiresKitchen: true,
         unitPrice: 31.11,
         totalAmount: 62.22,
         notes: 'sem cebola',
@@ -525,6 +528,7 @@ describe('OperationsHelpersService - branches', () => {
         productId: null,
         productName: 'Item Manual',
         quantity: 1,
+        requiresKitchen: false,
         unitPrice: 12.5,
         totalAmount: 12.5,
         notes: null,

@@ -91,10 +91,6 @@ export async function prepareComandaItemsForBatchCreate(
   )
 }
 
-export function selectDraftProductIds(items: Array<{ productId?: string | null | undefined }>) {
-  return items.flatMap((item) => (item.productId ? [item.productId] : []))
-}
-
 export function selectDraftStockSelections(items: Array<{ productId?: string | null | undefined; quantity: number }>) {
   return items.flatMap((item) => (item.productId ? [{ productId: item.productId, quantity: item.quantity }] : []))
 }

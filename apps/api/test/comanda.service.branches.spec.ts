@@ -367,6 +367,7 @@ describe('ComandaService branch happy paths', () => {
         productId: 'product-1',
         productName: 'Pizza',
         quantity: 1,
+        requiresKitchen: true,
         unitPrice: 100,
         totalAmount: 100,
         notes: 'sem cebola',
@@ -412,6 +413,7 @@ describe('ComandaService branch happy paths', () => {
         ],
       }),
     )
+    expect(prisma.product.findMany).not.toHaveBeenCalled()
     expect(realtime.publishComandaUpdated).toHaveBeenCalledTimes(1)
     expect(realtime.publishComandaUpdated.mock.calls[0][1]).toEqual(
       expect.objectContaining({

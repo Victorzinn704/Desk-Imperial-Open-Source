@@ -29,7 +29,6 @@ import { OperationsRealtimeService } from '../operations-realtime/operations-rea
 import type { OperationsRealtimePublishInstrumentation } from '../operations-realtime/operations-realtime.types'
 import { OperationsHelpersService } from './operations-helpers.service'
 import { toComandaRecord } from './operations.types'
-import { isKitchenCategory } from '../../common/utils/is-kitchen-category.util'
 import { FinanceService } from '../finance/finance.service'
 import { assertMonetaryAdjustmentsWithinSubtotal, calculateDraftItemsSubtotal } from './comanda-validation.utils'
 import {
@@ -62,7 +61,6 @@ import { prepareComandaDraftFields } from './comanda-draft-fields.utils'
 import {
   prepareComandaItemForCreate,
   prepareComandaItemsForBatchCreate,
-  selectDraftProductIds,
   selectDraftStockSelections,
 } from './comanda-item-preparation.utils'
 import type {
@@ -429,20 +427,10 @@ export class ComandaService {
       })
 
       if (draftItems.length) {
-        const productIds = selectDraftProductIds(draftItems)
-        const products = productIds.length
-          ? await transaction.product.findMany({
-              where: { id: { in: productIds } },
-              select: { id: true, category: true, requiresKitchen: true },
-            })
-          : []
-        const productMap = new Map(products.map((p) => [p.id, p]))
         const now = new Date()
 
         await transaction.comandaItem.createMany({
           data: draftItems.map((item) => {
-            const prod = item.productId ? productMap.get(item.productId) : undefined
-            const needsKitchen = prod ? prod.requiresKitchen || isKitchenCategory(prod.category) : false
             return {
               comandaId: createdComanda.id,
               productId: item.productId,
@@ -451,8 +439,8 @@ export class ComandaService {
               unitPrice: item.unitPrice,
               totalAmount: item.totalAmount,
               notes: item.notes,
-              kitchenStatus: needsKitchen ? KitchenItemStatus.QUEUED : null,
-              kitchenQueuedAt: needsKitchen ? now : null,
+              kitchenStatus: item.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+              kitchenQueuedAt: item.requiresKitchen ? now : null,
             }
           }),
         })
@@ -781,14 +769,6 @@ export class ComandaService {
 
     const helpers = this.helpers
     const { refreshedComanda, businessDate } = await this.prisma.$transaction(async (transaction) => {
-      const productIds = selectDraftProductIds(draftItems)
-      const products = productIds.length
-        ? await transaction.product.findMany({
-            where: { id: { in: productIds } },
-            select: { id: true, category: true, requiresKitchen: true },
-          })
-        : []
-      const productMap = new Map(products.map((product) => [product.id, product]))
       const now = new Date()
       const remainingExistingItems = [...comanda.items]
 
@@ -811,9 +791,12 @@ export class ComandaService {
       if (draftItems.length) {
         await transaction.comandaItem.createMany({
           data: draftItems.map((item) => {
-            const product = item.productId ? productMap.get(item.productId) : undefined
-            const needsKitchen = product ? product.requiresKitchen || isKitchenCategory(product.category) : false
-            const preservedKitchenState = this.takeMatchingKitchenState(remainingExistingItems, item, needsKitchen, now)
+            const preservedKitchenState = this.takeMatchingKitchenState(
+              remainingExistingItems,
+              item,
+              item.requiresKitchen,
+              now,
+            )
             return {
               comandaId: comanda.id,
               productId: item.productId,
