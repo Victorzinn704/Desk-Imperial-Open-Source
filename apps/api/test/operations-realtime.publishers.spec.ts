@@ -202,9 +202,9 @@ describe('Operations realtime publishers', () => {
   })
 
   it('emite comanda fechada com deltas mínimos e totais', () => {
-    ;(service as any).publishComandaCloseRealtime(
+    ;(service as any).publishComandaCloseRealtime({
       auth,
-      {
+      comanda: {
         id: 'comanda-1',
         tableLabel: 'Mesa 01',
         currentEmployeeId: 'emp-1',
@@ -215,8 +215,8 @@ describe('Operations realtime publishers', () => {
         closedAt: new Date('2026-03-30T11:00:00.000Z'),
         items: [{ quantity: 2 }, { quantity: 1 }],
       },
-      null,
-      {
+      refreshedSession: null,
+      closure: {
         id: 'closure-1',
         status: 'CLOSED',
         createdAt: new Date('2026-03-30T08:00:00.000Z'),
@@ -229,8 +229,8 @@ describe('Operations realtime publishers', () => {
         openComandasCount: 0,
         openSessionsCount: 0,
       } as any,
-      new Date(2026, 2, 30),
-    )
+      businessDate: new Date(2026, 2, 30),
+    })
 
     expect(realtimeService.publishComandaClosed).toHaveBeenCalledTimes(1)
     expect(realtimeService.publishComandaClosed.mock.calls[0][0]).toBe(auth)

@@ -59,6 +59,12 @@ import {
   toNumberOrZero,
 } from './operations-domain.utils'
 import { prepareComandaDraftFields } from './comanda-draft-fields.utils'
+import {
+  prepareComandaItemForCreate,
+  prepareComandaItemsForBatchCreate,
+  selectDraftProductIds,
+  selectDraftStockSelections,
+} from './comanda-item-preparation.utils'
 import type {
   AddComandaItemDto,
   AddComandaItemsBatchDto,
@@ -551,11 +557,6 @@ export class ComandaService {
       throw new ConflictException('Nao e possivel adicionar itens em uma comanda encerrada ou cancelada.')
     }
 
-    let productId: string | null = null
-    let productName: string
-    let unitPrice: number
-    let requiresKitchen = false
-
     if (dto.productId) {
       await this.helpers.assertDraftSelectionsStockAvailability(this.prisma, workspaceOwnerUserId, [
         {
@@ -563,50 +564,9 @@ export class ComandaService {
           quantity: dto.quantity,
         },
       ])
-
-      const product = await this.prisma.product.findFirst({
-        where: {
-          id: dto.productId,
-          userId: workspaceOwnerUserId,
-          active: true,
-        },
-      })
-
-      if (!product) {
-        throw new NotFoundException('Produto nao encontrado para esta conta.')
-      }
-
-      productId = product.id
-      productName = product.name
-      unitPrice = roundCurrency(dto.unitPrice ?? toNumberOrZero(product.unitPrice))
-      // requiresKitchen: use product flag; if false but category suggests food, infer true
-      // This handles products created before the auto-detection feature
-      requiresKitchen = product.requiresKitchen || isKitchenCategory(product.category)
-    } else {
-      const sanitizedProductName = sanitizePlainText(dto.productName, 'Nome do item da comanda', {
-        allowEmpty: false,
-        rejectFormula: true,
-      })
-
-      if (!sanitizedProductName) {
-        throw new BadRequestException('Informe o nome do item quando o produto nao estiver vinculado ao catalogo.')
-      }
-
-      productName = sanitizedProductName
-
-      if (dto.unitPrice === undefined) {
-        throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
-      }
-
-      unitPrice = roundCurrency(dto.unitPrice)
     }
 
-    const note = sanitizePlainText(dto.notes, 'Observacoes do item', {
-      allowEmpty: true,
-      rejectFormula: false,
-    })
-    const totalAmount = roundCurrency(unitPrice * dto.quantity)
-    const kitchenQueuedAt = requiresKitchen ? new Date() : null
+    const preparedItem = await prepareComandaItemForCreate(this.prisma, workspaceOwnerUserId, dto)
 
     const helpers = this.helpers
     const { item, refreshedComanda, businessDate } = await this.prisma.$transaction(
@@ -614,14 +574,14 @@ export class ComandaService {
         const createdItem = await transaction.comandaItem.create({
           data: {
             comandaId: comanda.id,
-            productId,
-            productName,
-            quantity: dto.quantity,
-            unitPrice,
-            totalAmount,
-            notes: note,
-            kitchenStatus: requiresKitchen ? KitchenItemStatus.QUEUED : null,
-            kitchenQueuedAt,
+            productId: preparedItem.productId,
+            productName: preparedItem.productName,
+            quantity: preparedItem.quantity,
+            unitPrice: preparedItem.unitPrice,
+            totalAmount: preparedItem.totalAmount,
+            notes: preparedItem.notes,
+            kitchenStatus: preparedItem.requiresKitchen ? KitchenItemStatus.QUEUED : null,
+            kitchenQueuedAt: preparedItem.kitchenQueuedAt,
           },
         })
 
@@ -646,10 +606,10 @@ export class ComandaService {
       resourceId: comanda.id,
       metadata: {
         itemId: item.id,
-        productId,
-        productName,
-        quantity: dto.quantity,
-        unitPrice,
+        productId: preparedItem.productId,
+        productName: preparedItem.productName,
+        quantity: preparedItem.quantity,
+        unitPrice: preparedItem.unitPrice,
       },
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
@@ -661,7 +621,7 @@ export class ComandaService {
       mutationStartedAtMs,
     })
 
-    if (requiresKitchen && kitchenQueuedAt) {
+    if (preparedItem.requiresKitchen && preparedItem.kitchenQueuedAt) {
       this.publishKitchenItemQueuedRealtime(auth, refreshedComanda, item, businessDate)
     }
 
@@ -696,56 +656,7 @@ export class ComandaService {
       selectDraftStockSelections(dto.items),
     )
 
-    const uniqueProductIds = Array.from(
-      new Set(dto.items.map((item) => item.productId).filter((productId): productId is string => Boolean(productId))),
-    )
-    const products = uniqueProductIds.length
-      ? await this.prisma.product.findMany({
-          where: {
-            id: { in: uniqueProductIds },
-            userId: workspaceOwnerUserId,
-            active: true,
-          },
-        })
-      : []
-    const productMap = new Map(products.map((product) => [product.id, product]))
-    const missingProductId = uniqueProductIds.find((productId) => !productMap.has(productId))
-    if (missingProductId) {
-      throw new NotFoundException('Produto nao encontrado para esta conta.')
-    }
-
-    const now = new Date()
-    const preparedItems = dto.items.map((itemDto) => {
-      const product = itemDto.productId ? productMap.get(itemDto.productId) : undefined
-      const productId = product?.id ?? null
-      const productName =
-        product?.name ??
-        sanitizePlainText(itemDto.productName, 'Nome do item da comanda', {
-          allowEmpty: false,
-          rejectFormula: true,
-        })
-      if (!productName) {
-        throw new BadRequestException('Informe o nome do item quando o produto nao estiver vinculado ao catalogo.')
-      }
-
-      const unitPrice = resolveComandaItemUnitPrice(product, itemDto.unitPrice)
-      const notes = sanitizePlainText(itemDto.notes, 'Observacoes do item', {
-        allowEmpty: true,
-        rejectFormula: false,
-      })
-      const requiresKitchen = product ? product.requiresKitchen || isKitchenCategory(product.category) : false
-
-      return {
-        productId,
-        productName,
-        quantity: itemDto.quantity,
-        unitPrice,
-        totalAmount: roundCurrency(unitPrice * itemDto.quantity),
-        notes,
-        requiresKitchen,
-        kitchenQueuedAt: requiresKitchen ? now : null,
-      }
-    })
+    const preparedItems = await prepareComandaItemsForBatchCreate(this.prisma, workspaceOwnerUserId, dto.items)
 
     const helpers = this.helpers
     const { createdItems, refreshedComanda, businessDate } = await this.prisma.$transaction(
@@ -1535,27 +1446,4 @@ function resolvePreviousKitchenStatus(status: KitchenItemStatus | null) {
   }
 
   return 'QUEUED' as const
-}
-
-function selectDraftProductIds(items: Array<{ productId?: string | null | undefined }>) {
-  return items.flatMap((item) => (item.productId ? [item.productId] : []))
-}
-
-function selectDraftStockSelections(items: Array<{ productId?: string | null | undefined; quantity: number }>) {
-  return items.flatMap((item) => (item.productId ? [{ productId: item.productId, quantity: item.quantity }] : []))
-}
-
-function resolveComandaItemUnitPrice(
-  product: { unitPrice: Prisma.Decimal | number | null } | undefined,
-  unitPrice: number | undefined,
-) {
-  if (product) {
-    return roundCurrency(unitPrice ?? toNumberOrZero(product.unitPrice))
-  }
-
-  if (unitPrice === undefined) {
-    throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
-  }
-
-  return roundCurrency(unitPrice)
 }
