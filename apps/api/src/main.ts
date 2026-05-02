@@ -14,6 +14,7 @@ import { AppService } from './app.service'
 import { generateApiOpenApiDocument } from './common/openapi/document'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { initializeApiOpenTelemetry, shutdownApiOpenTelemetry } from './common/utils/otel.util'
+import { startEventLoopMonitor, stopEventLoopMonitor } from './common/observability/event-loop-monitor.util'
 import { getAllowedOrigins, isAllowedOrigin } from './common/utils/origin.util'
 
 let processFailureHandlersRegistered = false
@@ -73,6 +74,7 @@ function registerProcessShutdownHandlers(logger: Logger) {
 
   const gracefulShutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
     try {
+      stopEventLoopMonitor()
       await shutdownApiOpenTelemetry()
       logger.log(`[process] OpenTelemetry finalizado em ${signal}.`)
     } catch (error) {
@@ -161,7 +163,7 @@ function configureCors(app: INestApplication, allowedOrigins: string[]) {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-Request-Id', 'Sentry-Trace', 'Baggage'],
     exposedHeaders: ['X-Request-Id'],
   })
 }
@@ -281,6 +283,11 @@ async function bootstrap() {
 
   registerProcessFailureHandlers(logger)
   registerProcessShutdownHandlers(logger)
+
+  if (!isTestEnvironment) {
+    const sampleIntervalMs = Number(configService.get<string>('OTEL_METRICS_EXPORT_INTERVAL_MS') ?? '15000')
+    startEventLoopMonitor({ sampleIntervalMs: Number.isFinite(sampleIntervalMs) ? sampleIntervalMs : 15_000 })
+  }
 
   configureHelmet(app, isProduction)
   app.use(cookieParser(cookieSecret))
