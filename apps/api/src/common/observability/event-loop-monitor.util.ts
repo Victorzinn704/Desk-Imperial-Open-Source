@@ -28,7 +28,17 @@ export function startEventLoopMonitor(options?: {
   const histogram: IntervalHistogram = monitorEventLoopDelay({ resolution: resolutionMs })
   histogram.enable()
 
+  // A primeira janela contém ruído de bootstrap (Nest module init, OTel SDK warm-up).
+  // Descarta a leitura inicial pra não enviesar os percentis para o resto da sessão.
+  let warmupConsumed = false
+
   const timer = setInterval(() => {
+    if (!warmupConsumed) {
+      histogram.reset()
+      warmupConsumed = true
+      return
+    }
+
     const p50 = histogram.percentile(50) / 1_000_000
     const p95 = histogram.percentile(95) / 1_000_000
     const p99 = histogram.percentile(99) / 1_000_000

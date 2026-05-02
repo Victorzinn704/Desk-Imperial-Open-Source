@@ -18,6 +18,7 @@ type OperationsRealtimeDropReason =
   | 'duplicate-id'
   | 'buffer-overflow'
   | 'stale-business-date'
+  | 'baseline-error'
 
 type OperationsPerformanceEvent =
   | {

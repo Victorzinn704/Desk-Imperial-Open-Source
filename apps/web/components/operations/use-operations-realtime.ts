@@ -6,22 +6,22 @@ import type { OperationsLiveResponse, OperationsSummaryResponse } from '@contrac
 import { toast } from 'sonner'
 import {
   fetchUserNotificationPreferences,
-  type UserNotificationPreference,
   USER_NOTIFICATION_PREFERENCES_QUERY_KEY,
+  type UserNotificationPreference,
 } from '@/lib/api'
 import {
+  invalidateOperationsWorkspace,
   OPERATIONS_KITCHEN_QUERY_KEY,
   OPERATIONS_LIVE_COMPACT_QUERY_KEY,
   OPERATIONS_LIVE_QUERY_PREFIX,
   OPERATIONS_SUMMARY_QUERY_KEY,
-  invalidateOperationsWorkspace,
   settleScheduledOperationsWorkspaceReconcile,
 } from '@/lib/operations/operations-query'
 import {
   detectOperationsRealtimeEnvelopeOutOfOrder,
   recordOperationsRealtimeEnvelopeDropped,
-  recordOperationsRealtimeEnvelopeProcessed,
   recordOperationsRealtimeEnvelopeOutOfOrder,
+  recordOperationsRealtimeEnvelopeProcessed,
   recordOperationsReconnectRefreshEvent,
 } from '@/lib/operations/operations-performance-diagnostics'
 import {
@@ -67,7 +67,7 @@ export function useOperationsRealtime(
   const kitchenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const commercialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const notifiedEnvelopeIdsRef = useRef<string[]>([])
+  const notifiedEnvelopeIdsRef = useRef<{ set: Set<string>; order: string[] }>({ set: new Set(), order: [] })
   // Idempotência de patch: dedup por envelope.id em janela FIFO (cap em MAX_PROCESSED_ENVELOPE_IDS).
   const processedEnvelopeIdsRef = useRef<Set<string>>(new Set())
   const processedEnvelopeIdsOrderRef = useRef<string[]>([])
@@ -132,7 +132,17 @@ export function useOperationsRealtime(
       })
     } catch (error) {
       isSyncingRef.current = false
+      const droppedOnError = reidratationBufferRef.current
       reidratationBufferRef.current = []
+      // Envelopes que estavam no buffer durante a falha não voltam ao fluxo (estado pré-erro pode estar stale).
+      // Registra perda explícita pra dashboards distinguirem 'baseline-error' de outras razões de drop.
+      for (const envelope of droppedOnError) {
+        recordOperationsRealtimeEnvelopeDropped({
+          event: envelope.event,
+          entityKey: resolveRealtimeEnvelopeEntityKey(envelope),
+          reason: 'baseline-error',
+        })
+      }
       recordOperationsReconnectRefreshEvent({
         status: 'error',
         durationMs: Math.max(0, now() - startedAt),
@@ -405,7 +415,7 @@ function shouldRecordDroppedRealtimeEnvelope(
 function maybeNotifyRealtimeStatusChange(
   envelope: OperationsRealtimeEnvelope,
   currentUserId: string | null,
-  notifiedEnvelopeIds: string[],
+  notifiedEnvelopeIds: { set: Set<string>; order: string[] },
   notificationChannel: UserNotificationPreference['channel'] | null,
   queryClient: QueryClient,
 ) {
@@ -414,13 +424,17 @@ function maybeNotifyRealtimeStatusChange(
   }
 
   if (envelope.id) {
-    if (notifiedEnvelopeIds.includes(envelope.id)) {
+    if (notifiedEnvelopeIds.set.has(envelope.id)) {
       return
     }
 
-    notifiedEnvelopeIds.push(envelope.id)
-    if (notifiedEnvelopeIds.length > 40) {
-      notifiedEnvelopeIds.splice(0, notifiedEnvelopeIds.length - 40)
+    notifiedEnvelopeIds.set.add(envelope.id)
+    notifiedEnvelopeIds.order.push(envelope.id)
+    while (notifiedEnvelopeIds.order.length > 40) {
+      const evicted = notifiedEnvelopeIds.order.shift()
+      if (evicted) {
+        notifiedEnvelopeIds.set.delete(evicted)
+      }
     }
   }
 

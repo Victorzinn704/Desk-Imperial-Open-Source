@@ -2,6 +2,8 @@
 
 Data: 2026-04-24
 
+> **Update 2026-05-01:** Reconstrução Fase 0+1+2 adicionou (a) hard-fail de Redis em prod, (b) buffer de envelopes durante reidratação + dedup por `envelope.id`, (c) event loop monitor (`desk.process.event_loop_lag`). Métricas novas a observar: `realtime-envelope-dropped` por `reason` (inclui `duplicate-id`, `buffer-overflow`, `baseline-error` e `stale-business-date`). Decisões e diff em [realtime-reconstruction-2026-05-01.md](realtime-reconstruction-2026-05-01.md).
+
 ## Objetivo
 
 Medir gargalos de comandas, salao e cozinha antes de mudar arquitetura. A regra e simples: se a operacao parece lenta, primeiro medir:

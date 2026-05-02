@@ -5,6 +5,8 @@
 **Tecnologia:** Socket.IO  
 **Namespace:** `/operations`
 
+> **Atualização 2026-05-01:** auditoria + reconstrução Fase 0+1+2 entregue (C2, C5, C6, C4, C1 + event loop monitor). Estado pós-reconstrução, decisões de design e instruções para próximos agentes em [docs/operations/realtime-reconstruction-2026-05-01.md](../operations/realtime-reconstruction-2026-05-01.md). Os comportamentos descritos abaixo refletem o pipeline pós-reconstrução.
+
 ---
 
 ## Visão geral
