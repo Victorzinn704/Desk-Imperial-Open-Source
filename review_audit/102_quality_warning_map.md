@@ -1,6 +1,6 @@
 # Quality Warning Map
 
-**Generated at:** 2026-04-26T19:43:42.297Z
+**Generated at:** 2026-05-02T03:09:57.031Z
 **Scope:** current local workspace
 **Status:** alert active
 
@@ -8,61 +8,61 @@
 
 ## Executive Alert
 
-| Level   | Source       | Message                     |
-| ------- | ------------ | --------------------------- |
-| warning | eslint       | 855 ESLint warning(s) found |
-| warning | coverage:web | line coverage is 69.11%     |
-| warning | sonar        | fetch failed                |
+| Level   | Source       | Message                                            |
+| ------- | ------------ | -------------------------------------------------- |
+| warning | eslint       | 707 ESLint warning(s) found                        |
+| warning | coverage:web | line coverage is 66.27%                            |
+| warning | sonar        | Sonar /api/measures/component failed with HTTP 401 |
 
 ---
 
 ## ESLint Baseline
 
-- Files analyzed: 712
+- Files analyzed: 888
 - Errors: 0
-- Warnings: 855
-- Fixable warnings: 160
+- Warnings: 707
+- Fixable warnings: 152
 
 ### Top ESLint Rules
 
 | Rule                                     | Count |
 | ---------------------------------------- | ----- |
-| max-lines-per-function                   | 320   |
-| no-nested-ternary                        | 124   |
-| react/jsx-sort-props                     | 106   |
-| complexity                               | 95    |
-| @typescript-eslint/no-non-null-assertion | 77    |
-| max-lines                                | 63    |
-| sort-imports                             | 53    |
-| max-params                               | 15    |
+| max-lines-per-function                   | 271   |
+| react/jsx-sort-props                     | 95    |
+| complexity                               | 71    |
+| no-nested-ternary                        | 71    |
+| @typescript-eslint/no-non-null-assertion | 64    |
+| sort-imports                             | 57    |
+| max-lines                                | 56    |
+| max-params                               | 20    |
+| @typescript-eslint/no-unused-vars        | 1     |
 | react-hooks/incompatible-library         | 1     |
-| unknown                                  | 1     |
 
 ### Top ESLint Files
 
-| File                                                                     | Count |
-| ------------------------------------------------------------------------ | ----- |
-| apps/web/components/dashboard/environments/pedidos-environment.tsx       | 25    |
-| apps/web/components/dashboard/salao-environment.tsx                      | 23    |
-| apps/web/components/calendar/commercial-calendar.tsx                     | 20    |
-| apps/web/app/api/barcode/lookup/route.ts                                 | 19    |
-| apps/web/components/dashboard/environments/overview-environment.tsx      | 18    |
-| apps/api/src/modules/operations/comanda.service.ts                       | 17    |
-| apps/web/components/design-lab/lab-primitives.tsx                        | 17    |
-| apps/web/components/design-lab/lab-shell.tsx                             | 15    |
-| apps/api/src/modules/products/products.service.ts                        | 14    |
-| apps/web/components/ai/ai-consultant-workspace.tsx                       | 14    |
-| apps/web/components/dashboard/environments/pdv-wireframe-environment.tsx | 14    |
-| apps/web/components/dashboard/environments/equipe-environment.tsx        | 12    |
-| apps/web/components/dashboard/overview-recent-orders.tsx                 | 12    |
-| apps/web/components/staff-mobile/kitchen-orders-view.tsx                 | 12    |
-| apps/api/src/modules/auth/auth-registration.service.ts                   | 11    |
+| File                                                                 | Count |
+| -------------------------------------------------------------------- | ----- |
+| apps/web/components/dashboard/salao-environment.tsx                  | 23    |
+| apps/web/components/calendar/commercial-calendar.tsx                 | 21    |
+| apps/web/components/dashboard/environments/overview-environment.tsx  | 18    |
+| apps/web/components/design-lab/lab-primitives.tsx                    | 17    |
+| apps/api/src/modules/operations/comanda.service.ts                   | 14    |
+| apps/api/src/modules/products/products.service.ts                    | 14    |
+| apps/web/components/ai/ai-consultant-workspace.tsx                   | 14    |
+| apps/web/components/dashboard/overview-recent-orders.tsx             | 12    |
+| apps/api/src/modules/auth/auth-registration.service.ts               | 11    |
+| apps/api/src/modules/orders/orders.service.ts                        | 11    |
+| apps/web/components/dashboard/environments/financeiro-tab-panels.tsx | 11    |
+| apps/web/components/dashboard/environments/portfolio-environment.tsx | 11    |
+| apps/web/components/lite/lite-pdv-kanban.tsx                         | 10    |
+| apps/api/src/modules/auth/auth-login.service.ts                      | 9     |
+| apps/web/app/design-lab/cadastro-rapido/page.tsx                     | 9     |
 
 ---
 
 ## Sonar Baseline
 
-Sonar unavailable: fetch failed
+Sonar unavailable: Sonar /api/measures/component failed with HTTP 401
 
 ---
 
@@ -94,23 +94,23 @@ Sonar unavailable: fetch failed
 
 | Metric     | Pct    |
 | ---------- | ------ |
-| lines      | 69.11% |
-| branches   | 60%    |
-| functions  | 66.18% |
-| statements | 68.47% |
+| lines      | 66.27% |
+| branches   | 53.61% |
+| functions  | 62.82% |
+| statements | 65.62% |
 
 | File                                                                 | Lines pct | Uncovered lines |
 | -------------------------------------------------------------------- | --------- | --------------- |
-| apps/web/components/staff-mobile/staff-mobile-shell.tsx              | 44.72%    | 131             |
-| apps/web/components/dashboard/settings/components/pin-setup-card.tsx | 0.84%     | 118             |
-| apps/web/components/dashboard/order-form.tsx                         | 2.4%      | 81              |
-| apps/web/components/calendar/commercial-calendar.tsx                 | 37.61%    | 68              |
-| apps/web/components/owner-mobile/owner-mobile-shell.tsx              | 55.33%    | 67              |
-| apps/web/lib/admin-pin.ts                                            | 44.31%    | 49              |
-| apps/web/components/dashboard/caixa-panel.tsx                        | 46.25%    | 43              |
-| apps/web/components/dashboard/dashboard-sidebar.tsx                  | 4.65%     | 41              |
-| apps/web/components/dashboard/settings/tabs/session-tab.tsx          | 0%        | 36              |
-| apps/web/lib/operations/operations-realtime-patching.ts              | 90.24%    | 36              |
+| apps/web/components/dashboard/salao-environment.tsx                  | 0.97%     | 203             |
+| apps/web/components/calendar/commercial-calendar.tsx                 | 23.11%    | 143             |
+| apps/web/components/dashboard/settings/components/pin-setup-card.tsx | 0.78%     | 127             |
+| apps/web/components/staff-mobile/use-staff-mobile-shell-mutations.ts | 24.03%    | 98              |
+| apps/web/hooks/performance-web-vitals.ts                             | 1.33%     | 74              |
+| apps/web/components/dashboard/salao/hooks/use-mesa-drag.ts           | 0%        | 61              |
+| apps/web/components/dashboard/environments/overview-environment.tsx  | 35.48%    | 60              |
+| apps/web/components/operations/use-operations-realtime.ts            | 72.98%    | 57              |
+| apps/web/lib/admin-pin.ts                                            | 43.18%    | 50              |
+| apps/web/components/dashboard/caixa-panel.tsx                        | 48.38%    | 48              |
 
 ---
 
@@ -130,10 +130,10 @@ Quality Gate fails on new coverage and global coverage is below the target for s
 - apps/api/src/common/services/cache.service.ts: 24 uncovered line(s)
 - apps/api/src/modules/auth/auth-login.service.ts: 24 uncovered line(s)
 - apps/api/src/modules/operations/operations-helpers.service.ts: 24 uncovered line(s)
-- apps/web/components/staff-mobile/staff-mobile-shell.tsx: 131 uncovered line(s)
-- apps/web/components/dashboard/settings/components/pin-setup-card.tsx: 118 uncovered line(s)
-- apps/web/components/dashboard/order-form.tsx: 81 uncovered line(s)
-- apps/web/components/calendar/commercial-calendar.tsx: 68 uncovered line(s)
+- apps/web/components/dashboard/salao-environment.tsx: 203 uncovered line(s)
+- apps/web/components/calendar/commercial-calendar.tsx: 143 uncovered line(s)
+- apps/web/components/dashboard/settings/components/pin-setup-card.tsx: 127 uncovered line(s)
+- apps/web/components/staff-mobile/use-staff-mobile-shell-mutations.ts: 98 uncovered line(s)
 
 ### P2 - High-volume mechanical Sonar smells
 
@@ -156,7 +156,7 @@ Large files need behavior tests before extraction.
 
 Warnings should become a managed budget instead of terminal noise.
 
-- Current ESLint baseline: 855 warning(s), 0 error(s).
+- Current ESLint baseline: 707 warning(s), 0 error(s).
 - Reduce by cluster and update this report after each cleanup.
 - Do not enable fail-on-alert until the baseline is intentionally accepted.
 

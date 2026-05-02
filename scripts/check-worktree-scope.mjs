@@ -13,6 +13,7 @@ const knownScopes = [
       /^apps\/api\/test\/period-classifier\.service\.spec\.ts$/,
       /^apps\/api\/src\/modules\/operations\/comanda-/,
       /^apps\/api\/src\/modules\/operations\/comanda\.service\.ts$/,
+      /^apps\/api\/test\/comanda.*\.spec\.ts$/,
       /^apps\/api\/src\/modules\/operations\/operations-helpers\.service\.ts$/,
       /^apps\/api\/test\/products\.service\.spec\.ts$/,
       /^apps\/web\/lib\/api\.ts$/,

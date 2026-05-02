@@ -114,13 +114,46 @@ function extractControllerRoutes(baseDir) {
   for (const file of walkFiles(baseDir, (candidate) => candidate.endsWith('.controller.ts'))) {
     const text = readText(file)
     const classRoute = text.match(/@Controller\(([^)]*)\)/u)?.[1]?.replaceAll(/['"`\s]/gu, '') ?? ''
-    const methodRegex = /@(Get|Post|Patch|Put|Delete)\(([^)]*)\)\s+(?:async\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(/gs
-
-    for (const match of text.matchAll(methodRegex)) {
-      const routePath = match[2].replaceAll(/['"`\s]/gu, '')
-      routes.add(`${classRoute} ${match[1]} ${routePath} -> ${match[3]}`)
+    for (const route of extractControllerFileRoutes(text)) {
+      routes.add(`${classRoute} ${route.verb} ${route.path} -> ${route.handler}`)
     }
   }
+  return routes
+}
+
+function extractControllerFileRoutes(text) {
+  const routes = []
+  let pendingRoute = null
+
+  for (const line of text.split(/\r?\n/u)) {
+    const trimmed = line.trim()
+    const routeMatch = trimmed.match(/^@(Get|Post|Patch|Put|Delete)\(([^)]*)\)/u)
+    if (routeMatch) {
+      pendingRoute = {
+        verb: routeMatch[1],
+        path: routeMatch[2].replaceAll(/['"`\s]/gu, ''),
+      }
+      continue
+    }
+
+    if (!pendingRoute) {
+      continue
+    }
+
+    if (trimmed === '' || trimmed.startsWith('@')) {
+      continue
+    }
+
+    const handlerMatch = trimmed.match(/^(?:async\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(/u)
+    if (handlerMatch) {
+      routes.push({
+        ...pendingRoute,
+        handler: handlerMatch[1],
+      })
+    }
+    pendingRoute = null
+  }
+
   return routes
 }
 

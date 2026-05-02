@@ -51,8 +51,8 @@ import { toRealtimeStatus } from './comanda-realtime-status.utils'
 import { resolveComandaSessionContext } from './comanda-session-resolver.utils'
 import { assertMesaAvailability, resolveMesaSelection } from './comanda-mesa.utils'
 import {
-  buildCashUpdatedPayload,
   buildCashClosurePayload,
+  buildCashUpdatedPayload,
   formatBusinessDateKey,
   isOpenComandaStatus,
   resolveBusinessDate,
@@ -138,14 +138,15 @@ export class ComandaService {
     publishComandaUpdated(this.operationsRealtimeService, auth, comanda, businessDate, options, instrumentation)
   }
 
-  private publishComandaCloseRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof publishComandaClosed>[2],
-    refreshedSession: Parameters<typeof publishComandaClosed>[3],
-    closure: Parameters<typeof publishComandaClosed>[4],
-    businessDate: Date,
-    instrumentation?: OperationsRealtimePublishInstrumentation,
-  ) {
+  private publishComandaCloseRealtime(params: {
+    auth: AuthContext
+    comanda: Parameters<typeof publishComandaClosed>[2]
+    refreshedSession: Parameters<typeof publishComandaClosed>[3]
+    closure: Parameters<typeof publishComandaClosed>[4]
+    businessDate: Date
+    instrumentation?: OperationsRealtimePublishInstrumentation
+  }) {
+    const { auth, comanda, refreshedSession, closure, businessDate, instrumentation } = params
     publishComandaClosed(
       this.operationsRealtimeService,
       auth,
@@ -167,14 +168,15 @@ export class ComandaService {
     publishKitchenItemQueued(this.operationsRealtimeService, auth, comanda, item, businessDate, instrumentation)
   }
 
-  private publishKitchenItemUpdatedRealtime(
-    auth: AuthContext,
-    comanda: Parameters<typeof publishKitchenItemUpdated>[2],
-    item: Parameters<typeof publishKitchenItemUpdated>[3],
-    businessDate: Date,
-    options?: Parameters<typeof publishKitchenItemUpdated>[5],
-    instrumentation?: OperationsRealtimePublishInstrumentation,
-  ) {
+  private publishKitchenItemUpdatedRealtime(params: {
+    auth: AuthContext
+    comanda: Parameters<typeof publishKitchenItemUpdated>[2]
+    item: Parameters<typeof publishKitchenItemUpdated>[3]
+    businessDate: Date
+    options?: Parameters<typeof publishKitchenItemUpdated>[5]
+    instrumentation?: OperationsRealtimePublishInstrumentation
+  }) {
+    const { auth, comanda, item, businessDate, options, instrumentation } = params
     publishKitchenItemUpdated(
       this.operationsRealtimeService,
       auth,
@@ -254,17 +256,20 @@ export class ComandaService {
 
   private async settleRemainingComandaBalance(
     transaction: Prisma.TransactionClient,
-    workspaceOwnerUserId: string,
-    comanda: {
-      cashSessionId?: string | null
-      currentEmployeeId?: string | null
-      id: string
-      totalAmount: Prisma.Decimal | number | null
+    params: {
+      workspaceOwnerUserId: string
+      comanda: {
+        cashSessionId?: string | null
+        currentEmployeeId?: string | null
+        id: string
+        totalAmount: Prisma.Decimal | number | null
+      }
+      actorUserId: string
+      paymentMethod: ComandaPaymentMethod
+      actorEmployeeId?: string | null
     },
-    actorUserId: string,
-    paymentMethod: ComandaPaymentMethod,
-    actorEmployeeId?: string | null,
   ) {
+    const { workspaceOwnerUserId, comanda, actorUserId, paymentMethod, actorEmployeeId } = params
     const confirmedPayments = await transaction.comandaPayment.aggregate({
       where: {
         comandaId: comanda.id,
@@ -360,12 +365,7 @@ export class ComandaService {
     await this.helpers.assertDraftSelectionsStockAvailability(
       this.prisma,
       workspaceOwnerUserId,
-      draftItems
-        .filter((item) => Boolean(item.productId))
-        .map((item) => ({
-          productId: item.productId!,
-          quantity: item.quantity,
-        })),
+      selectDraftStockSelections(draftItems),
     )
     const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
       prepareComandaDraftFields({
@@ -423,7 +423,7 @@ export class ComandaService {
       })
 
       if (draftItems.length) {
-        const productIds = draftItems.map((i) => i.productId).filter(Boolean) as string[]
+        const productIds = selectDraftProductIds(draftItems)
         const products = productIds.length
           ? await transaction.product.findMany({
               where: { id: { in: productIds } },
@@ -583,10 +583,16 @@ export class ComandaService {
       // This handles products created before the auto-detection feature
       requiresKitchen = product.requiresKitchen || isKitchenCategory(product.category)
     } else {
-      productName = sanitizePlainText(dto.productName, 'Nome do item da comanda', {
+      const sanitizedProductName = sanitizePlainText(dto.productName, 'Nome do item da comanda', {
         allowEmpty: false,
         rejectFormula: true,
-      })!
+      })
+
+      if (!sanitizedProductName) {
+        throw new BadRequestException('Informe o nome do item quando o produto nao estiver vinculado ao catalogo.')
+      }
+
+      productName = sanitizedProductName
 
       if (dto.unitPrice === undefined) {
         throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
@@ -687,12 +693,7 @@ export class ComandaService {
     await this.helpers.assertDraftSelectionsStockAvailability(
       this.prisma,
       workspaceOwnerUserId,
-      dto.items
-        .filter((item) => Boolean(item.productId))
-        .map((item) => ({
-          productId: item.productId!,
-          quantity: item.quantity,
-        })),
+      selectDraftStockSelections(dto.items),
     )
 
     const uniqueProductIds = Array.from(
@@ -727,13 +728,7 @@ export class ComandaService {
         throw new BadRequestException('Informe o nome do item quando o produto nao estiver vinculado ao catalogo.')
       }
 
-      if (!product && itemDto.unitPrice === undefined) {
-        throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
-      }
-
-      const unitPrice = roundCurrency(
-        product ? (itemDto.unitPrice ?? toNumberOrZero(product.unitPrice)) : itemDto.unitPrice!,
-      )
+      const unitPrice = resolveComandaItemUnitPrice(product, itemDto.unitPrice)
       const notes = sanitizePlainText(itemDto.notes, 'Observacoes do item', {
         allowEmpty: true,
         rejectFormula: false,
@@ -852,12 +847,7 @@ export class ComandaService {
     await this.helpers.assertDraftSelectionsStockAvailability(
       this.prisma,
       workspaceOwnerUserId,
-      draftItems
-        .filter((item) => Boolean(item.productId))
-        .map((item) => ({
-          productId: item.productId!,
-          quantity: item.quantity,
-        })),
+      selectDraftStockSelections(draftItems),
     )
     const { customerDocument, customerName, discountAmount, notes, participantCount, serviceFeeAmount, tableLabel } =
       prepareComandaDraftFields({
@@ -880,7 +870,7 @@ export class ComandaService {
 
     const helpers = this.helpers
     const { refreshedComanda, businessDate } = await this.prisma.$transaction(async (transaction) => {
-      const productIds = draftItems.map((item) => item.productId).filter(Boolean) as string[]
+      const productIds = selectDraftProductIds(draftItems)
       const products = productIds.length
         ? await transaction.product.findMany({
             where: { id: { in: productIds } },
@@ -1368,19 +1358,19 @@ export class ComandaService {
     invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
 
     if (refreshedComanda) {
-      this.publishKitchenItemUpdatedRealtime(
+      this.publishKitchenItemUpdatedRealtime({
         auth,
-        refreshedComanda,
-        updatedItem,
+        comanda: refreshedComanda,
+        item: updatedItem,
         businessDate,
-        {
+        options: {
           previousKitchenStatus: resolvePreviousKitchenStatus(previousKitchenStatus),
         },
-        {
+        instrumentation: {
           mutationName: 'update-kitchen-item-status',
           mutationStartedAtMs,
         },
-      )
+      })
       this.publishComandaUpdatedRealtime(auth, refreshedComanda, businessDate, {
         ...(refreshedComanda.status !== previousComandaStatus
           ? { previousStatus: toRealtimeStatus(previousComandaStatus) }
@@ -1441,19 +1431,18 @@ export class ComandaService {
             discountAmount,
             serviceFeeAmount,
           })
-          await this.settleRemainingComandaBalance(
-            transaction,
+          await this.settleRemainingComandaBalance(transaction, {
             workspaceOwnerUserId,
-            {
+            comanda: {
               cashSessionId: comanda.cashSessionId,
               currentEmployeeId: comanda.currentEmployeeId,
               id: comanda.id,
               totalAmount: recalculatedComanda.totalAmount,
             },
-            auth.userId,
-            dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
-            actorEmployee?.id ?? null,
-          )
+            actorUserId: auth.userId,
+            paymentMethod: dto.paymentMethod ?? ComandaPaymentMethod.OTHER,
+            actorEmployeeId: actorEmployee?.id ?? null,
+          })
 
           await transaction.comanda.update({
             where: { id: comanda.id },
@@ -1497,9 +1486,16 @@ export class ComandaService {
       })
 
       invalidateLiveSnapshotCache(this.cache, workspaceOwnerUserId, businessDate)
-      this.publishComandaCloseRealtime(auth, refreshedComanda, refreshedSession, closure, businessDate, {
-        mutationName: 'close-comanda',
-        mutationStartedAtMs,
+      this.publishComandaCloseRealtime({
+        auth,
+        comanda: refreshedComanda,
+        refreshedSession,
+        closure,
+        businessDate,
+        instrumentation: {
+          mutationName: 'close-comanda',
+          mutationStartedAtMs,
+        },
       })
       void this.cache.del(CacheService.ordersKey(workspaceOwnerUserId))
       this.refreshFinanceSummary(workspaceOwnerUserId)
@@ -1539,4 +1535,27 @@ function resolvePreviousKitchenStatus(status: KitchenItemStatus | null) {
   }
 
   return 'QUEUED' as const
+}
+
+function selectDraftProductIds(items: Array<{ productId?: string | null | undefined }>) {
+  return items.flatMap((item) => (item.productId ? [item.productId] : []))
+}
+
+function selectDraftStockSelections(items: Array<{ productId?: string | null | undefined; quantity: number }>) {
+  return items.flatMap((item) => (item.productId ? [{ productId: item.productId, quantity: item.quantity }] : []))
+}
+
+function resolveComandaItemUnitPrice(
+  product: { unitPrice: Prisma.Decimal | number | null } | undefined,
+  unitPrice: number | undefined,
+) {
+  if (product) {
+    return roundCurrency(unitPrice ?? toNumberOrZero(product.unitPrice))
+  }
+
+  if (unitPrice === undefined) {
+    throw new BadRequestException('Informe o valor unitario quando o item nao estiver vinculado ao catalogo.')
+  }
+
+  return roundCurrency(unitPrice)
 }

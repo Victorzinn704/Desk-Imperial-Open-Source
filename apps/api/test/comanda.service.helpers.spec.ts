@@ -285,9 +285,9 @@ describe('ComandaService helpers', () => {
   })
 
   it('publica fechamento de comanda com cash update e cash closure', () => {
-    ;(service as any).publishComandaCloseRealtime(
+    ;(service as any).publishComandaCloseRealtime({
       auth,
-      {
+      comanda: {
         id: 'comanda-1',
         tableLabel: 'Mesa 5',
         currentEmployeeId: 'emp-1',
@@ -298,7 +298,7 @@ describe('ComandaService helpers', () => {
         closedAt: new Date('2026-04-01T11:30:00.000Z'),
         items: [{ quantity: 2 }],
       },
-      {
+      refreshedSession: {
         id: 'cash-1',
         status: CashSessionStatus.OPEN,
         openingCashAmount: 200,
@@ -307,7 +307,7 @@ describe('ComandaService helpers', () => {
         differenceAmount: null,
         movements: [{ type: 'SUPPLY', amount: 50 }],
       },
-      {
+      closure: {
         id: 'closure-1',
         status: CashClosureStatus.CLOSED,
         createdAt: new Date('2026-04-01T08:00:00.000Z'),
@@ -320,8 +320,8 @@ describe('ComandaService helpers', () => {
         openComandasCount: 0,
         openSessionsCount: 0,
       } as any,
-      new Date('2026-04-01T00:00:00.000Z'),
-    )
+      businessDate: new Date('2026-04-01T00:00:00.000Z'),
+    })
 
     expect(operationsRealtimeService.publishComandaClosed).toHaveBeenCalledTimes(1)
     expect(operationsRealtimeService.publishComandaClosed.mock.calls[0][0]).toBe(auth)
