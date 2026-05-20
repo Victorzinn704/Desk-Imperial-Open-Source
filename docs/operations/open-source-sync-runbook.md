@@ -83,12 +83,10 @@ Antes de abrir PR publico, revise e remova, sanitize ou transforme em template:
 Execute no privado antes de preparar a branch publica:
 
 ```powershell
-npm run repo:open-source:audit
-npm run repo:scan-public
-npm run lint:secrets
-npm run quality:contracts
-git diff --check
+npm run repo:open-source:review
 ```
+
+Esse comando executa auditoria de snapshot, scan de riscos publicos, varredura de segredos e contratos.
 
 Para gerar uma snapshot completa sanitizada fora do repositório privado:
 
@@ -97,6 +95,19 @@ npm run repo:open-source:prepare
 ```
 
 O comando cria `..\desk-imperial-open-source-snapshot`, copia apenas arquivos versionados, remove arquivos bloqueados pela politica de publicação, sanitiza `.env.example` e grava o relatório em `docs/operations/open-source-full-sync-audit.md`.
+
+## Screenshots publicos
+
+Screenshots oficiais devem ficar em `docs/assets/screenshots/`. Imagens soltas na raiz (`lab-*.png`, `overview.png`, `ref-shadcn.png`) continuam bloqueadas na snapshot por padrão.
+
+Antes de publicar uma imagem, valide:
+
+- [ ] massa demo ou anonimizada;
+- [ ] nenhum dado de cliente, e-mail, telefone, CPF/CNPJ ou endereço real;
+- [ ] nenhum token, webhook, DSN, IP, hostname interno ou nome real de VM;
+- [ ] nenhum painel de provedor cloud, CI privado ou observabilidade real;
+- [ ] imagem listada em `docs/assets/screenshots/README.md`;
+- [ ] README referencia apenas caminhos versionados e publicaveis.
 
 Valide a snapshot antes de abrir PR:
 

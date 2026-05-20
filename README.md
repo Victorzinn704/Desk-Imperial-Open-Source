@@ -24,6 +24,19 @@ Veja [docs/DEMO.md](./docs/DEMO.md) para instruções de acesso.
 
 ---
 
+## Screenshots
+
+As telas abaixo usam massa de demonstração e não expõem clientes, chaves, infraestrutura ou dados reais.
+
+| Operação ao vivo                                                                    | Gestão do negócio                                                                    |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| ![Visão geral operacional do Desk Imperial](./docs/assets/screenshots/overview.png) | ![Financeiro por período no Desk Imperial](./docs/assets/screenshots/financeiro.png) |
+| ![PDV e comandas em tempo real](./docs/assets/screenshots/pdv-comandas.png)         | ![Portfólio e catálogo comercial](./docs/assets/screenshots/portfolio.png)           |
+
+Mais telas: [salão](./docs/assets/screenshots/salao.png), [equipe](./docs/assets/screenshots/equipe.png), [folha de pagamento](./docs/assets/screenshots/folha-pagamento.png) e [calendário](./docs/assets/screenshots/calendario.png).
+
+---
+
 ## O que é
 
 O Desk Imperial resolve dois problemas que costumam ficar separados:
@@ -75,7 +88,7 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 | Tempo real         | Socket.IO                                                       |
 | Autenticação       | Cookies HttpOnly + CSRF duplo                                   |
 | Monorepo           | Turborepo + npm workspaces                                      |
-| Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |
+| Deploy             | Containers Linux + PostgreSQL + Redis em cloud gerenciada        |
 | Testes backend     | Jest + 53+ arquivos de spec                                     |
 | Testes frontend    | Vitest + Playwright                                             |
 | Load tests         | K6                                                              |
