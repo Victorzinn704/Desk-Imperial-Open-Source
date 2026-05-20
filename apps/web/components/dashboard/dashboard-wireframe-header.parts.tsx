@@ -13,7 +13,7 @@ import {
   type DashboardSettingsSectionId,
   type DashboardTabId,
 } from '@/components/dashboard/dashboard-navigation'
-import type { DashboardWireframeHeaderProps } from './dashboard-wireframe-header'
+import type { DashboardWireframeHeaderProps } from './dashboard-wireframe-header.types'
 import { type MouseEvent as ReactMouseEvent, useCallback } from 'react'
 
 export function WireframeBrandLink({
