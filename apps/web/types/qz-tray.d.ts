@@ -42,6 +42,21 @@ declare module 'qz-tray' {
       ): void
       setSignatureAlgorithm(algorithm: 'SHA1' | 'SHA256' | 'SHA512'): void
     }
+    serial?: {
+      findPorts(): Promise<string[] | string>
+      openPort(port: string, options?: Record<string, unknown>): Promise<void>
+      sendData(
+        port: string,
+        data:
+          | string
+          | {
+              type?: 'PLAIN' | 'FILE' | 'HEX' | 'BASE64'
+              data: string | string[]
+            },
+        options?: Record<string, unknown>,
+      ): Promise<void>
+      closePort(port: string): Promise<void>
+    }
     print(config: QzConfig, data: QzPrintData[]): Promise<void>
   }
 

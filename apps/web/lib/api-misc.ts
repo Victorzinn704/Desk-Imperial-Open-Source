@@ -1,0 +1,284 @@
+import type { OrderRecord, OrdersResponse } from '@contracts/contracts'
+
+import { type ApiBody, ApiError, apiFetch, BARCODE_LOOKUP_TIMEOUT_MS, POSTAL_LOOKUP_TIMEOUT_MS } from './api-core'
+
+export type PostalCodeLookupResponse = {
+  postalCode: string
+  streetLine1: string | null
+  addressComplement: string | null
+  district: string | null
+  city: string | null
+  state: string | null
+  stateName: string | null
+  country: string
+  source: 'viacep'
+}
+
+export type BarcodeCatalogLookupResponse = {
+  barcode: string
+  name: string | null
+  description: string | null
+  brand: string | null
+  category: string | null
+  quantityLabel: string | null
+  measurementUnit: 'ML' | 'L' | 'G' | 'KG' | 'UN' | null
+  measurementValue: number | null
+  packagingClass: string | null
+  servingSize: string | null
+  imageUrl: string | null
+  source: 'open_food_facts' | 'national_beverage_catalog'
+}
+
+export type ConsentDocument = {
+  id: string
+  key: string
+  title: string
+  description?: string
+  kind: string
+  required: boolean
+  active: boolean
+}
+
+export type ConsentOverview = {
+  documents: ConsentDocument[]
+  legalAcceptances: Array<{
+    key: string
+    acceptedAt: string
+  }>
+  cookiePreferences: {
+    necessary: boolean
+    analytics: boolean
+    marketing: boolean
+  }
+}
+
+export type LastLoginEntry = {
+  id: string
+  browser: string
+  os: string
+  ipAddress: string | null
+  createdAt: string
+}
+
+export type ActivityFeedEntry = {
+  id: string
+  event: string
+  resource: string
+  resourceId: string | null
+  severity: 'INFO' | 'WARN' | 'ERROR'
+  actorUserId: string | null
+  actorName: string | null
+  actorRole: 'OWNER' | 'STAFF' | null
+  ipAddress: string | null
+  createdAt: string
+  metadata: Record<string, unknown> | null
+}
+
+export type OrderPayload = {
+  items: Array<{
+    productId: string
+    quantity: number
+    unitPrice?: number
+  }>
+  customerName: string
+  buyerType: 'PERSON' | 'COMPANY'
+  buyerDocument: string
+  buyerDistrict?: string
+  buyerCity: string
+  buyerState?: string
+  buyerCountry: string
+  sellerEmployeeId?: string
+  currency?: string
+  channel?: string
+  notes?: string
+}
+
+export type CookiePreferencePayload = {
+  analytics: boolean
+  marketing: boolean
+}
+
+export type FetchOrdersOptions = {
+  includeCancelled?: boolean
+  includeItems?: boolean
+  limit?: number
+}
+
+export async function lookupPostalCode(postalCode: string) {
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      '/api/v1/postal-code/lookup',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postalCode }),
+      },
+      POSTAL_LOOKUP_TIMEOUT_MS,
+      '/api/v1/postal-code/lookup',
+    )
+  } catch (error) {
+    if (error instanceof Error && error.name === 'ApiTimeoutError') {
+      throw new ApiError('Consulta de CEP demorou demais. Tente novamente em instantes.', 504)
+    }
+    throw new ApiError('Nao foi possivel consultar o CEP agora.', 0)
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response, readResponseRequestId(response))
+  }
+
+  return (await response.json()) as PostalCodeLookupResponse
+}
+
+export async function lookupBarcodeCatalog(barcode: string) {
+  let response: Response
+
+  try {
+    response = await fetchWithTimeout(
+      '/api/barcode/lookup',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ barcode }),
+      },
+      BARCODE_LOOKUP_TIMEOUT_MS,
+      '/api/barcode/lookup',
+    )
+  } catch (error) {
+    if (error instanceof Error && error.name === 'ApiTimeoutError') {
+      throw new ApiError('Consulta de EAN demorou demais. Tente novamente em instantes.', 504)
+    }
+    throw new ApiError('Nao foi possivel consultar o catalogo por EAN agora.', 0)
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response, readResponseRequestId(response))
+  }
+
+  return (await response.json()) as BarcodeCatalogLookupResponse
+}
+
+export async function fetchConsentDocuments() {
+  return apiFetch<ConsentDocument[]>('/consent/documents', {
+    method: 'GET',
+  })
+}
+
+export async function fetchConsentOverview() {
+  return apiFetch<ConsentOverview>('/consent/me', {
+    method: 'GET',
+  })
+}
+
+export async function fetchOrders(options?: FetchOrdersOptions) {
+  const params = new URLSearchParams()
+
+  if (options?.includeCancelled !== undefined) {
+    params.set('includeCancelled', String(options.includeCancelled))
+  }
+
+  if (options?.includeItems !== undefined) {
+    params.set('includeItems', String(options.includeItems))
+  }
+
+  if (options?.limit !== undefined) {
+    params.set('limit', String(options.limit))
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch<OrdersResponse>(`/orders${suffix}`, {
+    method: 'GET',
+  })
+}
+
+export async function fetchLastLogins() {
+  return apiFetch<LastLoginEntry[]>('/auth/activity', { method: 'GET' })
+}
+
+export async function fetchActivityFeed() {
+  return apiFetch<ActivityFeedEntry[]>('/auth/activity-feed', { method: 'GET' })
+}
+
+export async function createOrder(payload: OrderPayload) {
+  return apiFetch<{ order: OrderRecord }>('/orders', {
+    method: 'POST',
+    body: payload as ApiBody,
+  })
+}
+
+export async function cancelOrder(orderId: string) {
+  return apiFetch<{ order: OrderRecord }>(`/orders/${orderId}/cancel`, {
+    method: 'POST',
+  })
+}
+
+export async function updateCookiePreferences(payload: CookiePreferencePayload) {
+  return apiFetch<CookiePreferencePayload>('/consent/preferences', {
+    method: 'POST',
+    body: payload as ApiBody,
+  })
+}
+
+class ApiTimeoutError extends Error {
+  constructor(
+    public readonly timeoutMs: number,
+    public readonly requestPath: string,
+  ) {
+    super(`Request timed out after ${timeoutMs}ms`)
+    this.name = 'ApiTimeoutError'
+  }
+}
+
+async function toApiError(response: Response, requestId: string | null) {
+  const fallbackMessage =
+    response.status >= 500 ? 'O servidor encontrou um erro inesperado.' : 'Nao foi possivel concluir a requisicao.'
+  const contentType = response.headers.get('content-type') ?? ''
+
+  if (!contentType.includes('application/json')) {
+    return new ApiError(fallbackMessage, response.status, requestId)
+  }
+
+  const payload = (await response.json()) as {
+    message?: string | string[]
+  }
+
+  const message = Array.isArray(payload.message) ? payload.message.join(' ') : payload.message
+  return new ApiError(message || fallbackMessage, response.status, requestId)
+}
+
+function readResponseRequestId(response: Response) {
+  const requestId = response.headers.get('x-request-id')
+  if (!requestId?.trim()) {
+    return null
+  }
+  return requestId.trim()
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number, requestPath: string) {
+  const controller = new AbortController()
+  const timeoutHandle = setTimeout(() => {
+    controller.abort()
+  }, timeoutMs)
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiTimeoutError(timeoutMs, requestPath)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
+}

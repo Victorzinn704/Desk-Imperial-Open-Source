@@ -1,4 +1,4 @@
-import { BadGatewayException, HttpException, ServiceUnavailableException } from '@nestjs/common'
+import { BadGatewayException, BadRequestException, HttpException, ServiceUnavailableException } from '@nestjs/common'
 import { MarketIntelligenceService } from '../src/modules/market-intelligence/market-intelligence.service'
 import type { ConfigService } from '@nestjs/config'
 import type { FinanceService } from '../src/modules/finance/finance.service'
@@ -96,15 +96,23 @@ describe('MarketIntelligenceService', () => {
 
     expect(result.cached).toBe(true)
     expect((global as any).fetch).not.toHaveBeenCalled()
-    expect(auditLogService.record).toHaveBeenCalledWith(expect.objectContaining({ event: 'market-intelligence.cached' }))
+    expect(auditLogService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'market-intelligence.cached' }),
+    )
   })
 
   it('falha quando GEMINI_API_KEY nao esta configurada', async () => {
     configValues.GEMINI_API_KEY = undefined
     cache.get.mockResolvedValueOnce(null)
 
-    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(
-      ServiceUnavailableException,
+    await expect(
+      service.getInsightForUser(makeAuthContext(), 'foco operacional', makeRequestContext()),
+    ).rejects.toThrow(ServiceUnavailableException)
+  })
+
+  it('bloqueia consultas fora do escopo do aplicativo', async () => {
+    await expect(service.getInsightForUser(makeAuthContext(), 'receita de bolo', makeRequestContext())).rejects.toThrow(
+      BadRequestException,
     )
   })
 
@@ -113,7 +121,9 @@ describe('MarketIntelligenceService', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ count: 7, firstAttemptAt: Date.now() - 1000, lockedUntil: Date.now() + 60_000 })
 
-    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(HttpException)
+    await expect(
+      service.getInsightForUser(makeAuthContext(), 'foco operacional', makeRequestContext()),
+    ).rejects.toThrow(HttpException)
     expect(financeService.getSummaryForUser).not.toHaveBeenCalled()
   })
 
@@ -125,9 +135,9 @@ describe('MarketIntelligenceService', () => {
       text: async () => 'provider-failed',
     })
 
-    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(
-      BadGatewayException,
-    )
+    await expect(
+      service.getInsightForUser(makeAuthContext(), 'foco operacional', makeRequestContext()),
+    ).rejects.toThrow(BadGatewayException)
   })
 
   it('retorna bad gateway quando payload da IA nao e json valido', async () => {
@@ -145,9 +155,9 @@ describe('MarketIntelligenceService', () => {
       }),
     })
 
-    await expect(service.getInsightForUser(makeAuthContext(), 'foco', makeRequestContext())).rejects.toThrow(
-      BadGatewayException,
-    )
+    await expect(
+      service.getInsightForUser(makeAuthContext(), 'foco operacional', makeRequestContext()),
+    ).rejects.toThrow(BadGatewayException)
   })
 
   it('gera insight e persiste cache quando provider responde formato valido', async () => {

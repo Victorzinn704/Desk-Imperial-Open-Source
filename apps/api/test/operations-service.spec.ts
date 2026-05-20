@@ -45,14 +45,20 @@ function createMockPrisma() {
     mesa: {
       findMany: jest.fn(async ({ where }: any) => {
         return Array.from(mesaStore.values()).filter((m) => {
-          if (where?.companyOwnerId && m.companyOwnerId !== where.companyOwnerId) return false
-          if (where?.active !== undefined && m.active !== where.active) return false
+          if (where?.companyOwnerId && m.companyOwnerId !== where.companyOwnerId) {
+            return false
+          }
+          if (where?.active !== undefined && m.active !== where.active) {
+            return false
+          }
           return true
         })
       }),
 
       findUnique: jest.fn(async ({ where }: any) => {
-        if (where?.id) return mesaStore.get(where.id) ?? null
+        if (where?.id) {
+          return mesaStore.get(where.id) ?? null
+        }
 
         // Unique index composto no schema: @@unique([companyOwnerId, label])
         if (where?.companyOwnerId_label) {
@@ -81,7 +87,9 @@ function createMockPrisma() {
 
       update: jest.fn(async ({ where, data }: any) => {
         const mesa = mesaStore.get(where.id)
-        if (!mesa) throw new Error(`Mesa ${where.id} não encontrada no mock store`)
+        if (!mesa) {
+          throw new Error(`Mesa ${where.id} não encontrada no mock store`)
+        }
         const updated = { ...mesa, ...data }
         mesaStore.set(where.id, updated)
         return updated
@@ -178,7 +186,9 @@ describe('Mesa CRUD', () => {
       expect(existing).not.toBeNull()
       // Simulando a guard que o OperationsService faria:
       expect(() => {
-        if (existing) throw new ConflictException('Já existe uma mesa com este nome.')
+        if (existing) {
+          throw new ConflictException('Já existe uma mesa com este nome.')
+        }
       }).toThrow(ConflictException)
     })
 

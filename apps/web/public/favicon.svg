@@ -1,26 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Define o gradiente imperial desaturado -->
   <defs>
-    <linearGradient id="imperialGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#9b8460;stop-opacity:0.18" />
-      <stop offset="100%" style="stop-color:#9b8460;stop-opacity:0.06" />
+    <linearGradient id="deskBlue" x1="4" y1="3" x2="28" y2="29" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0.08" />
     </linearGradient>
   </defs>
 
-  <!-- Fundo com borda e gradiente (novo padrão desaturado) -->
-  <rect x="2" y="2" width="28" height="28" rx="6" fill="url(#imperialGradient)" stroke="#9b8460" stroke-opacity="0.35" stroke-width="1" />
+  <rect
+    x="2.5"
+    y="2.5"
+    width="27"
+    height="27"
+    rx="8"
+    fill="url(#deskBlue)"
+    stroke="#008CFF"
+    stroke-opacity="0.34"
+  />
 
-  <!-- Crown Icon SVG (similar ao Lucide Crown) -->
-  <g transform="translate(8, 8)">
-    <!-- Base da coroa -->
-    <path d="M2 8H14M2 8L3.5 3.5L7 5L8 1L9 5L12.5 3.5L14 8" 
-          stroke="#9b8460" 
-          stroke-width="1.2" 
-          fill="none" 
-          stroke-linecap="round" 
-          stroke-linejoin="round"/>
-    <!-- Joia central -->
-    <circle cx="8" cy="1" r="0.8" fill="#9b8460" />
+  <g transform="translate(5 6)">
+    <path
+      d="M1.8 4.1L5.25 15.1H16.75L20.2 4.1L14.95 10.15L11 3.85L7.05 10.15L1.8 4.1Z"
+      stroke="#008CFF"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M5.2 18H16.8"
+      stroke="#008CFF"
+      stroke-width="1.7"
+      stroke-linecap="round"
+    />
   </g>
 </svg>

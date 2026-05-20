@@ -38,6 +38,7 @@ Mobile não é "a versão menor do desktop". É um contexto completamente difere
 O agente deve dominar os conceitos independente da abordagem atual (PWA, React Native, Expo, Flutter):
 
 ### Abordagem PWA / Web Mobile
+
 - Responsividade real com mobile-first
 - Touch targets mínimos de 44x44px
 - Sem dependência de hover para funcionalidade
@@ -45,6 +46,7 @@ O agente deve dominar os conceitos independente da abordagem atual (PWA, React N
 - Manifest para instalação como app
 
 ### Abordagem App Nativo / Cross-platform
+
 - Navegação com padrões nativos da plataforma (iOS vs Android)
 - Gestos: swipe, pull-to-refresh, long press
 - Notificações push com permissão explícita
@@ -52,6 +54,7 @@ O agente deve dominar os conceitos independente da abordagem atual (PWA, React N
 - Otimização de imagens e assets por density
 
 ### Universal (independe da abordagem)
+
 - Estados de loading, erro e offline comunicados claramente
 - Formulários com teclado virtual em mente (scroll, foco, submit)
 - Paginação ou scroll infinito para listas longas

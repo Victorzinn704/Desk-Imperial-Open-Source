@@ -20,4 +20,3 @@ export function hasRedisUrl(env: EnvLike): boolean {
 export function getRedisUrlKeys(): readonly string[] {
   return REDIS_URL_KEYS
 }
-

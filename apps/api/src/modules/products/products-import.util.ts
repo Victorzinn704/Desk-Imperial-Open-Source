@@ -16,6 +16,23 @@ export type ProductImportRow = {
   stock: number
 }
 
+type ProductImportCsvDocument = {
+  headers: string[]
+  dataLines: string[]
+  delimiter: string
+}
+
+type ProductImportLineInput = {
+  line: string
+  rowIndex: number
+  document: ProductImportCsvDocument
+}
+
+type ProductImportRowInput = {
+  lineNumber: number
+  row: Record<string, string>
+}
+
 const requiredHeaders = ['name', 'category', 'description', 'unitcost', 'unitprice']
 const MAX_IMPORT_ROWS = 500
 const MAX_LINE_LENGTH = 4000
@@ -23,97 +40,190 @@ const MAX_COLUMNS = 14
 const MAX_CELL_LENGTH = 280
 
 export function parseProductImportCsv(content: string): ProductImportRow[] {
-  if (content.includes('\0')) {
-    throw new Error('O CSV contem bytes invalidos e nao pode ser processado.')
+  const lines = normalizeCsvLines(content)
+  const document = buildCsvDocument(lines)
+
+  if (!document) {
+    return []
   }
+
+  return document.dataLines.map((line, rowIndex) => parseProductImportLine({ line, rowIndex, document }))
+}
+
+function normalizeCsvLines(content: string) {
+  assertCsvContentIsSafe(content)
 
   const normalized = content.replace(/^\uFEFF/, '').trim()
   if (!normalized) {
     return []
   }
 
-  const lines = normalized
+  return normalized
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
+}
 
-  if (lines.length < 2) {
-    return []
+function assertCsvContentIsSafe(content: string) {
+  if (content.includes('\0')) {
+    throw new Error('O CSV contem bytes invalidos e nao pode ser processado.')
+  }
+}
+
+function buildCsvDocument(lines: string[]): ProductImportCsvDocument | null {
+  const headerLine = lines[0]
+  if (!headerLine || lines.length < 2) {
+    return null
   }
 
+  assertImportRowLimit(lines)
+
+  const delimiter = detectDelimiter(headerLine)
+  const headers = splitCsvLine(headerLine, delimiter).map((header) => normalizeHeader(header))
+
+  validateCsvHeaders(headers)
+
+  return {
+    headers,
+    dataLines: lines.slice(1),
+    delimiter,
+  }
+}
+
+function assertImportRowLimit(lines: string[]) {
   if (lines.length - 1 > MAX_IMPORT_ROWS) {
     throw new Error(`O CSV excede o limite de ${MAX_IMPORT_ROWS} linhas por importacao.`)
   }
+}
 
-  const delimiter = detectDelimiter(lines[0])
-  const headers = splitCsvLine(lines[0], delimiter).map((header) => normalizeHeader(header))
+function validateCsvHeaders(headers: string[]) {
+  assertColumnLimit(headers)
+  assertRequiredHeaders(headers)
+  assertStockHeaders(headers)
+}
 
+function assertColumnLimit(headers: string[]) {
   if (headers.length > MAX_COLUMNS) {
     throw new Error(`O CSV suporta no maximo ${MAX_COLUMNS} colunas nesta importacao.`)
   }
+}
 
+function assertRequiredHeaders(headers: string[]) {
   for (const requiredHeader of requiredHeaders) {
     if (!headers.includes(requiredHeader)) {
       throw new Error(`O CSV precisa conter a coluna "${requiredHeader}".`)
     }
   }
+}
 
-  if (!headers.includes('stock') && !headers.includes('stockpackages') && !headers.includes('stocklooseunits')) {
+function assertStockHeaders(headers: string[]) {
+  if (!hasStockHeader(headers)) {
     throw new Error('O CSV precisa conter "stock" ou o par "stockPackages" e "stockLooseUnits".')
   }
+}
 
-  return lines.slice(1).map((line, index) => {
-    if (line.length > MAX_LINE_LENGTH) {
-      throw new Error(`Linha ${index + 2}: excede o limite maximo permitido.`)
-    }
+function hasStockHeader(headers: string[]) {
+  return headers.includes('stock') || headers.includes('stockpackages') || headers.includes('stocklooseunits')
+}
 
-    const values = splitCsvLine(line, delimiter)
-    if (values.length !== headers.length) {
-      throw new Error(`Linha ${index + 2}: quantidade de colunas invalida para o cabecalho informado.`)
-    }
+function parseProductImportLine({ document, line, rowIndex }: ProductImportLineInput): ProductImportRow {
+  const lineNumber = rowIndex + 2
 
-    for (const value of values) {
-      if (value.length > MAX_CELL_LENGTH) {
-        throw new Error(`Linha ${index + 2}: uma das colunas excede o tamanho maximo permitido.`)
-      }
-    }
+  assertLineLength({ line, lineNumber })
+  const values = splitCsvLine(line, document.delimiter)
+  assertLineShape({ headers: document.headers, values, lineNumber })
 
-    const row = Object.fromEntries(headers.map((header, headerIndex) => [header, values[headerIndex]?.trim() ?? '']))
-    const unitsPerPackage = Number.parseInt(row.unitsperpackage || '1', 10)
-    const stockPackages = Number.parseInt(row.stockpackages || '0', 10)
-    const stockLooseUnits = Number.parseInt(row.stocklooseunits || '0', 10)
-    const totalStock = Number.parseInt(row.stock || '-1', 10)
-
-    return {
-      line: index + 2,
-      name: row.name,
-      brand: row.brand || null,
-      category: row.category,
-      packagingClass: row.packagingclass || 'UN',
-      measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
-      measurementValue: Number.parseFloat(row.measurementvalue || '1'),
-      unitsPerPackage,
-      description: row.description || null,
-      unitCost: (() => {
-        const v = Number.parseFloat(row.unitcost)
-        if (!Number.isFinite(v) || v < 0) throw new Error(`Linha ${index + 2}: "unitcost" deve ser um numero valido e positivo.`)
-        return v
-      })(),
-      unitPrice: (() => {
-        const v = Number.parseFloat(row.unitprice)
-        if (!Number.isFinite(v) || v < 0) throw new Error(`Linha ${index + 2}: "unitprice" deve ser um numero valido e positivo.`)
-        return v
-      })(),
-      currency: (row.currency || 'BRL').toUpperCase(),
-      stockPackages: Number.isNaN(stockPackages) ? 0 : stockPackages,
-      stockLooseUnits: Number.isNaN(stockLooseUnits) ? 0 : stockLooseUnits,
-      stock:
-        !Number.isNaN(totalStock) && totalStock >= 0
-          ? totalStock
-          : Math.max(0, Number.isNaN(stockPackages) ? 0 : stockPackages) * Math.max(1, unitsPerPackage) +
-            Math.max(0, Number.isNaN(stockLooseUnits) ? 0 : stockLooseUnits),
-    }
+  return toProductImportRow({
+    lineNumber,
+    row: buildRowValues({ headers: document.headers, values }),
   })
+}
+
+function assertLineLength(params: { line: string; lineNumber: number }) {
+  if (params.line.length > MAX_LINE_LENGTH) {
+    throw new Error(`Linha ${params.lineNumber}: excede o limite maximo permitido.`)
+  }
+}
+
+function assertLineShape(params: { headers: string[]; values: string[]; lineNumber: number }) {
+  if (params.values.length !== params.headers.length) {
+    throw new Error(`Linha ${params.lineNumber}: quantidade de colunas invalida para o cabecalho informado.`)
+  }
+
+  for (const value of params.values) {
+    if (value.length > MAX_CELL_LENGTH) {
+      throw new Error(`Linha ${params.lineNumber}: uma das colunas excede o tamanho maximo permitido.`)
+    }
+  }
+}
+
+function buildRowValues(params: { headers: string[]; values: string[] }) {
+  return Object.fromEntries(
+    params.headers.map((header, headerIndex) => [header, params.values[headerIndex]?.trim() ?? '']),
+  ) as Record<string, string>
+}
+
+function toProductImportRow({ lineNumber, row }: ProductImportRowInput): ProductImportRow {
+  const unitsPerPackage = parseIntegerCell(row.unitsperpackage, '1')
+  const stockPackages = parseIntegerCell(row.stockpackages, '0')
+  const stockLooseUnits = parseIntegerCell(row.stocklooseunits, '0')
+  const totalStock = parseIntegerCell(row.stock, '-1')
+
+  return {
+    line: lineNumber,
+    name: row.name ?? '',
+    brand: row.brand || null,
+    category: row.category ?? '',
+    packagingClass: row.packagingclass || 'UN',
+    measurementUnit: (row.measurementunit || 'UN').toUpperCase(),
+    measurementValue: Number.parseFloat(row.measurementvalue || '1'),
+    unitsPerPackage,
+    description: row.description || null,
+    unitCost: parseNonNegativeMoney({ value: row.unitcost ?? '', column: 'unitcost', lineNumber }),
+    unitPrice: parseNonNegativeMoney({ value: row.unitprice ?? '', column: 'unitprice', lineNumber }),
+    currency: (row.currency || 'BRL').toUpperCase(),
+    stockPackages: normalizeOptionalStockCount(stockPackages),
+    stockLooseUnits: normalizeOptionalStockCount(stockLooseUnits),
+    stock: resolveTotalStock({ totalStock, stockPackages, stockLooseUnits, unitsPerPackage }),
+  }
+}
+
+function parseNonNegativeMoney(params: { value: string; column: 'unitcost' | 'unitprice'; lineNumber: number }) {
+  const amount = Number.parseFloat(params.value)
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new Error(`Linha ${params.lineNumber}: "${params.column}" deve ser um numero valido e positivo.`)
+  }
+
+  return amount
+}
+
+function parseIntegerCell(value: string | undefined, fallback: string) {
+  return Number.parseInt(value || fallback, 10)
+}
+
+function normalizeOptionalStockCount(value: number) {
+  return Number.isNaN(value) ? 0 : value
+}
+
+function resolveTotalStock(params: {
+  totalStock: number
+  stockPackages: number
+  stockLooseUnits: number
+  unitsPerPackage: number
+}) {
+  if (hasExplicitStock(params.totalStock)) {
+    return params.totalStock
+  }
+
+  return (
+    Math.max(0, normalizeOptionalStockCount(params.stockPackages)) * Math.max(1, params.unitsPerPackage) +
+    Math.max(0, normalizeOptionalStockCount(params.stockLooseUnits))
+  )
+}
+
+function hasExplicitStock(totalStock: number) {
+  return !Number.isNaN(totalStock) && totalStock >= 0
 }
 
 function normalizeHeader(value: string) {

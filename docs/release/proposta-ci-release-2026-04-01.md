@@ -7,15 +7,18 @@ Data: 2026-04-01
 ## 1. Diagnostico do pipeline atual
 
 Estado atual:
+
 - CI principal com quality + backend test + build
 - dependency review em workflow separado
 
 Pontos fortes:
+
 - gate rapido de lint/typecheck
 - build final condicionado a jobs anteriores
 - controle de concorrencia e cache turbo
 
 Lacunas para release:
+
 - ausencia de gate frontend completo no pipeline principal
 - ausencia de validacao de seguranca integrada no fluxo unico
 - ausencia de artefatos de teste frontend em falha para triagem rapida
@@ -27,6 +30,7 @@ Lacunas para release:
 Transformar o CI de desenvolvimento em CI de release, sem perder velocidade de feedback para PR.
 
 Principios:
+
 - fail fast
 - gates progressivos
 - rastreabilidade de falha por artefato
@@ -65,6 +69,7 @@ Principios:
 ## 4. Regras de bloqueio de merge
 
 Merge permitido somente com:
+
 - todos os jobs PR green
 - sem vulnerabilidade high/critical nao tratada
 - sem falha de e2e baseline
@@ -74,22 +79,28 @@ Merge permitido somente com:
 ## 5. Matriz minima de comandos
 
 Quality:
+
 - npm run lint
 - npm run typecheck
 
 Backend:
+
 - npm --workspace @partner/api run test -- --coverage --ci --forceExit
 
 Frontend unit:
+
 - npm --workspace @partner/web run test
 
 Frontend e2e baseline:
+
 - npm --workspace @partner/web run test:e2e
 
 Build:
+
 - npm run build
 
 Security:
+
 - dependency-review-action
 - npm audit --omit=dev --audit-level=high
 
@@ -107,16 +118,20 @@ Security:
 ## 7. Riscos e mitigacoes da proposta
 
 Risco:
+
 - aumento de tempo medio de CI em PR
 
 Mitigacao:
+
 - paralelizar jobs de backend/frontend
 - separar baseline e suites estendidas
 
 Risco:
+
 - flakiness de E2E
 
 Mitigacao:
+
 - retries apenas em CI
 - artefatos de trace/video em falha
 
@@ -125,15 +140,19 @@ Mitigacao:
 ## 8. Entrega incremental recomendada
 
 Etapa 1:
+
 - integrar frontend unit no CI principal
 
 Etapa 2:
+
 - integrar e2e baseline com artefatos
 
 Etapa 3:
+
 - adicionar gate de seguranca integrado
 
 Etapa 4:
+
 - formalizar fluxo de release com aprovacao manual no branch principal
 
 ---

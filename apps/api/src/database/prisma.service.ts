@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common'
+import { type Prisma, PrismaClient } from '@prisma/client'
 
 const SLOW_QUERY_THRESHOLD_MS = 500
 
@@ -43,7 +43,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
           break
         }
 
-        const delay = baseDelayMs * Math.pow(2, attempt - 1)
+        const delay = baseDelayMs * 2 ** (attempt - 1)
         this.logger.warn(`Retrying Prisma connection in ${delay}ms...`, 'PrismaService')
         await new Promise((resolve) => setTimeout(resolve, delay))
       }

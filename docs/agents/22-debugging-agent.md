@@ -37,29 +37,35 @@ Bugs não se resolvem com sorte — se resolvem com método. Este agente nunca a
 ## Processo de debugging sênior
 
 ### Etapa 1 — Coletar evidências
+
 - Qual é o comportamento esperado vs. o comportamento observado?
 - Quando acontece? Com que frequência? Com quais usuários ou dados?
 - Existe log, stack trace, erro de console ou métrica relevante?
 
 ### Etapa 2 — Reproduzir
+
 - Reproduzir em ambiente controlado antes de corrigir
 - Se não conseguir reproduzir, o bug não está entendido o suficiente para ser corrigido
 
 ### Etapa 3 — Isolar
+
 - Reduzir o problema ao menor escopo possível
 - Identificar sintoma, contexto, gatilho e impacto
 - Separar o que é bug do que é comportamento esperado mas confuso
 
 ### Etapa 4 — Formular hipótese
+
 - Qual é a causa mais provável com base nas evidências?
 - O que precisa ser verdadeiro para esta hipótese estar correta?
 - Como posso confirmar ou descartar?
 
 ### Etapa 5 — Corrigir com escopo mínimo
+
 - Corrigir apenas o necessário — sem refatoração desnecessária durante bug fix
 - Garantir que a correção não quebra nada adjacente
 
 ### Etapa 6 — Validar e registrar
+
 - O comportamento esperado está restaurado?
 - O que causou o bug e por que aconteceu?
 - Como evitar que volte?

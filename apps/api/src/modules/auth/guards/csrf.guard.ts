@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { timingSafeEqual } from 'node:crypto'
 import type { SessionRequest } from '../auth.types'
@@ -27,11 +33,11 @@ export class CsrfGuard implements CanActivate {
     const headerToken = this.readHeaderToken(request)
     const expectedToken = this.authService.buildCsrfToken(auth.sessionId)
 
-    if (!cookieToken || !headerToken) {
+    if (!(cookieToken && headerToken)) {
       throw new ForbiddenException('Token CSRF ausente.')
     }
 
-    if (!safeEqual(cookieToken, headerToken) || !safeEqual(cookieToken, expectedToken)) {
+    if (!(safeEqual(cookieToken, headerToken) && safeEqual(cookieToken, expectedToken))) {
       throw new ForbiddenException('Token CSRF invalido.')
     }
 
@@ -47,7 +53,7 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('Origem nao autorizada.')
     }
 
-    if (!origin && referer && !allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin))) {
+    if (!origin && referer && !isAllowedReferer(referer, allowedOrigins)) {
       throw new ForbiddenException('Referer nao autorizado.')
     }
   }
@@ -67,4 +73,13 @@ function safeEqual(left: string, right: string) {
   }
 
   return timingSafeEqual(leftBuffer, rightBuffer)
+}
+
+function isAllowedReferer(referer: string, allowedOrigins: string[]) {
+  try {
+    const refererOrigin = new URL(referer).origin
+    return allowedOrigins.includes(refererOrigin)
+  } catch {
+    return false
+  }
 }

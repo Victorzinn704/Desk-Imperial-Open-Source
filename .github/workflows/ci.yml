@@ -15,6 +15,8 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  HUSKY: '0'
+  NPM_CONFIG_FUND: 'false'
   NODE_ENV: test
   TZ: America/Sao_Paulo
   NEXT_PUBLIC_APP_URL: http://localhost:3000
@@ -26,7 +28,7 @@ env:
   SESSION_TTL_HOURS: '24'
   PASSWORD_RESET_TTL_MINUTES: '30'
   CONSENT_VERSION: '2026.03'
-  ENABLE_SWAGGER: 'false'
+  ENABLE_API_DOCS: 'false'
 
 jobs:
   quality:
@@ -36,22 +38,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Lint
         run: npm run lint
@@ -59,41 +53,67 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Check OpenAPI contract
+        run: npm run openapi:check
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      REDIS_URL: redis://localhost:6379
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install CI native bindings
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Run API tests
-        run: npm --workspace @partner/api run test -- --coverage --ci --forceExit
+        run: npm --workspace @partner/api run test:coverage:sonar
 
       - name: Upload API coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-coverage-${{ github.sha }}
           path: apps/api/coverage/lcov.info
           if-no-files-found: ignore
           retention-days: 14
+
+  backend-e2e:
+    name: Backend E2E Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
+        with:
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
+
+      - name: Run API e2e smoke
+        run: npm --workspace @partner/api run test:e2e
 
   frontend-unit:
     name: Frontend Unit Tests
@@ -102,19 +122,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
+          node-version: '22'
+          install-native-bindings: 'true'
 
       - name: Run web unit tests
         run: npm --workspace @partner/web run test
@@ -126,29 +140,23 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Linux native bindings for web toolchain
-        run: node ./scripts/install-ci-native-bindings.mjs
+          node-version: '22'
+          install-native-bindings: 'true'
 
       - name: Install Playwright Chromium
-        run: npm --workspace @partner/web exec playwright install --with-deps chromium
+        run: npm --workspace @partner/web exec -- playwright install --with-deps chromium
 
       - name: Run web e2e baseline
         run: npm --workspace @partner/web run test:e2e
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-e2e-artifacts-${{ github.sha }}
           path: |
@@ -167,16 +175,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
+          node-version: '22'
 
       - name: Public repo safety scan
         run: npm run repo:scan-public
@@ -189,6 +193,9 @@ jobs:
           fail-on-severity: high
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
           comment-summary-in-pr: always
+
+      - name: npm audit
+        run: npm audit --audit-level=high
 
       - name: Runtime security audit
         run: npm run security:audit-runtime
@@ -230,24 +237,20 @@ jobs:
       COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
       CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
       ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-      ENABLE_SWAGGER: 'false'
+      ENABLE_API_DOCS: 'false'
       NEXT_PUBLIC_API_URL: http://127.0.0.1:4000
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
+          node-version: '22'
 
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
-
-      - name: Install dependencies
-        run: npm ci
 
       - name: Prepare API database schema
         run: |
@@ -265,7 +268,7 @@ jobs:
       - name: Wait for API health
         run: |
           for i in {1..45}; do
-            if curl -fsS http://127.0.0.1:4000/api/health > /tmp/api-health.json; then
+            if curl -fsS http://127.0.0.1:4000/api/v1/health > /tmp/api-health.json; then
               cat /tmp/api-health.json
               exit 0
             fi
@@ -283,7 +286,7 @@ jobs:
 
       - name: Upload latency gate artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: latency-gate-debug-${{ github.sha }}
           path: api-latency-gate.log
@@ -300,33 +303,25 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [quality, backend-tests, frontend-unit, frontend-e2e, security, performance-latency-gate]
+    needs: [quality, backend-tests, backend-e2e, frontend-unit, frontend-e2e, security, performance-latency-gate]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+      - name: Setup workspace
+        uses: ./.github/actions/setup-node-workspace
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install CI native bindings
-        run: node ./scripts/install-ci-native-bindings.mjs
-
-      - name: Generate Prisma client
-        run: npm --workspace @partner/api run prisma:generate
+          node-version: '22'
+          install-native-bindings: 'true'
+          generate-prisma: 'true'
 
       - name: Build all workspaces
         run: npm run build
 
       - name: Upload build artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-failure-${{ github.sha }}
           path: |

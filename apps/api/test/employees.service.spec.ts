@@ -15,6 +15,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common'
 import { Prisma, UserRole, UserStatus } from '@prisma/client'
 import { EmployeesService } from '../src/modules/employees/employees.service'
+import type { AuthService } from '../src/modules/auth/auth.service'
 import type { PrismaService } from '../src/database/prisma.service'
 import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
 import type { CacheService } from '../src/common/services/cache.service'
@@ -39,6 +40,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
   },
   user: {
+    upsert: jest.fn(),
     update: jest.fn(),
     findUnique: jest.fn(),
   },
@@ -47,6 +49,11 @@ const mockPrisma = {
 
 const mockAuditLogService = {
   record: jest.fn(),
+}
+
+const mockAuthService = {
+  refreshEmployeeSessionCaches: jest.fn(),
+  revokeEmployeeSessions: jest.fn(),
 }
 
 const mockCache = {
@@ -91,6 +98,7 @@ beforeEach(() => {
     mockPrisma as unknown as PrismaService,
     mockAuditLogService as unknown as AuditLogService,
     mockCache as unknown as CacheService,
+    mockAuthService as unknown as AuthService,
   )
 
   mockAuthContext = makeAuthContext()
@@ -98,6 +106,35 @@ beforeEach(() => {
   // Defaults
   mockCache.employeesKey.mockReturnValue('employees:list:owner-1')
   ;(argon2.hash as jest.Mock).mockResolvedValue('$argon2id$hashed')
+  mockPrisma.user.findUnique.mockResolvedValue({
+    id: 'owner-1',
+    companyName: 'Empresa Imperial',
+    companyStreetLine1: 'Rua A',
+    companyStreetNumber: '100',
+    companyAddressComplement: null,
+    companyDistrict: 'Centro',
+    companyCity: 'Sao Paulo',
+    companyState: 'SP',
+    companyPostalCode: '01000-000',
+    companyCountry: 'Brasil',
+    companyLatitude: -23.55,
+    companyLongitude: -46.63,
+    hasEmployees: true,
+    employeeCount: 1,
+    email: 'owner@empresa.com',
+    emailVerifiedAt: new Date('2026-01-01T00:00:00.000Z'),
+    preferredCurrency: 'BRL',
+    status: UserStatus.ACTIVE,
+    cookiePreference: { analytics: false, marketing: false },
+  })
+  mockPrisma.user.upsert.mockResolvedValue({
+    id: 'user-employee-1',
+    passwordHash: '$argon2id$hashed',
+  })
+  mockPrisma.user.update.mockResolvedValue({
+    id: 'user-employee-1',
+    passwordHash: '$argon2id$hashed',
+  })
   mockPrisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
     fn({
       user: mockPrisma.user,
@@ -144,7 +181,7 @@ describe('EmployeesService', () => {
 
       expect(mockPrisma.employee.findMany).toHaveBeenCalledWith({
         where: { userId: 'owner-1' },
-        orderBy: [{ active: 'desc' }, { employeeCode: 'asc' }],
+        orderBy: [{ active: 'desc' }, { displayName: 'asc' }],
       })
       expect(result.items).toHaveLength(2)
       expect(result.totals.activeEmployees).toBe(1)
@@ -172,33 +209,56 @@ describe('EmployeesService', () => {
     const mockContext = makeRequestContext()
 
     it('deve criar funcionário com credencial operacional no employee', async () => {
-      const createdEmployee = makeEmployee()
+      const createdEmployee = makeEmployee({
+        loginUserId: null,
+        loginUser: null,
+        employeeCode: 'A7K2M9',
+        displayName: 'Maria Funcionária',
+      })
 
       mockPrisma.employee.create.mockResolvedValue(createdEmployee)
 
       const result = await employeesService.createForUser(
         mockAuthContext,
         {
-          employeeCode: '002',
           displayName: 'Maria Funcionária',
-          temporaryPassword: 'Temp@123',
         },
         mockContext,
       )
 
-      expect(argon2.hash).toHaveBeenCalledWith('Temp@123', { type: argon2.argon2id })
+      expect(argon2.hash).toHaveBeenCalledWith(expect.stringMatching(/^\d{8}$/), { type: argon2.argon2id })
       expect(mockPrisma.employee.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userId: 'owner-1',
-            employeeCode: '002',
+            employeeCode: expect.stringMatching(/^[A-Z0-9]{6}$/),
             displayName: 'Maria Funcionária',
             passwordHash: '$argon2id$hashed',
             active: true,
           }),
         }),
       )
+      expect(mockPrisma.user.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            email: 'staff-employee-1@desk-imperial.local',
+          },
+          create: expect.objectContaining({
+            companyOwnerId: 'owner-1',
+            fullName: 'Maria Funcionária',
+            role: UserRole.STAFF,
+          }),
+        }),
+      )
+      expect(mockPrisma.employee.update).toHaveBeenCalledWith({
+        where: { id: 'employee-1' },
+        data: { loginUserId: 'user-employee-1' },
+      })
       expect(result.employee).toBeDefined()
+      expect(result.credentials).toEqual({
+        employeeCode: expect.stringMatching(/^[A-Z0-9]{6}$/),
+        temporaryPassword: expect.stringMatching(/^\d{8}$/),
+      })
     })
 
     it('deve rejeitar payload com HTML em campos sensíveis', async () => {
@@ -206,9 +266,7 @@ describe('EmployeesService', () => {
         employeesService.createForUser(
           mockAuthContext,
           {
-            employeeCode: '<script>003</script>',
             displayName: 'Nome <b>Teste</b>',
-            temporaryPassword: 'Temp@123',
           },
           mockContext,
         ),
@@ -223,9 +281,7 @@ describe('EmployeesService', () => {
       await employeesService.createForUser(
         mockAuthContext,
         {
-          employeeCode: '002',
           displayName: 'Novo Funcionário',
-          temporaryPassword: 'Temp@123',
         },
         mockContext,
       )
@@ -250,9 +306,7 @@ describe('EmployeesService', () => {
       await employeesService.createForUser(
         mockAuthContext,
         {
-          employeeCode: '002',
           displayName: 'Novo Funcionário',
-          temporaryPassword: 'Temp@123',
         },
         mockContext,
       )
@@ -267,9 +321,7 @@ describe('EmployeesService', () => {
         employeesService.createForUser(
           mockAuthContext,
           {
-            employeeCode: '001',
             displayName: 'Funcionário',
-            temporaryPassword: 'Temp@123',
           },
           mockContext,
         ),
@@ -283,9 +335,7 @@ describe('EmployeesService', () => {
         employeesService.createForUser(
           staffContext,
           {
-            employeeCode: '002',
             displayName: 'Funcionário',
-            temporaryPassword: 'Temp@123',
           },
           mockContext,
         ),
@@ -326,6 +376,7 @@ describe('EmployeesService', () => {
         }),
       )
       expect(result.employee.displayName).toBe('Nome Atualizado')
+      expect(mockAuthService.refreshEmployeeSessionCaches).toHaveBeenCalledWith('employee-1')
     })
 
     it('deve atualizar apenas campos fornecidos', async () => {
@@ -357,6 +408,7 @@ describe('EmployeesService', () => {
           }),
         }),
       )
+      expect(mockAuthService.revokeEmployeeSessions).toHaveBeenCalledWith('employee-1')
     })
 
     it('deve lançar NotFoundException se funcionário não existir', async () => {
@@ -387,6 +439,117 @@ describe('EmployeesService', () => {
           mockContext,
         ),
       ).rejects.toThrow('Apenas o dono pode editar funcionarios')
+    })
+  })
+
+  describe('employee access lifecycle', () => {
+    const mockContext = makeRequestContext()
+
+    it('deve emitir novo acesso e revogar sessões ativas', async () => {
+      const existingEmployee = makeEmployee({ employeeCode: 'OLD123', displayName: 'Marina' })
+      const updatedEmployee = { ...existingEmployee, employeeCode: 'NEW789', passwordHash: '$argon2id$hashed' }
+
+      mockPrisma.employee.findFirst = jest.fn().mockResolvedValueOnce(existingEmployee).mockResolvedValueOnce(null)
+      mockPrisma.employee.update.mockResolvedValue(updatedEmployee)
+      mockPrisma.$transaction.mockImplementation(async (fn) =>
+        fn({
+          user: mockPrisma.user,
+          employee: mockPrisma.employee,
+        }),
+      )
+
+      const result = await employeesService.issueAccessForUser(mockAuthContext, 'employee-1', mockContext)
+
+      expect(mockPrisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'employee-1' },
+          data: expect.objectContaining({
+            employeeCode: expect.stringMatching(/^[A-Z0-9]{6}$/),
+            passwordHash: '$argon2id$hashed',
+          }),
+        }),
+      )
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'employee.access_issued',
+        }),
+      )
+      expect(mockAuthService.revokeEmployeeSessions).toHaveBeenCalledWith('employee-1')
+      expect(result.credentials.employeeCode).toMatch(/^[A-Z0-9]{6}$/)
+      expect(result.credentials.temporaryPassword).toMatch(/^\d{8}$/)
+    })
+
+    it('deve rotacionar apenas a senha mantendo o mesmo ID de acesso', async () => {
+      const existingEmployee = makeEmployee({ employeeCode: 'KEEP01', displayName: 'Marina' })
+      const updatedEmployee = { ...existingEmployee, passwordHash: '$argon2id$new-hash' }
+
+      mockPrisma.employee.findFirst = jest.fn().mockResolvedValue(existingEmployee)
+      mockPrisma.employee.update.mockResolvedValue(updatedEmployee)
+      ;(argon2.hash as jest.Mock).mockResolvedValueOnce('$argon2id$new-hash')
+      mockPrisma.$transaction.mockImplementation(async (fn) =>
+        fn({
+          user: mockPrisma.user,
+          employee: mockPrisma.employee,
+        }),
+      )
+
+      const result = await employeesService.rotatePasswordForUser(mockAuthContext, 'employee-1', mockContext)
+
+      expect(mockPrisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'employee-1' },
+          data: expect.objectContaining({
+            passwordHash: '$argon2id$new-hash',
+          }),
+        }),
+      )
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'employee.access_password_rotated',
+        }),
+      )
+      expect(mockAuthService.revokeEmployeeSessions).toHaveBeenCalledWith('employee-1')
+      expect(result.credentials.employeeCode).toBe('KEEP01')
+      expect(result.credentials.temporaryPassword).toMatch(/^\d{8}$/)
+    })
+
+    it('deve bloquear rotação de senha quando o funcionário ainda não tem acesso ativo', async () => {
+      const existingEmployee = makeEmployee({ passwordHash: null, loginUserId: null })
+      mockPrisma.employee.findFirst = jest.fn().mockResolvedValue(existingEmployee)
+
+      const promise = employeesService.rotatePasswordForUser(mockAuthContext, 'employee-1', mockContext)
+
+      await expect(promise).rejects.toThrow(BadRequestException)
+      await expect(promise).rejects.toThrow('Gere o acesso do funcionario antes de rotacionar a senha.')
+    })
+
+    it('deve revogar o acesso do funcionário', async () => {
+      const existingEmployee = makeEmployee({ employeeCode: 'OLD123' })
+      const updatedEmployee = { ...existingEmployee, passwordHash: null }
+
+      mockPrisma.employee.findFirst = jest.fn().mockResolvedValue(existingEmployee)
+      mockPrisma.employee.update.mockResolvedValue(updatedEmployee)
+      mockPrisma.$transaction.mockImplementation(async (fn) =>
+        fn({
+          user: mockPrisma.user,
+          employee: mockPrisma.employee,
+        }),
+      )
+
+      const result = await employeesService.revokeAccessForUser(mockAuthContext, 'employee-1', mockContext)
+
+      expect(mockPrisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ passwordHash: null }),
+        }),
+      )
+      expect(mockAuditLogService.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'employee.access_revoked',
+        }),
+      )
+      expect(mockAuthService.revokeEmployeeSessions).toHaveBeenCalledWith('employee-1')
+      expect(result.employee.hasLogin).toBe(false)
     })
   })
 

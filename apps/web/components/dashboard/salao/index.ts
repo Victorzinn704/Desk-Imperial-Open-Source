@@ -5,16 +5,11 @@ export {
   CANVAS_H,
   CARD_W,
   CARD_H,
-  GRID_SPACING_X,
-  GRID_SPACING_Y,
-  GRID_COLS,
   CANVAS_PADDING,
-  STATUS_LABEL,
   fmtBRL,
   defaultCreateForm,
   getAutoPosition,
   clamp,
-  getMesaPositionStatic,
   type View,
   type CreateForm,
   type EditForm,
@@ -23,6 +18,9 @@ export {
 
 // Hooks
 export { useMesaDrag } from './hooks/use-mesa-drag'
+
+// Theme
+export { getComandaStatusMeta, getMesaStatusMeta, getSalaoToneStyle, getUrgencyTone, type SalaoTone } from './theme'
 
 // Components
 export { Field } from './components/field'

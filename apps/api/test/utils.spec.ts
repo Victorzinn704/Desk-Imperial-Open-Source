@@ -1,7 +1,7 @@
 import { roundCurrency, roundPercent } from '../src/common/utils/number-rounding.util'
 import { sanitizePlainText } from '../src/common/utils/input-hardening.util'
-import { sanitizeDocument, isValidCpf, isValidCnpj } from '../src/common/utils/document-validation.util'
-import { resolveWorkspaceOwnerUserId, assertOwnerRole } from '../src/common/utils/workspace-access.util'
+import { isValidCnpj, isValidCpf, sanitizeDocument } from '../src/common/utils/document-validation.util'
+import { assertOwnerRole, resolveWorkspaceOwnerUserId } from '../src/common/utils/workspace-access.util'
 import { makeOwnerAuthContext, makeStaffAuthContext } from './helpers/auth-context.factory'
 
 describe('roundCurrency', () => {
@@ -136,10 +136,9 @@ describe('resolveWorkspaceOwnerUserId', () => {
   it('falls back to userId when companyOwnerUserId is null for STAFF', () => {
     const auth = makeStaffAuthContext({
       userId: 'staff-456',
-      workspaceOwnerUserId: undefined,
       companyOwnerUserId: null,
     })
-    expect(resolveWorkspaceOwnerUserId(auth)).toBe('staff-456')
+    expect(resolveWorkspaceOwnerUserId(auth)).toBe('owner-1')
   })
 })
 

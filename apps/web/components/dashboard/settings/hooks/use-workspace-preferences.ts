@@ -13,7 +13,7 @@ export function useWorkspacePreferences(): [WorkspacePreferences, Dispatch<SetSt
       return DEFAULT_WORKSPACE_PREFERENCES
     }
 
-    const saved = window.localStorage.getItem(SETTINGS_PREFS_KEY)
+    const saved = globalThis.localStorage.getItem(SETTINGS_PREFS_KEY)
     if (!saved) {
       return DEFAULT_WORKSPACE_PREFERENCES
     }
@@ -28,7 +28,7 @@ export function useWorkspacePreferences(): [WorkspacePreferences, Dispatch<SetSt
         },
       }
     } catch {
-      window.localStorage.removeItem(SETTINGS_PREFS_KEY)
+      globalThis.localStorage.removeItem(SETTINGS_PREFS_KEY)
       return DEFAULT_WORKSPACE_PREFERENCES
     }
   })
@@ -38,7 +38,7 @@ export function useWorkspacePreferences(): [WorkspacePreferences, Dispatch<SetSt
       return
     }
 
-    window.localStorage.setItem(SETTINGS_PREFS_KEY, JSON.stringify(preferences))
+    globalThis.localStorage.setItem(SETTINGS_PREFS_KEY, JSON.stringify(preferences))
   }, [preferences])
 
   return [preferences, setPreferences]

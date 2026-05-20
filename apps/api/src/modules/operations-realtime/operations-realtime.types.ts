@@ -1,9 +1,71 @@
-import type { CashSessionRecord, MesaRecord } from '../operations/operations.types'
+import type {
+  CashSessionRecord,
+  ComandaItemRecord,
+  ComandaPaymentRecord,
+  MesaRecord,
+} from '../operations/operations.types'
 
 export const OPERATIONS_REALTIME_NAMESPACE = '/operations'
 
 export function buildWorkspaceChannel(workspaceOwnerUserId: string) {
   return `workspace:${workspaceOwnerUserId}`
+}
+
+export function buildWorkspaceKitchenChannel(workspaceOwnerUserId: string) {
+  return `${buildWorkspaceChannel(workspaceOwnerUserId)}:kitchen`
+}
+
+export function buildWorkspaceCashChannel(workspaceOwnerUserId: string) {
+  return `${buildWorkspaceChannel(workspaceOwnerUserId)}:cash`
+}
+
+export function buildWorkspaceMesaChannel(workspaceOwnerUserId: string) {
+  return `${buildWorkspaceChannel(workspaceOwnerUserId)}:mesa`
+}
+
+export function buildWorkspaceEmployeeChannel(workspaceOwnerUserId: string, employeeId: string) {
+  return `${buildWorkspaceChannel(workspaceOwnerUserId)}:employee:${employeeId}`
+}
+
+export function resolveOperationsRealtimeSocketChannels(input: {
+  workspaceOwnerUserId: string
+  role: OperationsRealtimeActorRole
+  employeeId?: string | null
+}) {
+  const channels = [
+    buildWorkspaceChannel(input.workspaceOwnerUserId),
+    buildWorkspaceKitchenChannel(input.workspaceOwnerUserId),
+    buildWorkspaceMesaChannel(input.workspaceOwnerUserId),
+  ]
+
+  if (input.role === 'OWNER') {
+    channels.push(buildWorkspaceCashChannel(input.workspaceOwnerUserId))
+  }
+
+  if (input.employeeId) {
+    channels.push(buildWorkspaceEmployeeChannel(input.workspaceOwnerUserId, input.employeeId))
+  }
+
+  return channels
+}
+
+export function resolveOperationsRealtimeEventChannels(
+  workspaceOwnerUserId: string,
+  event: OperationsRealtimeEventName,
+) {
+  switch (event) {
+    case 'cash.opened':
+    case 'cash.updated':
+    case 'cash.closure.updated':
+      return [buildWorkspaceCashChannel(workspaceOwnerUserId)]
+    case 'kitchen.item.queued':
+    case 'kitchen.item.updated':
+      return [buildWorkspaceKitchenChannel(workspaceOwnerUserId)]
+    case 'mesa.upserted':
+      return [buildWorkspaceMesaChannel(workspaceOwnerUserId)]
+    default:
+      return [buildWorkspaceChannel(workspaceOwnerUserId)]
+  }
 }
 
 export type OperationsRealtimeEventName =
@@ -19,24 +81,28 @@ export type OperationsRealtimeEventName =
 
 export type OperationsRealtimeActorRole = 'OWNER' | 'STAFF'
 
-export type OperationsRealtimeComandaStatus = 'ABERTA' | 'EM_PREPARO' | 'PRONTA' | 'FECHADA'
+export type OperationsRealtimeComandaStatus = 'OPEN' | 'IN_PREPARATION' | 'READY' | 'CLOSED'
 
 export type OperationsRealtimeKitchenItemStatus = 'QUEUED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED'
 
-export type OperationsRealtimeComandaDelta = {
-  comandaId: string
-  mesaLabel: string
-  openedAt?: string
-  closedAt?: string
-  employeeId: string | null
-  status: OperationsRealtimeComandaStatus
-  subtotal: number
-  discountAmount: number
-  serviceFeeAmount: number
-  totalAmount: number
-  totalItems: number
-  businessDate: string
-  paymentMethod?: string | null
+export type OperationsRealtimeMutationName =
+  | 'open-comanda'
+  | 'add-comanda-item'
+  | 'add-comanda-items'
+  | 'replace-comanda'
+  | 'assign-comanda'
+  | 'update-comanda-status'
+  | 'create-comanda-payment'
+  | 'update-kitchen-item-status'
+  | 'close-comanda'
+  | 'open-cash-session'
+  | 'create-cash-movement'
+  | 'close-cash-session'
+  | 'close-cash-closure'
+
+export type OperationsRealtimePublishInstrumentation = {
+  mutationName: OperationsRealtimeMutationName
+  mutationStartedAtMs: number
 }
 
 export type OperationsRealtimeKitchenItemDelta = {
@@ -93,6 +159,7 @@ export interface OperationsRealtimeEventPayloadMap {
     comandaId: string
     mesaLabel: string
     status: OperationsRealtimeComandaStatus
+    previousStatus?: OperationsRealtimeComandaStatus
     employeeId: string | null
     subtotal: number
     discountAmount: number
@@ -100,6 +167,18 @@ export interface OperationsRealtimeEventPayloadMap {
     totalAmount: number
     totalItems: number
     businessDate: string
+    mesaId?: string | null
+    cashSessionId?: string | null
+    customerName?: string | null
+    customerDocument?: string | null
+    participantCount?: number
+    notes?: string | null
+    openedAt?: string
+    items?: ComandaItemRecord[]
+    paidAmount?: number
+    remainingAmount?: number
+    paymentStatus?: 'UNPAID' | 'PARTIAL' | 'PAID'
+    payments?: ComandaPaymentRecord[]
     requiresKitchenRefresh?: boolean
     replaceKitchenItems?: boolean
     kitchenItems?: OperationsRealtimeKitchenItemDelta[]
@@ -117,6 +196,18 @@ export interface OperationsRealtimeEventPayloadMap {
     totalItems: number
     paymentMethod: string | null
     businessDate: string
+    mesaId?: string | null
+    cashSessionId?: string | null
+    customerName?: string | null
+    customerDocument?: string | null
+    participantCount?: number
+    notes?: string | null
+    openedAt?: string
+    items?: ComandaItemRecord[]
+    paidAmount?: number
+    remainingAmount?: number
+    paymentStatus?: 'UNPAID' | 'PARTIAL' | 'PAID'
+    payments?: ComandaPaymentRecord[]
   }
   'cash.closure.updated': {
     closureId: string
@@ -152,6 +243,7 @@ export interface OperationsRealtimeEventPayloadMap {
     productName: string
     quantity: number
     notes: string | null
+    previousKitchenStatus?: OperationsRealtimeKitchenItemStatus
     kitchenStatus: Exclude<OperationsRealtimeKitchenItemStatus, 'QUEUED'>
     kitchenQueuedAt: string | null
     kitchenReadyAt: string | null

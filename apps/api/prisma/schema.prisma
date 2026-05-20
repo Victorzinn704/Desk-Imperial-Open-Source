@@ -18,6 +18,12 @@ enum UserRole {
   STAFF
 }
 
+enum TelegramAccountStatus {
+  ACTIVE
+  REVOKED
+  BLOCKED
+}
+
 enum ConsentKind {
   LEGAL
   COOKIE
@@ -45,6 +51,33 @@ enum CashMovementType {
   SUPPLY
   WITHDRAWAL
   ADJUSTMENT
+}
+
+enum ComandaPaymentMethod {
+  CASH
+  PIX
+  DEBIT
+  CREDIT
+  VOUCHER
+  OTHER
+}
+
+enum ComandaPaymentStatus {
+  CONFIRMED
+  VOIDED
+}
+
+enum PaymentTerminalProvider {
+  MERCADO_PAGO_POINT
+}
+
+enum PaymentTerminalIntentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  FAILED
 }
 
 enum CashClosureStatus {
@@ -130,6 +163,10 @@ model User {
   cashSessionsClosed        CashSession[]        @relation("CashSessionClosedBy")
   companyCashMovements      CashMovement[]       @relation("CompanyCashMovements")
   cashMovementsCreated      CashMovement[]       @relation("CashMovementCreatedBy")
+  companyComandaPayments    ComandaPayment[]     @relation("CompanyComandaPayments")
+  comandaPaymentsCreated    ComandaPayment[]     @relation("ComandaPaymentCreatedBy")
+  companyPaymentTerminalIntents PaymentTerminalIntent[] @relation("CompanyPaymentTerminalIntents")
+  paymentTerminalIntentsCreated PaymentTerminalIntent[] @relation("PaymentTerminalIntentCreatedBy")
   companyCashClosures       CashClosure[]        @relation("CompanyCashClosures")
   cashClosuresClosed        CashClosure[]        @relation("CashClosureClosedBy")
   companyComandas           Comanda[]            @relation("CompanyComandas")
@@ -139,6 +176,12 @@ model User {
   companyComandaAssignments ComandaAssignment[]  @relation("CompanyComandaAssignments")
   comandaAssignmentsGranted ComandaAssignment[]  @relation("ComandaAssignmentGrantedBy")
   workspaceSessions         Session[]            @relation("WorkspaceSessions")
+  telegramAccounts          TelegramAccount[]    @relation("TelegramAccountUser")
+  telegramWorkspaceAccounts TelegramAccount[]    @relation("TelegramAccountWorkspaceOwner")
+  telegramLinkTokens        TelegramLinkToken[]  @relation("TelegramLinkTokenUser")
+  telegramWorkspaceTokens   TelegramLinkToken[]  @relation("TelegramLinkTokenWorkspaceOwner")
+  notificationPreferences   NotificationPreference[]
+  userNotificationPreferences UserNotificationPreference[]
 
   @@index([companyOwnerId, role])
   @@index([companyCity, companyState])
@@ -280,35 +323,106 @@ model AuditLog {
   @@index([resourceId, event])
 }
 
+model TelegramAccount {
+  id                   String                @id @default(cuid())
+  userId               String
+  workspaceOwnerUserId String
+  telegramChatId       BigInt
+  telegramUserId       BigInt
+  telegramUsername     String?
+  status               TelegramAccountStatus @default(ACTIVE)
+  linkedAt             DateTime              @default(now())
+  lastActiveAt         DateTime              @default(now())
+  revokedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  user                 User                  @relation("TelegramAccountUser", fields: [userId], references: [id], onDelete: Cascade)
+  workspaceOwner       User                  @relation("TelegramAccountWorkspaceOwner", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([workspaceOwnerUserId, status])
+  @@index([telegramChatId, status])
+}
+
+model TelegramLinkToken {
+  token                String   @id
+  userId               String
+  workspaceOwnerUserId String
+  expiresAt            DateTime
+  usedAt               DateTime?
+  ipAddress            String?
+  createdAt            DateTime @default(now())
+  user                 User     @relation("TelegramLinkTokenUser", fields: [userId], references: [id], onDelete: Cascade)
+  workspaceOwner       User     @relation("TelegramLinkTokenWorkspaceOwner", fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([workspaceOwnerUserId, expiresAt])
+  @@index([expiresAt, usedAt])
+}
+
+model NotificationPreference {
+  id                   String   @id @default(cuid())
+  workspaceOwnerUserId String
+  channel              String
+  eventType            String
+  enabled              Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  workspaceOwner       User     @relation(fields: [workspaceOwnerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceOwnerUserId, channel, eventType])
+  @@index([workspaceOwnerUserId, channel])
+}
+
+model UserNotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  channel   String
+  eventType String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, eventType])
+  @@index([userId, channel])
+}
+
 model Product {
-  id               String             @id @default(cuid())
-  userId           String
-  name             String
-  brand            String?
-  category         String
-  packagingClass   String             @default("Cadastro rapido")
-  measurementUnit  String             @default("UN")
-  measurementValue Decimal            @default(1) @db.Decimal(10, 2)
-  unitsPerPackage  Int                @default(1)
-  isCombo          Boolean            @default(false)
-  comboDescription String?
-  description      String?
-  unitCost         Decimal            @db.Decimal(10, 2)
-  unitPrice        Decimal            @db.Decimal(10, 2)
-  currency         CurrencyCode       @default(BRL)
-  stock            Int
+  id                String             @id @default(cuid())
+  userId            String
+  name              String
+  barcode           String?
+  brand             String?
+  category          String
+  packagingClass    String             @default("Cadastro rapido")
+  measurementUnit   String             @default("UN")
+  measurementValue  Decimal            @default(1) @db.Decimal(10, 2)
+  unitsPerPackage   Int                @default(1)
+  isCombo           Boolean            @default(false)
+  comboDescription  String?
+  description       String?
+  quantityLabel     String?
+  servingSize       String?
+  imageUrl          String?
+  catalogSource     String?
+  unitCost          Decimal            @db.Decimal(10, 2)
+  unitPrice         Decimal            @db.Decimal(10, 2)
+  currency          CurrencyCode       @default(BRL)
+  stock             Int
   lowStockThreshold Int?
-  requiresKitchen  Boolean            @default(false)
-  active           Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems       OrderItem[]
-  comandaItems     ComandaItem[]
-  comboComponents  ProductComboItem[] @relation("ComboComponents")
-  usedInCombos     ProductComboItem[] @relation("ComboComponentProducts")
+  requiresKitchen   Boolean            @default(false)
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems        OrderItem[]
+  comandaItems      ComandaItem[]
+  comboComponents   ProductComboItem[] @relation("ComboComponents")
+  usedInCombos      ProductComboItem[] @relation("ComboComponentProducts")
 
   @@unique([userId, name])
+  @@unique([userId, barcode])
   @@index([userId, active])
   @@index([userId, active, createdAt])
   @@index([userId, category])
@@ -349,6 +463,8 @@ model Employee {
   sales              Order[]
   cashSessions       CashSession[]
   cashMovements      CashMovement[]
+  comandaPayments    ComandaPayment[]
+  paymentTerminalIntents PaymentTerminalIntent[]
   currentComandas    Comanda[]           @relation("ComandaCurrentEmployee")
   comandaAssignments ComandaAssignment[]
 
@@ -381,6 +497,8 @@ model CashSession {
   closedByUser         User?             @relation("CashSessionClosedBy", fields: [closedByUserId], references: [id], onDelete: SetNull)
   movements            CashMovement[]
   comandas             Comanda[]
+  payments             ComandaPayment[]
+  paymentTerminalIntents PaymentTerminalIntent[]
 
   @@index([companyOwnerId, businessDate, status])
   @@index([companyOwnerId, businessDate, openedAt])
@@ -483,6 +601,8 @@ model Comanda {
   currentEmployee   Employee?           @relation("ComandaCurrentEmployee", fields: [currentEmployeeId], references: [id], onDelete: SetNull)
   items             ComandaItem[]
   assignments       ComandaAssignment[]
+  payments          ComandaPayment[]
+  paymentTerminalIntents PaymentTerminalIntent[]
   order             Order?
 
   @@index([companyOwnerId, status, openedAt])
@@ -531,6 +651,75 @@ model ComandaAssignment {
   @@index([companyOwnerId, startedAt])
   @@index([comandaId, startedAt])
   @@index([employeeId, startedAt])
+}
+
+model ComandaPayment {
+  id              String               @id @default(cuid())
+  companyOwnerId  String
+  comandaId       String
+  cashSessionId   String?
+  employeeId      String?
+  createdByUserId String
+  method          ComandaPaymentMethod
+  amount          Decimal              @db.Decimal(12, 2)
+  note            String?
+  status          ComandaPaymentStatus @default(CONFIRMED)
+  paidAt          DateTime             @default(now())
+  voidedAt        DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  companyOwner    User                 @relation("CompanyComandaPayments", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  comanda         Comanda              @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+  cashSession     CashSession?         @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  employee        Employee?            @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  createdByUser   User                 @relation("ComandaPaymentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  terminalIntent  PaymentTerminalIntent?
+
+  @@index([companyOwnerId, paidAt])
+  @@index([comandaId, paidAt])
+  @@index([cashSessionId, paidAt])
+  @@index([employeeId, paidAt])
+  @@index([companyOwnerId, status, paidAt])
+}
+
+model PaymentTerminalIntent {
+  id                 String                      @id @default(cuid())
+  companyOwnerId     String
+  comandaId          String
+  cashSessionId      String?
+  employeeId         String?
+  createdByUserId    String
+  comandaPaymentId   String?                     @unique
+  provider           PaymentTerminalProvider     @default(MERCADO_PAGO_POINT)
+  status             PaymentTerminalIntentStatus @default(PENDING)
+  method             ComandaPaymentMethod
+  amount             Decimal                     @db.Decimal(12, 2)
+  note               String?
+  providerTerminalId String
+  providerOrderId    String?
+  providerPaymentId  String?
+  providerStatus     String?
+  externalReference  String                      @unique
+  idempotencyKey     String                      @unique
+  errorCode          String?
+  errorMessage       String?
+  expiresAt          DateTime?
+  approvedAt         DateTime?
+  rejectedAt         DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  companyOwner       User                        @relation("CompanyPaymentTerminalIntents", fields: [companyOwnerId], references: [id], onDelete: Cascade)
+  comanda            Comanda                     @relation(fields: [comandaId], references: [id], onDelete: Cascade)
+  cashSession        CashSession?                @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  employee           Employee?                   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  createdByUser      User                        @relation("PaymentTerminalIntentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  comandaPayment     ComandaPayment?             @relation(fields: [comandaPaymentId], references: [id], onDelete: SetNull)
+
+  @@index([companyOwnerId, status, createdAt])
+  @@index([comandaId, status, createdAt])
+  @@index([cashSessionId, status, createdAt])
+  @@index([provider, providerOrderId])
 }
 
 model Order {

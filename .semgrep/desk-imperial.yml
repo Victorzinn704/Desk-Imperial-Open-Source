@@ -1,0 +1,108 @@
+rules:
+  # ── Regra 1: NestJS endpoint sem ValidationPipe ──────────────────────────────
+  - id: nestjs-missing-validation-pipe
+    message: >
+      Endpoint NestJS com @Body() sem ValidationPipe explícito.
+      Verifique se ValidationPipe global está configurado em main.ts com
+      whitelist: true e forbidNonWhitelisted: true — ou adicione @UsePipes(ValidationPipe).
+    severity: WARNING
+    languages: [typescript]
+    patterns:
+      - pattern: |
+          @$HTTP(...)
+          async $METHOD(@Body() $PARAM: $TYPE, ...) {
+            ...
+          }
+      - pattern-not: |
+          @UsePipes(...)
+          @$HTTP(...)
+          async $METHOD(...) { ... }
+      - pattern-not: |
+          @UsePipes(...)
+          $METHOD(...) { ... }
+      - metavariable-regex:
+          metavariable: $HTTP
+          regex: '^(Post|Put|Patch|Delete)$'
+    paths:
+      include:
+        - '**/apps/api/src/**/*.controller.ts'
+
+  # ── Regra 2: Controller importando Prisma diretamente ───────────────────────
+  - id: prisma-import-in-controller
+    message: >
+      Controller importando diretamente de '@prisma/client'.
+      Acesso ao banco deve passar por repositório/service via injeção de dependência.
+      Controllers chamam services; services usam o PrismaService injetado.
+    severity: ERROR
+    languages: [typescript]
+    patterns:
+      - pattern: |
+          import { ... } from '@prisma/client'
+    paths:
+      include:
+        - '**/apps/api/src/**/*.controller.ts'
+
+  # ── Regra 3: bcrypt fora da camada de autenticação ──────────────────────────
+  - id: bcrypt-outside-auth-layer
+    message: >
+      'bcrypt' importado fora do módulo de autenticação.
+      Hashing de senhas deve ocorrer apenas em apps/api/src/modules/auth/.
+    severity: ERROR
+    languages: [typescript]
+    patterns:
+      - pattern: import $X from 'bcrypt'
+    paths:
+      include:
+        - '**/apps/api/src/**/*.ts'
+      exclude:
+        - '**/apps/api/src/modules/auth/**'
+
+  # ── Regra 4: jsonwebtoken fora da camada de autenticação ────────────────────
+  - id: jsonwebtoken-outside-auth-layer
+    message: >
+      'jsonwebtoken' importado fora do módulo de autenticação.
+      Manipulação de JWT deve ocorrer apenas em apps/api/src/modules/auth/.
+    severity: ERROR
+    languages: [typescript]
+    patterns:
+      - pattern: import $X from 'jsonwebtoken'
+    paths:
+      include:
+        - '**/apps/api/src/**/*.ts'
+      exclude:
+        - '**/apps/api/src/modules/auth/**'
+
+  # ── Regra 5: console.log no backend ──────────────────────────────────────────
+  - id: console-log-in-api
+    message: >
+      console.log() detectado no backend. Use o Logger injetado do NestJS:
+      this.logger.log(), this.logger.warn(), this.logger.error().
+    severity: WARNING
+    languages: [typescript]
+    pattern: console.log(...)
+    paths:
+      include:
+        - '**/apps/api/src/**/*.ts'
+      exclude:
+        - '**/apps/api/src/**/*.spec.ts'
+        - '**/apps/api/test/**'
+
+  # ── Regra 6: any explícito sem comentário de justificativa ──────────────────
+  - id: explicit-any-without-comment
+    message: >
+      Uso de 'any' explícito detectado sem justificativa.
+      Prefira tipos específicos. Se necessário, documente com // @ts-expect-error: <razão>.
+    severity: WARNING
+    languages: [typescript]
+    patterns:
+      - pattern: |
+          $X as any
+      - pattern-not-inside: |
+          // @ts-expect-error ...
+    paths:
+      include:
+        - '**/apps/api/src/**/*.ts'
+        - '**/packages/types/src/**/*.ts'
+      exclude:
+        - '**/*.spec.ts'
+        - '**/*.test.ts'

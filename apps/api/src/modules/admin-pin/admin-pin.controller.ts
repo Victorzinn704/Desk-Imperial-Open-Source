@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import type { Response } from 'express'
 import { assertOwnerRole } from '../../common/utils/workspace-access.util'
@@ -16,6 +16,15 @@ import { VerifyPinDto } from './dto/verify-pin.dto'
 @UseGuards(SessionGuard, CsrfGuard)
 export class AdminPinController {
   constructor(private readonly adminPinService: AdminPinService) {}
+
+  @Get('pin')
+  @HttpCode(HttpStatus.OK)
+  async getPinStatus(@CurrentAuth() auth: AuthContext) {
+    assertOwnerRole(auth, 'Apenas o dono pode consultar o PIN administrativo.')
+    return {
+      configured: await this.adminPinService.hasPinConfigured(auth.userId),
+    }
+  }
 
   /**
    * Verifica o PIN e emite um challenge opaco.

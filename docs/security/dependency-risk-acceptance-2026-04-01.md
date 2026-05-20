@@ -12,9 +12,31 @@ Escopo da rodada:
 - provisionamento local de Redis no compose para reduzir falhas operacionais de cache/realtime
 - remocao completa de overrides customizados de transitive deps (nao mitigavam runtime de forma efetiva e um deles quebrava lint local por incompatibilidade `minimatch` x `brace-expansion`)
 
-## Resultado objetivo
+## Atualizacao - 2026-05-19
 
-Estado original da rodada 2026-04-01:
+Durante a criacao do gate local `quality:offline-release`, `npm audit --audit-level=high` voltou a bloquear a entrega por novas vulnerabilidades em `@opentelemetry/*`, `next`, `fast-uri` e `protobufjs`.
+
+Remediacao aplicada sem `npm audit fix --force`:
+
+- `npm audit fix` para atualizar dependencias transientes com caminho non-breaking;
+- bump direto do stack OpenTelemetry da API para a familia `0.218.x`/`2.7.x`;
+- atualizacao transiente de Next para `16.2.6`, Nest para `11.1.21`/Swagger `11.4.3`, `protobufjs` para `7.6.0`, `fast-uri` para `3.1.2`, `turbo` para `2.9.14` e correlatos via lockfile.
+
+Resultado apos a rodada:
+
+- `npm audit --audit-level=high`: sem high/critical;
+- `npm run security:audit-runtime`: sem high/critical fora de allowlist;
+- residuo conhecido: vulnerabilidades `moderate` em `postcss` embutido no Next e `ws` via Socket.IO/Nest. A correcao automatica sugerida pelo npm exige `--force` com downgrade/alteracao breaking (`next@9.3.3` ou downgrade de Socket.IO), portanto nao deve ser aplicada sem trilha separada de compatibilidade.
+
+Criterio de saida atualizado:
+
+- manter `audit:deps` e `security:audit-runtime` verdes para high/critical;
+- abrir trilha separada para eliminar os moderates quando Next/Socket.IO/Nest entregarem caminho non-breaking validavel;
+- nao expandir allowlist para high/critical sem threat model e decisao documentada.
+
+## Resultado objetivo da rodada 2026-04-01
+
+Estado atual de auditoria:
 
 - runtime (`npm audit --omit=dev`): 8 vulnerabilidades high
 - completo (`npm audit`): 15 vulnerabilidades (10 high, 5 moderate)
@@ -35,29 +57,6 @@ Comprovacao manual executada:
 - `npm ls lodash path-to-regexp --all`
 - `npm explain lodash`
 - `npm explain path-to-regexp`
-
-## Atualizacao - 2026-05-19
-
-A sincronizacao publica trouxe a remediacao non-breaking que ja estava aplicada no
-privado para o gate de seguranca do repositório open source.
-
-Mudancas aplicadas:
-
-- `@nestjs/*` atualizado para a familia `11.1.21`/`11.4.3`;
-- OpenTelemetry atualizado para a familia `0.218.x`/`2.7.x`;
-- Next atualizado para `16.2.6`;
-- overrides de lock para `postcss@8.5.10` e `protobufjs@7.6.0`.
-
-Resultado objetivo apos a atualizacao:
-
-- `npm run security:audit-runtime`: verde;
-- vulnerabilidades high/critical inesperadas removidas de `@nestjs/core`,
-  `@nestjs/platform-express`, `@nestjs/swagger`, `@opentelemetry/*`, `next`,
-  `path-to-regexp` e `protobufjs`;
-- residuo runtime high ainda aceito temporariamente: `@nestjs/config` via
-  `lodash`;
-- vulnerabilidades `moderate` restantes continuam fora do gate de bloqueio e
-  devem ser tratadas em trilha separada, sem `npm audit fix --force`.
 
 ## Mitigacoes aplicadas no runtime exposto
 

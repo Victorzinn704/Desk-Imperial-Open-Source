@@ -83,10 +83,29 @@ Antes de abrir PR publico, revise e remova, sanitize ou transforme em template:
 Execute no privado antes de preparar a branch publica:
 
 ```powershell
+npm run repo:open-source:audit
 npm run repo:scan-public
 npm run lint:secrets
 npm run quality:contracts
 git diff --check
+```
+
+Para gerar uma snapshot completa sanitizada fora do repositório privado:
+
+```powershell
+npm run repo:open-source:prepare
+```
+
+O comando cria `..\desk-imperial-open-source-snapshot`, copia apenas arquivos versionados, remove arquivos bloqueados pela politica de publicação, sanitiza `.env.example` e grava o relatório em `docs/operations/open-source-full-sync-audit.md`.
+
+Valide a snapshot antes de abrir PR:
+
+```powershell
+Set-Location ..\desk-imperial-open-source-snapshot
+git init
+git add -A
+node scripts/scan-public-repo-risks.mjs
+gitleaks dir . --config ..\desk-imperial\.gitleaks.toml --redact --no-banner
 ```
 
 Se a intenção for publicar uma snapshot maior, execute também:
@@ -119,10 +138,10 @@ Dentro do worktree publico, substitua a árvore pela snapshot do privado:
 
 ```powershell
 Set-Location $Worktree
-git read-tree --reset -u origin/main
+robocopy ..\desk-imperial-open-source-snapshot . /MIR /XD .git node_modules .next dist build coverage .turbo .cache
 ```
 
-Depois remova ou ajuste qualquer arquivo que não deve ir para o open source.
+Depois revise o diff. Se aparecer `infra/oracle/**`, `review_audit/**`, `.playwright-cli/**`, inventário real de VM, Tailscale/workstation ou arquivo com credencial, a snapshot deve ser corrigida antes do commit.
 
 Rode os gates:
 

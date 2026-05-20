@@ -1,7 +1,7 @@
 'use client'
 
-import { memo } from 'react'
-import { Search, Coffee, Pizza, Beer, Package, UtensilsCrossed, Wine } from 'lucide-react'
+import { memo, type ReactNode } from 'react'
+import { Beer, Coffee, Package, Pizza, Search, UtensilsCrossed, Wine } from 'lucide-react'
 
 type CategoryGridProps = {
   categories: string[]
@@ -12,17 +12,22 @@ type CategoryGridProps = {
 
 function getCategoryIcon(cat: string) {
   const low = cat.toLowerCase()
-  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp'))
-    return <Beer className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  if (low.includes('vinho'))
-    return <Wine className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  if (low.includes('bebida') || low.includes('suco') || low.includes('refr'))
-    return <Coffee className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  if (low.includes('combo') || low.includes('kit'))
-    return <Package className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger'))
-    return <Pizza className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
-  return <UtensilsCrossed className="size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity" />
+  if (low.includes('alco') || low.includes('cerveja') || low.includes('chopp')) {
+    return <Beer className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
+  }
+  if (low.includes('vinho')) {
+    return <Wine className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
+  }
+  if (low.includes('bebida') || low.includes('suco') || low.includes('refr')) {
+    return <Coffee className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
+  }
+  if (low.includes('combo') || low.includes('kit')) {
+    return <Package className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
+  }
+  if (low.includes('pizza') || low.includes('lanche') || low.includes('burger')) {
+    return <Pizza className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
+  }
+  return <UtensilsCrossed className="size-4 opacity-80 transition-opacity group-hover:opacity-100" />
 }
 
 export const CategoryGrid = memo(function CategoryGrid({
@@ -31,52 +36,29 @@ export const CategoryGrid = memo(function CategoryGrid({
   onSelectCategory,
   showAllOption = true,
 }: CategoryGridProps) {
-  if (categories.length === 0) return null
+  if (categories.length === 0) {
+    return null
+  }
+
+  const showSelectedCategory = Boolean(selectedCategory)
 
   return (
     <>
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {showAllOption ? (
-          <button
-            onClick={() => onSelectCategory(null)}
-            className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
-              selectedCategory === null
-                ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
-            }`}
-          >
-            <Search
-              className={`size-5 mb-1 opacity-80 group-hover:opacity-100 transition-opacity ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
-            />
-            <span
-              className={`text-[9px] uppercase font-bold tracking-wider ${selectedCategory === null ? 'text-[#36f57c]' : ''}`}
-            >
-              Todos
-            </span>
-          </button>
+          <AllCategoryButton active={selectedCategory === null} onSelect={() => onSelectCategory(null)} />
         ) : null}
 
-        {categories.map((cat) => {
-          const isActive = selectedCategory === cat
-          return (
-            <button
-              key={cat}
-              onClick={() => onSelectCategory(cat)}
-              className={`group flex min-h-[76px] flex-col items-center justify-center rounded-[14px] border px-3 py-3 transition-all hover:-translate-y-0.5 ${
-                isActive
-                  ? 'bg-[rgba(54,245,124,0.15)] border-[rgba(54,245,124,0.5)] text-[#36f57c] shadow-[0_4px_16px_rgba(54,245,124,0.15)]'
-                  : 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:border-[rgba(255,255,255,0.2)] hover:text-white'
-              }`}
-            >
-              {getCategoryIcon(cat)}
-              <span className={`text-[9px] uppercase font-bold tracking-wider ${isActive ? 'text-[#36f57c]' : ''}`}>
-                {cat.length > 10 ? cat.substring(0, 10) + '...' : cat}
-              </span>
-            </button>
-          )
-        })}
+        {categories.map((cat) => (
+          <CategoryButton
+            active={selectedCategory === cat}
+            category={cat}
+            key={cat}
+            onSelect={() => onSelectCategory(cat)}
+          />
+        ))}
       </div>
-      {selectedCategory ? (
+      {showSelectedCategory ? (
         <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-soft)]">
           Subitens de {selectedCategory}
         </p>
@@ -84,3 +66,67 @@ export const CategoryGrid = memo(function CategoryGrid({
     </>
   )
 })
+
+function AllCategoryButton({ active, onSelect }: Readonly<{ active: boolean; onSelect: () => void }>) {
+  return (
+    <CategoryShell active={active} onSelect={onSelect}>
+      <Search
+        className={`size-4 opacity-80 transition-opacity group-hover:opacity-100 ${active ? 'text-[var(--accent)]' : ''}`}
+      />
+      <CategoryLabel active={active} value="Todos" />
+    </CategoryShell>
+  )
+}
+
+function CategoryButton({
+  active,
+  category,
+  onSelect,
+}: Readonly<{
+  active: boolean
+  category: string
+  onSelect: () => void
+}>) {
+  return (
+    <CategoryShell active={active} onSelect={onSelect}>
+      {getCategoryIcon(category)}
+      <CategoryLabel active={active} value={shortenCategory(category)} />
+    </CategoryShell>
+  )
+}
+
+function CategoryShell({
+  active,
+  children,
+  onSelect,
+}: Readonly<{
+  active: boolean
+  children: ReactNode
+  onSelect: () => void
+}>) {
+  const stateClassName = active
+    ? 'border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)]'
+    : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-soft)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+
+  return (
+    <button
+      className={`group flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3 py-2 transition-all ${stateClassName}`}
+      type="button"
+      onClick={onSelect}
+    >
+      {children}
+    </button>
+  )
+}
+
+function CategoryLabel({ active, value }: Readonly<{ active: boolean; value: string }>) {
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-[0.1em] ${active ? 'text-[var(--accent)]' : ''}`}>
+      {value}
+    </span>
+  )
+}
+
+function shortenCategory(category: string) {
+  return category.length > 18 ? `${category.substring(0, 18)}...` : category
+}

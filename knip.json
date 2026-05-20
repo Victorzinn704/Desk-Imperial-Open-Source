@@ -1,0 +1,39 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "package.json",
+        "turbo.json",
+        "biome.json",
+        "knip.json",
+        "gulpfile.js",
+        "scripts/**/*.{mjs,js,ts}",
+        "tests/load/k6/**/*.{js,ts}"
+      ],
+      "ignore": [".github/**", ".venv-aider/**"],
+      "ignoreDependencies": ["k6", "dotenv", "@prisma/client"],
+      "ignoreBinaries": ["k6", "powershell", "biome"]
+    },
+    "apps/api": {
+      "entry": ["src/app.module.ts", "src/**/*.module.ts", "prisma/**/*.ts", "test/**/*.ts"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["tsconfig-paths", "@sentry/profiling-node"]
+    },
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,error,loading,not-found,template}.{ts,tsx}",
+        "app/**/{route,middleware}.{ts,tsx}",
+        "public/sw*.js"
+      ],
+      "project": ["**/*.{ts,tsx}", "!**/*.d.ts"],
+      "ignore": ["e2e/**"],
+      "ignoreDependencies": ["tailwindcss"]
+    },
+    "packages/types": {
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["apexcharts", "react-apexcharts"]
+}

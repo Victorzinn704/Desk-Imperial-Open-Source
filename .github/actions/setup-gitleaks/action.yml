@@ -1,0 +1,26 @@
+name: Setup Gitleaks
+description: Instala o Gitleaks CLI pinado sem depender do gitleaks-action Node.
+
+inputs:
+  version:
+    description: Versao do Gitleaks CLI.
+    required: false
+    default: 8.30.1
+
+runs:
+  using: composite
+  steps:
+    - name: Install Gitleaks CLI
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        version="${{ inputs.version }}"
+        archive="gitleaks_${version}_linux_x64.tar.gz"
+        target="${RUNNER_TEMP}/gitleaks"
+
+        curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${version}/${archive}" \
+          -o "${RUNNER_TEMP}/${archive}"
+        tar -xzf "${RUNNER_TEMP}/${archive}" -C "${RUNNER_TEMP}" gitleaks
+        chmod +x "${target}"
+        echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"

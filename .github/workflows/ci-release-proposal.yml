@@ -21,10 +21,10 @@ env:
   COOKIE_SECRET: ci-only-cookie-secret-not-used-in-production-32c
   CSRF_SECRET: ci-only-csrf-secret-not-used-in-production-32ch!
   ENCRYPTION_KEY: ci-only-encryption-key-not-used-in-prod-32c
-  SESSION_TTL_HOURS: "24"
-  PASSWORD_RESET_TTL_MINUTES: "30"
-  CONSENT_VERSION: "2026.03"
-  ENABLE_SWAGGER: "false"
+  SESSION_TTL_HOURS: '24'
+  PASSWORD_RESET_TTL_MINUTES: '30'
+  CONSENT_VERSION: '2026.03'
+  ENABLE_API_DOCS: 'false'
 
 jobs:
   quality:
@@ -34,10 +34,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -61,10 +61,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload API coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-coverage-${{ github.sha }}
           path: apps/api/coverage/lcov.info
@@ -93,10 +93,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -114,10 +114,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -133,7 +133,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-e2e-artifacts-${{ github.sha }}
           path: |
@@ -151,7 +151,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -161,7 +161,7 @@ jobs:
           comment-summary-in-pr: always
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -180,10 +180,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -199,7 +199,7 @@ jobs:
 
       - name: Upload build artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-failure-${{ github.sha }}
           path: |

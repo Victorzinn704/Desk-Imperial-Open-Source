@@ -56,7 +56,6 @@ describe('CurrencyService', () => {
   it('usa URL customizada /last e injeta header de API key', async () => {
     configValues.EXCHANGE_RATES_URL = 'https://rates.example.com/last/'
     configValues.EXCHANGE_RATES_API_KEY = '  secret-key '
-
     ;(global as any).fetch.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -92,7 +91,6 @@ describe('CurrencyService', () => {
     const staleAfter429 = await service.getSnapshot()
     expect(staleAfter429.source).toBe('stale-cache')
     expect(staleAfter429.notice).toContain('Cotacao ao vivo indisponivel')
-
     ;(global as any).fetch.mockClear()
     const staleByRetryWindow = await service.getSnapshot()
 
@@ -122,7 +120,6 @@ describe('CurrencyService', () => {
   it('cai para fallback quando nao ha cache e a API falha', async () => {
     configValues.EXCHANGE_RATES_FALLBACK_USD_BRL = '-1'
     configValues.EXCHANGE_RATES_FALLBACK_EUR_BRL = 'abc'
-
     ;(global as any).fetch.mockRejectedValueOnce(new Error('network down'))
 
     const snapshot = await service.getSnapshot()
@@ -144,21 +141,26 @@ describe('CurrencyService', () => {
       },
     }
 
-    expect(service.convert(10, 'USD', 'USD', snapshot as any)).toBe(10)
-    expect(service.convert(10, 'USD', 'BRL', snapshot as any)).toBe(50)
-    expect(service.convert(10, 'BRL', 'USD', snapshot as any)).toBe(2)
-    expect(service.convert(10, 'USD', 'EUR', snapshot as any)).toBe(8.33)
+    expect(service.convert({ source: { amount: 10, currency: 'USD' }, targetCurrency: 'USD', snapshot } as any)).toBe(
+      10,
+    )
+    expect(service.convert({ source: { amount: 10, currency: 'USD' }, targetCurrency: 'BRL', snapshot } as any)).toBe(
+      50,
+    )
+    expect(service.convert({ source: { amount: 10, currency: 'BRL' }, targetCurrency: 'USD', snapshot } as any)).toBe(2)
+    expect(service.convert({ source: { amount: 10, currency: 'USD' }, targetCurrency: 'EUR', snapshot } as any)).toBe(
+      8.33,
+    )
 
     expect(() =>
-      service.convert(
-        10,
-        'EUR',
-        'USD',
-        {
+      service.convert({
+        source: { amount: 10, currency: 'EUR' },
+        targetCurrency: 'USD',
+        snapshot: {
           ...snapshot,
           rates: {},
-        } as any,
-      ),
+        },
+      } as any),
     ).toThrow(ServiceUnavailableException)
   })
 

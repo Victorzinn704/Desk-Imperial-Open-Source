@@ -1,5 +1,4 @@
-import { FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
-import type { Faro } from '@grafana/faro-web-sdk'
+import { type Faro, FetchTransport, getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk'
 
 type ApiClientErrorTelemetryContext = {
   path: string
@@ -46,6 +45,7 @@ let slowApiSampleRate = DEFAULT_SLOW_API_SAMPLE_RATE
 let signalWindowStartedAt = 0
 let signalCountInWindow = 0
 const recentErrorFingerprints = new Map<string, number>()
+let fallbackSamplingCounter = 0
 
 export function initializeFrontendFaro() {
   if (faroInitializationAttempted) {
@@ -89,10 +89,7 @@ export function initializeFrontendFaro() {
     process.env.NEXT_PUBLIC_FARO_BATCH_SEND_TIMEOUT_MS,
     DEFAULT_BATCH_SEND_TIMEOUT_MS,
   )
-  const batchItemLimit = parsePositiveInteger(
-    process.env.NEXT_PUBLIC_FARO_BATCH_ITEM_LIMIT,
-    DEFAULT_BATCH_ITEM_LIMIT,
-  )
+  const batchItemLimit = parsePositiveInteger(process.env.NEXT_PUBLIC_FARO_BATCH_ITEM_LIMIT, DEFAULT_BATCH_ITEM_LIMIT)
   const transportConcurrency = parsePositiveInteger(
     process.env.NEXT_PUBLIC_FARO_TRANSPORT_CONCURRENCY,
     DEFAULT_TRANSPORT_CONCURRENCY,
@@ -107,10 +104,7 @@ export function initializeFrontendFaro() {
     app: {
       name: process.env.NEXT_PUBLIC_FARO_APP_NAME?.trim() || 'desk-imperial-web',
       version: process.env.NEXT_PUBLIC_FARO_APP_VERSION?.trim() || '0.1.0',
-      environment:
-        process.env.NEXT_PUBLIC_FARO_ENVIRONMENT?.trim() ||
-        process.env.NODE_ENV ||
-        'development',
+      environment: process.env.NEXT_PUBLIC_FARO_ENVIRONMENT?.trim() || process.env.NODE_ENV || 'development',
     },
     eventDomain: process.env.NEXT_PUBLIC_FARO_EVENT_DOMAIN?.trim() || DEFAULT_EVENT_DOMAIN,
     transports: [
@@ -140,7 +134,10 @@ export function initializeFrontendFaro() {
     dedupe: true,
     trackResources: false,
     ignoreUrls: [/\/api\/health$/i, /\/_next\//i, /\/favicon\.ico$/i],
-    beforeSend: (item) => sanitizeTransportItem(item),
+    beforeSend: (item) => {
+      sanitizeTransportItemInPlace(item)
+      return item
+    },
     sessionTracking: {
       enabled: true,
       samplingRate: parseSampleRate(process.env.NEXT_PUBLIC_FARO_SAMPLE_RATE, 0.03),
@@ -227,9 +224,9 @@ export function reportApiRequestMeasurementToFaro(context: ApiRequestMeasurement
 
   const isSlowRequest = durationMs >= slowApiThresholdMs
   const isServerError = status >= 500
-  const sampledHealthyRequest = !isSlowRequest && !isServerError && Math.random() <= slowApiSampleRate
+  const sampledHealthyRequest = !(isSlowRequest || isServerError) && sampleUnit() <= slowApiSampleRate
 
-  if (!isSlowRequest && !isServerError && !sampledHealthyRequest) {
+  if (!(isSlowRequest || isServerError || sampledHealthyRequest)) {
     return
   }
 
@@ -273,6 +270,17 @@ export function reportApiRequestMeasurementToFaro(context: ApiRequestMeasurement
       'desk-imperial-web',
     )
   }
+}
+
+function sampleUnit() {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const values = new Uint32Array(1)
+    crypto.getRandomValues(values)
+    return values[0] / 0xffffffff
+  }
+
+  fallbackSamplingCounter = (fallbackSamplingCounter + 1) % 10_000
+  return ((Date.now() + fallbackSamplingCounter) % 10_000) / 10_000
 }
 
 function parseSampleRate(value: string | undefined, fallback: number) {
@@ -323,7 +331,7 @@ function resolveCollectorUrl(options: {
       return null
     }
 
-    if (!productionMode && !isSecureTransport && !isLocalDevelopmentCollector && !options.allowInsecureCollector) {
+    if (!(productionMode || isSecureTransport || isLocalDevelopmentCollector || options.allowInsecureCollector)) {
       return null
     }
 
@@ -384,22 +392,20 @@ function sanitizePath(path: string) {
     .replace(LONG_TOKEN_SEGMENT_PATTERN, '/:token')
 }
 
-function sanitizeTransportItem<T>(item: T): T | null {
+function sanitizeTransportItemInPlace(item: unknown) {
   if (!item || typeof item !== 'object') {
-    return item
+    return
   }
 
   const transportItem = item as {
     payload?: Record<string, unknown>
   }
   if (!transportItem.payload || typeof transportItem.payload !== 'object') {
-    return item
+    return
   }
 
-  sanitizeRecordObject(transportItem.payload['context'])
-  sanitizeRecordObject(transportItem.payload['attributes'])
-
-  return item
+  sanitizeRecordObject(transportItem.payload.context)
+  sanitizeRecordObject(transportItem.payload.attributes)
 }
 
 function sanitizeRecordObject(value: unknown) {
@@ -423,8 +429,13 @@ function sanitizeContextString(key: string, rawValue: string) {
     normalizedKey.includes('password') ||
     normalizedKey.includes('token') ||
     normalizedKey.includes('authorization') ||
+    normalizedKey.includes('apikey') ||
+    normalizedKey.includes('api_key') ||
+    normalizedKey.includes('bearer') ||
     normalizedKey.includes('cookie') ||
     normalizedKey.includes('secret') ||
+    normalizedKey.includes('session') ||
+    normalizedKey.includes('jwt') ||
     normalizedKey.includes('email') ||
     normalizedKey.includes('cpf') ||
     normalizedKey.includes('cnpj')
@@ -448,6 +459,7 @@ export const __faroInternals = {
   resolveCollectorUrl,
   parseSampleRate,
   parsePositiveInteger,
+  sanitizeTransportItemInPlace,
 }
 
 function normalizeRequestId(value: string | null | undefined) {

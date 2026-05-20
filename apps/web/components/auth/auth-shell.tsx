@@ -37,8 +37,8 @@ export function AuthShell({
   children: ReactNode
 }>) {
   return (
-    <main className="min-h-screen bg-[#020304] text-white lg:h-screen lg:overflow-hidden">
-      <div className="grid min-h-screen lg:h-screen lg:grid-cols-2">
+    <main className="dark min-h-screen bg-[#020304] text-white" style={{ colorScheme: 'dark' }}>
+      <div className="grid min-h-screen lg:min-h-[100svh] lg:grid-cols-2">
         <aside className="relative hidden overflow-hidden px-12 py-10 lg:flex lg:flex-col lg:justify-between xl:px-14">
           <div aria-hidden className="pointer-events-none absolute inset-0" style={leftPanelBackdropStyle} />
           <div aria-hidden className="pointer-events-none absolute inset-0" style={leftPanelTextureStyle} />
@@ -78,7 +78,7 @@ export function AuthShell({
           <div className="relative">
             <div className="flex items-center gap-5">
               {trustMetrics.map((metric, index) => (
-                <div key={metric.label} className="flex items-center gap-5">
+                <div className="flex items-center gap-5" key={metric.label}>
                   {index > 0 ? <span className="inline-block h-5 w-px bg-white/10" /> : null}
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/22">
@@ -92,8 +92,26 @@ export function AuthShell({
           </div>
         </aside>
 
-        <section className="flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.02)_0%,transparent_38%),#020304] px-6 py-8 sm:px-10 lg:px-12 xl:px-14">
-          <div className={`w-full ${contentWidthClass}`}>{children}</div>
+        <section
+          className="flex min-h-screen items-start justify-center bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.02)_0%,transparent_38%),#020304] px-4 py-6 sm:px-8 sm:py-8 lg:min-h-0 lg:items-center lg:px-12 xl:px-14"
+          style={{
+            paddingTop: 'max(1.5rem, env(safe-area-inset-top, 0px))',
+            paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          <div className={`w-full ${contentWidthClass}`}>
+            <div className="mb-8 space-y-4 lg:hidden">
+              <BrandMark size="sm" wordmark="responsive" />
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/38">{eyebrow}</p>
+                <h1 className="text-[2rem] font-semibold leading-tight tracking-tight text-white sm:text-[2.35rem]">
+                  {title}
+                </h1>
+                <p className="max-w-xl text-sm leading-6 text-white/58">{description}</p>
+              </div>
+            </div>
+            {children}
+          </div>
         </section>
       </div>
     </main>

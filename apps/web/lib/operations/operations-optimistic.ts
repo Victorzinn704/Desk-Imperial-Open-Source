@@ -1,5 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query'
-import type { ComandaItemRecord, ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
+import type { ComandaRecord, OperationsLiveResponse } from '@contracts/contracts'
+import { buildOptimisticComandaItem, generateOptimisticId } from './operations-optimistic-record'
+
+export { buildOptimisticComandaItem, buildOptimisticComandaRecord } from './operations-optimistic-record'
 
 export function getOperationsSnapshot(
   queryClient: QueryClient,
@@ -18,13 +21,35 @@ export function appendOptimisticComanda(
     return undefined
   }
 
-  queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
-    ...snapshot,
-    unassigned: {
-      ...snapshot.unassigned,
-      comandas: [...snapshot.unassigned.comandas, comanda],
-    },
-  })
+  const targetEmployeeIndex =
+    comanda.currentEmployeeId != null
+      ? snapshot.employees.findIndex((employee) => employee.employeeId === comanda.currentEmployeeId)
+      : -1
+
+  const nextSnapshot: OperationsLiveResponse =
+    targetEmployeeIndex === -1
+      ? {
+          ...snapshot,
+          unassigned: {
+            ...snapshot.unassigned,
+            comandas: [...snapshot.unassigned.comandas, comanda],
+          },
+          mesas: patchMesaCollection(snapshot.mesas, comanda, 'OPEN'),
+        }
+      : {
+          ...snapshot,
+          employees: snapshot.employees.map((employee, index) =>
+            index === targetEmployeeIndex
+              ? {
+                  ...employee,
+                  comandas: [...employee.comandas, comanda],
+                }
+              : employee,
+          ),
+          mesas: patchMesaCollection(snapshot.mesas, comanda, 'OPEN'),
+        }
+
+  queryClient.setQueryData<OperationsLiveResponse>(queryKey, nextSnapshot)
 
   return snapshot
 }
@@ -57,32 +82,30 @@ export function patchOptimisticComanda(
     }
 
     const updatedComandas = [...group.comandas]
-    updatedComandas[comandaIdx] = patcher(group.comandas[comandaIdx])
+    const updatedComanda = patcher(group.comandas[comandaIdx])
+    updatedComandas[comandaIdx] = updatedComanda
 
     if (group === snapshot.unassigned) {
       queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
         ...snapshot,
         unassigned: { ...snapshot.unassigned, comandas: updatedComandas },
+        mesas: patchMesaCollection(snapshot.mesas, updatedComanda, updatedComanda.status),
       })
     } else {
       const employeeIndex = snapshot.employees.findIndex((employee) => employee === group)
       const updatedEmployees = [...snapshot.employees]
       updatedEmployees[employeeIndex] = { ...group, comandas: updatedComandas }
-      queryClient.setQueryData<OperationsLiveResponse>(queryKey, { ...snapshot, employees: updatedEmployees })
+      queryClient.setQueryData<OperationsLiveResponse>(queryKey, {
+        ...snapshot,
+        employees: updatedEmployees,
+        mesas: patchMesaCollection(snapshot.mesas, updatedComanda, updatedComanda.status),
+      })
     }
 
     break
   }
 
   return snapshot
-}
-
-export function appendOptimisticComandaRecord(
-  queryClient: QueryClient,
-  queryKey: readonly unknown[],
-  input: Parameters<typeof buildOptimisticComandaRecord>[0],
-) {
-  return appendOptimisticComanda(queryClient, queryKey, buildOptimisticComandaRecord(input))
 }
 
 export function appendOptimisticComandaItem(
@@ -109,17 +132,54 @@ export function setOptimisticComandaStatus(
   return patchOptimisticComanda(queryClient, queryKey, comandaId, (comanda) => ({
     ...comanda,
     status,
+    closedAt: status === 'CLOSED' || status === 'CANCELLED' ? new Date().toISOString() : comanda.closedAt,
   }))
 }
 
-export async function patchOptimisticComandaMutation(
+export function appendOptimisticComandaPayment(
   queryClient: QueryClient,
   queryKey: readonly unknown[],
   comandaId: string,
-  patcher: (comanda: ComandaRecord) => ComandaRecord,
+  input: {
+    amount: number
+    method: NonNullable<ComandaRecord['payments']>[number]['method']
+  },
 ) {
-  await queryClient.cancelQueries({ queryKey })
-  return patchOptimisticComanda(queryClient, queryKey, comandaId, patcher)
+  return patchOptimisticComanda(queryClient, queryKey, comandaId, (comanda) => {
+    const paidAmount = Math.min(comanda.totalAmount, (comanda.paidAmount ?? 0) + input.amount)
+    const remainingAmount = Math.max(0, comanda.totalAmount - paidAmount)
+    const paymentStatus: ComandaRecord['paymentStatus'] = resolveOptimisticPaymentStatus(remainingAmount, paidAmount)
+
+    return {
+      ...comanda,
+      paidAmount,
+      remainingAmount,
+      paymentStatus,
+      payments: [
+        ...(comanda.payments ?? []),
+        {
+          id: generateOptimisticId('opt-pay'),
+          amount: input.amount,
+          method: input.method,
+          status: 'CONFIRMED',
+          paidAt: new Date().toISOString(),
+          note: null,
+        },
+      ],
+    }
+  })
+}
+
+function resolveOptimisticPaymentStatus(remainingAmount: number, paidAmount: number): ComandaRecord['paymentStatus'] {
+  if (remainingAmount <= 0.009) {
+    return 'PAID'
+  }
+
+  if (paidAmount > 0) {
+    return 'PARTIAL'
+  }
+
+  return 'UNPAID'
 }
 
 export function rollbackOperationsSnapshot(
@@ -134,97 +194,54 @@ export function rollbackOperationsSnapshot(
   queryClient.setQueryData(queryKey, snapshot)
 }
 
-function generateOptimisticId(prefix: string) {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return `${prefix}-${crypto.randomUUID()}`
-  }
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
-}
+function patchMesaCollection(
+  mesas: OperationsLiveResponse['mesas'],
+  comanda: Pick<ComandaRecord, 'id' | 'mesaId' | 'tableLabel' | 'currentEmployeeId'>,
+  status: ComandaRecord['status'],
+): OperationsLiveResponse['mesas'] {
+  return mesas.map((mesa) => {
+    const matchesMesaId = Boolean(comanda.mesaId) && mesa.id === comanda.mesaId
+    const matchesLabel = normalizeMesaKey(mesa.label) === normalizeMesaKey(comanda.tableLabel)
 
-export function buildOptimisticComandaRecord(input: {
-  tableLabel: string
-  cashSessionId?: string | null
-  customerName?: string | null
-  customerDocument?: string | null
-  participantCount?: number
-  notes?: string | null
-  items?: Array<{
-    productId?: string | null
-    productName?: string | null
-    quantity: number
-    unitPrice?: number
-    notes?: string | null
-  }>
-}): ComandaRecord {
-  const items = (input.items ?? []).map((item) => {
-    const unitPrice = resolveOptimisticUnitPrice(item.unitPrice, item.quantity)
+    if (!(matchesMesaId || matchesLabel) && mesa.comandaId !== comanda.id) {
+      return mesa
+    }
+
+    if (status === 'CLOSED' || status === 'CANCELLED') {
+      const nextStatus: OperationsLiveResponse['mesas'][number]['status'] =
+        mesa.reservedUntil && new Date(mesa.reservedUntil) > new Date() ? 'reservada' : 'livre'
+
+      return {
+        ...mesa,
+        status: nextStatus,
+        comandaId: null,
+        currentEmployeeId: null,
+      }
+    }
+
     return {
-      id: generateOptimisticId('opt-item'),
-      productId: item.productId ?? null,
-      productName: item.productName ?? 'Item',
-      quantity: item.quantity,
-      unitPrice,
-      totalAmount: item.quantity * unitPrice,
-      notes: item.notes ?? null,
-      kitchenStatus: null,
-      kitchenQueuedAt: null,
-      kitchenReadyAt: null,
+      ...mesa,
+      status: 'ocupada',
+      comandaId: comanda.id,
+      currentEmployeeId: comanda.currentEmployeeId ?? null,
     }
   })
-  const subtotalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0)
-
-  return {
-    id: generateOptimisticId('optimistic'),
-    companyOwnerId: '',
-    mesaId: null,
-    status: 'OPEN',
-    tableLabel: input.tableLabel,
-    customerName: input.customerName ?? null,
-    customerDocument: input.customerDocument ?? null,
-    participantCount: input.participantCount ?? 1,
-    notes: input.notes ?? null,
-    cashSessionId: input.cashSessionId ?? null,
-    currentEmployeeId: null,
-    discountAmount: 0,
-    serviceFeeAmount: 0,
-    subtotalAmount,
-    totalAmount: subtotalAmount,
-    openedAt: new Date().toISOString(),
-    closedAt: null,
-    items,
-  }
 }
 
-export function buildOptimisticComandaItem(input: {
-  productId?: string | null
-  productName?: string | null
-  quantity: number
-  unitPrice?: number
-  notes?: string | null
-}): ComandaItemRecord {
-  const unitPrice = resolveOptimisticUnitPrice(input.unitPrice, input.quantity)
-  return {
-    id: generateOptimisticId('opt-item'),
-    productId: input.productId ?? null,
-    productName: input.productName ?? 'Item',
-    quantity: input.quantity,
-    unitPrice,
-    totalAmount: input.quantity * unitPrice,
-    notes: input.notes ?? null,
-    kitchenStatus: null,
-    kitchenQueuedAt: null,
-    kitchenReadyAt: null,
-  }
-}
-
-function resolveOptimisticUnitPrice(unitPrice: number | undefined, quantity: number) {
-  if (typeof unitPrice === 'number' && Number.isFinite(unitPrice) && unitPrice >= 0) {
-    return unitPrice
+function normalizeMesaKey(raw: string | null | undefined) {
+  if (!raw) {
+    return ''
   }
 
-  if (quantity <= 0) {
-    return 0
+  const trimmed = raw.trim()
+  const cleaned = trimmed
+    .replace(/^(mesa|ms|m)\s*[-–—#nº.:]*\s*/i, '')
+    .replace(/^[-–—#nº.:]+\s*/, '')
+    .trim()
+
+  if (/^\d+$/.test(cleaned)) {
+    return String(Number(cleaned))
   }
 
-  return 0
+  return cleaned.toUpperCase()
 }

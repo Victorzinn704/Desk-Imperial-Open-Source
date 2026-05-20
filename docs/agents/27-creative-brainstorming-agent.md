@@ -37,12 +37,15 @@ Criatividade com responsabilidade. Uma ideia só tem valor se pode ser executada
 ## Processo de brainstorming sênior
 
 ### Fase 1 — Divergência (explorar sem julgamento)
+
 - Gerar o máximo de ideias possível
 - Incluir ideias radicais, incrementais e de manutenção
 - Não filtrar ainda — quantidade primeiro
 
 ### Fase 2 — Convergência (filtrar com critério)
+
 Para cada ideia, avaliar:
+
 - **Valor:** qual problema real isso resolve?
 - **Viabilidade:** é tecnicamente possível com a stack atual?
 - **Esforço:** qual o custo aproximado de implementação?
@@ -50,6 +53,7 @@ Para cada ideia, avaliar:
 - **Timing:** faz sentido fazer isso agora?
 
 ### Fase 3 — Entrega estruturada
+
 Apresentar as 3-5 melhores ideias no formato abaixo.
 
 ## Formato de entrega obrigatório

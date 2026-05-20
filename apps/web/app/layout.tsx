@@ -1,18 +1,42 @@
 import type { Metadata, Viewport } from 'next'
-import { Manrope } from 'next/font/google'
-import { Toaster } from 'sonner'
+import { Outfit } from 'next/font/google'
+import { Toaster, type ToasterProps } from 'sonner'
 import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner'
 import { QueryProvider } from '@/providers/query-provider'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 // Otimização de fonte: carregamento local com display swap
-const manrope = Manrope({
+const outfit = Outfit({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-manrope',
+  variable: '--font-outfit',
   preload: true,
   fallback: ['Inter', 'Segoe UI', 'sans-serif'],
 })
+
+const toasterOffset = {
+  bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+  left: '1rem',
+  right: '1rem',
+  top: 'calc(env(safe-area-inset-top, 0px) + 1rem)',
+} satisfies Exclude<ToasterProps['offset'], string | number | undefined>
+
+const toasterMobileInsetX = 'max(0.75rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))'
+
+const toasterMobileOffset = {
+  bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+  left: toasterMobileInsetX,
+  right: toasterMobileInsetX,
+  top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+} satisfies Exclude<ToasterProps['mobileOffset'], string | number | undefined>
+
+const toastStyle = {
+  backdropFilter: 'blur(12px)',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  color: 'var(--text-primary)',
+} satisfies React.CSSProperties
 
 export const metadata: Metadata = {
   title: 'DESK IMPERIAL',
@@ -23,7 +47,7 @@ export const metadata: Metadata = {
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
     ],
     apple: [{ url: '/icons/icon-180.png', sizes: '180x180', type: 'image/png' }],
-    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#9b8460' }],
+    other: [{ rel: 'mask-icon', url: '/favicon.svg', color: '#008cff' }],
   },
   // PWA e mobile optimization
   manifest: '/manifest.json',
@@ -42,7 +66,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: 'cover',
-  themeColor: '#000000',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
 }
 
 export default function RootLayout({
@@ -51,21 +78,21 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={manrope.variable}>
-      <body className={manrope.className}>
-        <QueryProvider>
-          <div id="app-shell">{children}</div>
-        </QueryProvider>
+    <html suppressHydrationWarning className={outfit.variable} lang="pt-BR">
+      <body className={`${outfit.className} bg-[var(--bg)] text-[var(--text-primary)] antialiased transition-colors`}>
+        <ThemeProvider enableSystem attribute="class" defaultTheme="system">
+          <QueryProvider>
+            <div id="app-shell">{children}</div>
+          </QueryProvider>
+        </ThemeProvider>
         <Toaster
-          theme="dark"
-          position="top-center"
           richColors
+          mobileOffset={toasterMobileOffset}
+          offset={toasterOffset}
+          position="top-center"
+          theme="system"
           toastOptions={{
-            style: {
-              background: 'rgba(15,15,15,0.95)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(12px)',
-            },
+            style: toastStyle,
           }}
         />
         <div id="cookie-consent-root">

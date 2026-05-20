@@ -1,6 +1,6 @@
 # Roadmap — Desk Imperial
 
-**Última atualização:** 2026-04-01  
+**Última atualização:** 2026-04-01
 **Mantido por:** João Victor de Moraes da Cruz
 
 Este documento mostra o estado real do projeto e o que está planejado.
@@ -76,7 +76,7 @@ Os módulos principais estão completos e estáveis. Há débitos técnicos conh
 - [x] Índice de documentação (docs/INDEX.md)
 - [x] Documentação de produto (overview, requirements, user-flows, risks)
 - [x] Documentação de arquitetura (modules, database, realtime)
-- [ ] docs/DEMO.md — instruções de acesso à conta demo
+- [x] docs/DEMO.md — instruções de acesso à conta demo
 - [ ] Screenshots do produto
 
 ### Qualidade
@@ -92,11 +92,11 @@ Sem prazo definido. Ordem não é prioridade — depende de demanda real dos usu
 
 ### Alta prioridade
 
-| Item                       | Descrição                                                     |
-| -------------------------- | ------------------------------------------------------------- |
+| Item                       | Descrição                                                            |
+| -------------------------- | -------------------------------------------------------------------- |
 | **Monitoramento de erros** | Consolidação da stack OSS (OTel + Alloy + Tempo + Loki + Prometheus) |
-| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta    |
-| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.   |
+| **Import CSV de produtos** | Endpoint estava bloqueado — reativar com validação robusta           |
+| **Notificações push**      | Alertas para o dono quando caixa fecha, meta atingida, etc.          |
 
 ### Média prioridade
 

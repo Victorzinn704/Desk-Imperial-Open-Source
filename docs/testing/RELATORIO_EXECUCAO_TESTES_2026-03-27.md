@@ -1,8 +1,8 @@
 # 🧪 RELATÓRIO DE EXECUÇÃO DE TESTES - DESK IMPERIAL
 
-**Data da Execução:** 27 de março de 2026  
-**Responsável:** Staff Tech Leader em Testes Automatizados  
-**Tipo de Documento:** Relatório de Falhas e Análise de Cobertura  
+**Data da Execução:** 27 de março de 2026
+**Responsável:** Staff Tech Leader em Testes Automatizados
+**Tipo de Documento:** Relatório de Falhas e Análise de Cobertura
 **Status:** ⚠️ FALHAS CRÍTICAS IDENTIFICADAS
 
 ---
@@ -26,8 +26,8 @@
 
 ### Falha #1: `AppService - returns a healthy payload when db and redis are up`
 
-**Arquivo:** `apps/api/test/app.service.spec.ts`  
-**Linha:** 14  
+**Arquivo:** `apps/api/test/app.service.spec.ts`
+**Linha:** 14
 **Erro:** `TypeError: this.cacheService.isConfigured is not a function`
 
 #### 🔍 Análise do Problema
@@ -131,8 +131,8 @@ const mockCache = createMockCacheService({
 
 ### Falha #2: `AppService - returns error status when db is down`
 
-**Arquivo:** `apps/api/test/app.service.spec.ts`  
-**Linha:** 26  
+**Arquivo:** `apps/api/test/app.service.spec.ts`
+**Linha:** 26
 **Erro:** `TypeError: this.cacheService.isConfigured is not a function`
 
 #### 🔍 Análise do Problema
@@ -264,9 +264,9 @@ it('logs warning when health check fails', async () => {
 
 #### 2. `finance.service.ts` (100% não coberta - 0%)
 
-**Arquivo:** `apps/api/src/modules/finance/finance.service.ts`  
-**Linhas Totais:** 918  
-**Linhas Cobertas:** 0  
+**Arquivo:** `apps/api/src/modules/finance/finance.service.ts`
+**Linhas Totais:** 918
+**Linhas Cobertas:** 0
 **Linhas Descobertas:** TODAS
 
 **💡 Como Consertaria:**
@@ -388,9 +388,9 @@ describe('FinanceService', () => {
 
 #### 3. `geocoding.service.ts` (4.95% coberta)
 
-**Arquivo:** `apps/api/src/modules/geocoding/geocoding.service.ts`  
-**Linhas Totais:** 357  
-**Linhas Cobertas:** ~18  
+**Arquivo:** `apps/api/src/modules/geocoding/geocoding.service.ts`
+**Linhas Totais:** 357
+**Linhas Cobertas:** ~18
 **Linhas Descobertas:** ~339
 
 **Métodos Não Testados:**
@@ -546,9 +546,9 @@ describe('GeocodingService', () => {
 
 #### 4. `auth.service.ts` (26.99% coberta)
 
-**Arquivo:** `apps/api/src/modules/auth/auth.service.ts`  
-**Linhas Totais:** 1742  
-**Linhas Cobertas:** ~470  
+**Arquivo:** `apps/api/src/modules/auth/auth.service.ts`
+**Linhas Totais:** 1742
+**Linhas Cobertas:** ~470
 **Linhas Descobertas:** ~1272
 
 **Métodos Parcialmente Testados:**
@@ -956,8 +956,8 @@ A suíte de testes do DESK IMPERIAL está **funcionando parcialmente**, com **33
 
 ---
 
-**Documento elaborado por:** Staff Tech Leader em Testes Automatizados  
-**Data:** 27 de março de 2026  
+**Documento elaborado por:** Staff Tech Leader em Testes Automatizados
+**Data:** 27 de março de 2026
 **Próxima Revisão:** Após correção das falhas críticas
 
 ---

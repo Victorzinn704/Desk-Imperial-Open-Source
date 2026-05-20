@@ -19,6 +19,7 @@ describe('OperationsService (facade)', () => {
     },
     comanda: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
     },
   }
 
@@ -43,6 +44,7 @@ describe('OperationsService (facade)', () => {
 
   const helpers = {
     buildLiveSnapshot: jest.fn(),
+    buildStaffOperationalSnapshot: jest.fn(),
     buildKitchenView: jest.fn(),
     buildSummaryView: jest.fn(),
   }
@@ -66,10 +68,12 @@ describe('OperationsService (facade)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    prisma.comanda.findFirst.mockResolvedValue(null)
   })
 
   it('delega consultas de snapshot para helpers com escopo correto', async () => {
     helpers.buildLiveSnapshot.mockResolvedValue({ snapshot: 'live' })
+    helpers.buildStaffOperationalSnapshot.mockResolvedValue({ snapshot: 'staff-live' })
     helpers.buildKitchenView.mockResolvedValue({ snapshot: 'kitchen' })
     helpers.buildSummaryView.mockResolvedValue({ snapshot: 'summary' })
 
@@ -81,18 +85,18 @@ describe('OperationsService (facade)', () => {
       includeCashMovements: true,
       compactMode: true,
     })
-    const kitchen = await service.getKitchenView(ownerAuth, { businessDate: '2026-04-01' })
+    const kitchen = await service.getKitchenView(staffAuth, { businessDate: '2026-04-01' })
     const summary = await service.getSummaryView(ownerAuth, { businessDate: '2026-04-01' })
 
-    expect(live).toEqual({ snapshot: 'live' })
+    expect(live).toEqual({ snapshot: 'staff-live' })
     expect(kitchen).toEqual({ snapshot: 'kitchen' })
     expect(summary).toEqual({ snapshot: 'summary' })
 
-    expect(helpers.buildLiveSnapshot).toHaveBeenCalledWith(
+    expect(helpers.buildStaffOperationalSnapshot).toHaveBeenCalledWith(
       'owner-1',
       expect.any(Date),
       'employee-9',
-      expect.objectContaining({ includeCashMovements: true, compactMode: true }),
+      expect.objectContaining({ compactMode: true }),
     )
     expect(helpers.buildKitchenView).toHaveBeenCalledWith('owner-1', expect.any(Date), null)
     expect(helpers.buildSummaryView).toHaveBeenCalledWith('owner-1', expect.any(Date), null)
@@ -117,7 +121,9 @@ describe('OperationsService (facade)', () => {
     comanda.closeComanda.mockResolvedValue({ ok: 'close' })
     comanda.updateKitchenItemStatus.mockResolvedValue({ ok: 'kitchen' })
 
-    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({ ok: 'open-cash' })
+    await expect(service.openCashSession(auth, {} as any, context, options as any)).resolves.toEqual({
+      ok: 'open-cash',
+    })
     await expect(service.createCashMovement(auth, 'cash-1', {} as any, context, options as any)).resolves.toEqual({
       ok: 'movement',
     })
@@ -182,9 +188,13 @@ describe('OperationsService (facade)', () => {
     const result = await service.listMesas(makeOwnerAuthContext())
 
     expect(result).toHaveLength(2)
-    expect(result[0].status).toBe('ocupada')
-    expect(result[0].comandaId).toBe('comanda-1')
-    expect(result[1].status).toBe('reservada')
+    const firstMesa = result[0]
+    const secondMesa = result[1]
+    expect(firstMesa).toBeDefined()
+    expect(secondMesa).toBeDefined()
+    expect(firstMesa?.status).toBe('ocupada')
+    expect(firstMesa?.comandaId).toBe('comanda-1')
+    expect(secondMesa?.status).toBe('reservada')
   })
 
   it('bloqueia listagem de mesas para STAFF', async () => {
@@ -233,9 +243,9 @@ describe('OperationsService (facade)', () => {
   it('falha ao criar mesa com label duplicado', async () => {
     prisma.mesa.findUnique.mockResolvedValueOnce({ id: 'mesa-duplicada' })
 
-    await expect(
-      service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext()),
-    ).rejects.toThrow(ConflictException)
+    await expect(service.createMesa(makeOwnerAuthContext(), { label: 'Mesa 1' }, makeRequestContext())).rejects.toThrow(
+      ConflictException,
+    )
   })
 
   it('falha ao atualizar mesa inexistente ou de outro workspace', async () => {
@@ -343,7 +353,7 @@ describe('OperationsService (facade)', () => {
         makeOwnerAuthContext(),
         'mesa-1',
         {
-          section: '=1+cmd(\'calc\')',
+          section: "=1+cmd('calc')",
         },
         makeRequestContext(),
       ),

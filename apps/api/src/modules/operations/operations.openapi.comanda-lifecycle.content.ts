@@ -1,0 +1,6 @@
+export { buildAssignComandaPathDefinition } from './operations.openapi.comanda-assignment.content'
+export { buildCloseComandaPathDefinition } from './operations.openapi.comanda-close.content'
+export { buildComandaDetailsPathDefinition } from './operations.openapi.comanda-details.content'
+export { buildReplaceComandaPathDefinition } from './operations.openapi.comanda-edit.content'
+export { buildOpenComandaPathDefinition } from './operations.openapi.comanda-open.content'
+export { buildUpdateComandaStatusPathDefinition } from './operations.openapi.comanda-status.content'

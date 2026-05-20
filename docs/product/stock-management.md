@@ -79,11 +79,11 @@ available = product.stock - inCartQty
 
 `inCartQty` é a quantidade que o garçom já adicionou nessa comanda na sessão atual — o número mostrado desconta o que já foi reservado.
 
-| Situação | Cor | Texto |
-|---|---|---|
-| Estoque normal | Cinza (`--text-soft`) | `42 und` |
-| `isLowStock = true` ou `available ≤ 5` | Âmbar `#f59e0b` | `3 und` |
-| `available ≤ 0` | Vermelho `#f87171` | `Esgotado` |
+| Situação                               | Cor                   | Texto      |
+| -------------------------------------- | --------------------- | ---------- |
+| Estoque normal                         | Cinza (`--text-soft`) | `42 und`   |
+| `isLowStock = true` ou `available ≤ 5` | Âmbar `#f59e0b`       | `3 und`    |
+| `available ≤ 0`                        | Vermelho `#f87171`    | `Esgotado` |
 
 O garçom nunca fica sem informação: se adicionar 8 de um produto com 10 em estoque, o card muda para `2 und` em âmbar na hora.
 
@@ -116,26 +116,26 @@ O garçom nunca fica sem informação: se adicionar 8 de um produto com 10 em es
 
 ## Arquivos modificados
 
-| Arquivo | O que mudou |
-|---|---|
-| `apps/api/prisma/schema.prisma` | Campo `lowStockThreshold Int?` adicionado ao model `Product` |
-| `apps/api/prisma/migrations/20260402000000_*` | Migration SQL para a nova coluna |
-| `apps/api/src/modules/products/products.types.ts` | `isLowStock` calculado em `toProductRecord`, exposto em `ProductRecord` |
-| `apps/api/src/modules/products/dto/create-product.dto.ts` | Campo `lowStockThreshold` no DTO de criação |
-| `apps/api/src/modules/products/dto/update-product.dto.ts` | Campo `lowStockThreshold` no DTO de atualização |
-| `apps/api/src/modules/operations/operations-helpers.service.ts` | Baixa de estoque dentro da transação de fechamento |
-| `apps/api/src/modules/operations/comanda.service.ts` | `checkLowStockAfterClose` após fechamento |
-| `apps/api/src/modules/finance/finance.service.ts` | `lowStockItems` usa `isLowStock` em vez de `stock <= 10` fixo |
-| `packages/types/src/contracts.ts` | `lowStockThreshold` e `isLowStock` em `ProductRecord` compartilhado |
-| `apps/web/lib/validation.ts` | `lowStockThreshold` no `productSchema` (Zod) |
-| `apps/web/lib/api.ts` | `lowStockThreshold` em `ProductPayload` |
-| `apps/web/components/dashboard/product-form.tsx` | Campo de input no formulário de produto |
-| `apps/web/components/dashboard/environments/portfolio-environment.tsx` | Inclui `lowStockThreshold` no payload de criação/edição |
-| `apps/web/components/pdv/comanda-modal/types.ts` | `stock` e `isLowStock` em `SimpleProduct` |
-| `apps/web/components/pdv/pdv-board.tsx` | Tipo local `SimpleProduct` atualizado |
-| `apps/web/components/dashboard/environments/pdv-environment.tsx` | Mapeamento `ProductRecord → SimpleProduct` inclui stock |
-| `apps/web/components/pdv/comanda-modal/components/product-card.tsx` | Indicador visual de estoque no card do PDV |
-| `apps/web/components/dashboard/activity-timeline.tsx` | Renderização do evento `product.stock.low` |
+| Arquivo                                                                | O que mudou                                                             |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `apps/api/prisma/schema.prisma`                                        | Campo `lowStockThreshold Int?` adicionado ao model `Product`            |
+| `apps/api/prisma/migrations/20260402000000_*`                          | Migration SQL para a nova coluna                                        |
+| `apps/api/src/modules/products/products.types.ts`                      | `isLowStock` calculado em `toProductRecord`, exposto em `ProductRecord` |
+| `apps/api/src/modules/products/dto/create-product.dto.ts`              | Campo `lowStockThreshold` no DTO de criação                             |
+| `apps/api/src/modules/products/dto/update-product.dto.ts`              | Campo `lowStockThreshold` no DTO de atualização                         |
+| `apps/api/src/modules/operations/operations-helpers.service.ts`        | Baixa de estoque dentro da transação de fechamento                      |
+| `apps/api/src/modules/operations/comanda.service.ts`                   | `checkLowStockAfterClose` após fechamento                               |
+| `apps/api/src/modules/finance/finance.service.ts`                      | `lowStockItems` usa `isLowStock` em vez de `stock <= 10` fixo           |
+| `packages/types/src/contracts.ts`                                      | `lowStockThreshold` e `isLowStock` em `ProductRecord` compartilhado     |
+| `apps/web/lib/validation.ts`                                           | `lowStockThreshold` no `productSchema` (Zod)                            |
+| `apps/web/lib/api.ts`                                                  | `lowStockThreshold` em `ProductPayload`                                 |
+| `apps/web/components/dashboard/product-form.tsx`                       | Campo de input no formulário de produto                                 |
+| `apps/web/components/dashboard/environments/portfolio-environment.tsx` | Inclui `lowStockThreshold` no payload de criação/edição                 |
+| `apps/web/components/pdv/comanda-modal/types.ts`                       | `stock` e `isLowStock` em `SimpleProduct`                               |
+| `apps/web/components/pdv/pdv-board.tsx`                                | Tipo local `SimpleProduct` atualizado                                   |
+| `apps/web/components/dashboard/environments/pdv-environment.tsx`       | Mapeamento `ProductRecord → SimpleProduct` inclui stock                 |
+| `apps/web/components/pdv/comanda-modal/components/product-card.tsx`    | Indicador visual de estoque no card do PDV                              |
+| `apps/web/components/dashboard/activity-timeline.tsx`                  | Renderização do evento `product.stock.low`                              |
 
 ---
 
@@ -148,4 +148,4 @@ Em um PDV real, bloquear uma venda no momento do fechamento causaria fricção o
 Produtos têm velocidades de giro completamente diferentes. 20 unidades de Coca-Cola Lata pode ser normal; 20 unidades de um insumo raro pode ser crítico. Um threshold global seria inútil ou geraria alertas em excesso.
 
 **Por que `available = stock - inCartQty` no card?**
-O garçom precisa saber o que sobrou *considerando o que ele mesmo já adicionou na mesa*. Mostrar o estoque bruto seria enganoso: o card mostraria 10 und disponíveis mesmo depois de ele já ter adicionado 10 na comanda.
+O garçom precisa saber o que sobrou _considerando o que ele mesmo já adicionou na mesa_. Mostrar o estoque bruto seria enganoso: o card mostraria 10 und disponíveis mesmo depois de ele já ter adicionado 10 na comanda.

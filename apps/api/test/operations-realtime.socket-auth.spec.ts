@@ -70,7 +70,7 @@ describe('operations-realtime.socket-auth', () => {
     }
 
     await expect(
-      authenticateOperationsRealtimeSocket(socket as any, async () => ({ userId: 'u1' } as any)),
+      authenticateOperationsRealtimeSocket(socket as any, async () => ({ userId: 'u1' }) as any),
     ).rejects.toThrow(UnauthorizedException)
   })
 
@@ -102,13 +102,17 @@ describe('operations-realtime.socket-auth', () => {
     }
 
     await expect(
-      authenticateOperationsRealtimeSocket(socket as any, async () => ({
-        userId: 'owner-1',
-        role: 'OWNER',
-        status: 'INACTIVE',
-        workspaceOwnerUserId: 'owner-1',
-        companyOwnerUserId: 'owner-1',
-      } as any)),
+      authenticateOperationsRealtimeSocket(
+        socket as any,
+        async () =>
+          ({
+            userId: 'owner-1',
+            role: 'OWNER',
+            status: 'INACTIVE',
+            workspaceOwnerUserId: 'owner-1',
+            companyOwnerUserId: 'owner-1',
+          }) as any,
+      ),
     ).rejects.toThrow(ForbiddenException)
   })
 

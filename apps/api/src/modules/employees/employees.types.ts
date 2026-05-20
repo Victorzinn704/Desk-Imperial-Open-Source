@@ -9,7 +9,7 @@ export function toEmployeeRecord(
     employeeCode: employee.employeeCode,
     displayName: employee.displayName,
     active: employee.active,
-    hasLogin: Boolean(employee.passwordHash ?? employee.loginUserId),
+    hasLogin: Boolean(employee.passwordHash),
     salarioBase: Number(employee.salarioBase),
     percentualVendas: Number(employee.percentualVendas),
     createdAt: employee.createdAt.toISOString(),

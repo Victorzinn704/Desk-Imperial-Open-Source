@@ -13,6 +13,8 @@ export type OperationsRealtimeSocketData = {
   auth?: AuthContext
   workspaceOwnerUserId?: string
   workspaceChannel?: string
+  /** Token bruto normalizado — armazenado para invalidação do auth cache no disconnect. */
+  rawToken?: string
 }
 
 export interface OperationsRealtimeSocketLike {

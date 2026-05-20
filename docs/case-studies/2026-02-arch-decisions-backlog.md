@@ -41,6 +41,7 @@ Este arquivo documenta decisões tomadas durante o desenvolvimento que não fora
 ## Decisão: Centralização de queries do dashboard
 
 **Commits:**
+
 - `07014ca perf: centralize dashboard queries, throttle session lastSeenAt to 60s fire-and-forget`
 - `e166d79 refactor: centralize dashboard queries in useDashboardQueries hook`
 
@@ -57,6 +58,7 @@ O `lastSeenAt` de sessão foi throttled para 60 segundos com fire-and-forget par
 **Commit:** `0594f3c perf: fix P0/P1 bottlenecks (staleTime, orders aggregate, countdown isolate, finance TTL)`
 
 **Contexto:** Identificados gargalos críticos de performance:
+
 - `staleTime` não configurado causava refetch a cada navegação
 - Query de aggregate de pedidos sem índice adequado
 - Componente de countdown re-renderizando todo o dashboard a cada segundo
@@ -69,6 +71,7 @@ O `lastSeenAt` de sessão foi throttled para 60 segundos com fire-and-forget par
 ## Decisão: Mudança de maplibre-gl para Leaflet
 
 **Commits:**
+
 - `a954a1f fix: replace maplibre-gl with leaflet + CARTO dark tiles`
 - `2f17a39 fix: load leaflet CSS via DOM link instead of dynamic import`
 
@@ -83,6 +86,7 @@ O CSS do Leaflet precisou ser carregado via DOM link ao invés de import dinâmi
 ## Padrão identificado: ciclos de revert no redesign
 
 **Commits relevantes:**
+
 - `9cd3afb feat(ui): redesign SaaS premium`
 - `2e369b7 revert(web): restore frontend state before 9cd3afb`
 - `1b1adbc reverte(web): restaura frontend para o ponto 4187e5f`

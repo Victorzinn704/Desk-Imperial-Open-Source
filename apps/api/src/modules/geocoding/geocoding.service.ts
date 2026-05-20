@@ -1,71 +1,21 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { mapNominatimResult, mapViaCepResult } from './geocoding-mappers.util'
+import type {
+  GeocodedLocation,
+  GeocodeInput,
+  NominatimResult,
+  PostalCodeLookupResult,
+  ViaCepResult,
+} from './geocoding.types'
 
-type NominatimResult = {
-  lat: string
-  lon: string
-  address?: {
-    road?: string
-    house_number?: string
-    suburb?: string
-    neighbourhood?: string
-    quarter?: string
-    city_district?: string
-    city?: string
-    town?: string
-    village?: string
-    state?: string
-    postcode?: string
-    country?: string
-  }
-}
-
-type GeocodeInput = {
-  streetLine1?: string | null
-  streetNumber?: string | null
-  district?: string | null
-  city?: string | null
-  state?: string | null
-  postalCode?: string | null
-  country?: string | null
-}
-
-type ViaCepResult = {
-  cep?: string
-  logradouro?: string
-  complemento?: string
-  bairro?: string
-  localidade?: string
-  uf?: string
-  estado?: string
-  erro?: boolean
-}
-
-export type GeocodedLocation = {
-  streetLine1: string | null
-  streetNumber: string | null
-  district: string | null
-  city: string | null
-  state: string | null
-  postalCode: string | null
-  country: string | null
-  latitude: number
-  longitude: number
-  label: string
-  precision: 'city' | 'address'
-}
-
-export type PostalCodeLookupResult = {
-  postalCode: string
-  streetLine1: string | null
-  addressComplement: string | null
-  district: string | null
-  city: string | null
-  state: string | null
-  stateName: string | null
-  country: string
-  source: 'viacep'
-}
+export type {
+  GeocodedLocation,
+  GeocodeInput,
+  NominatimResult,
+  PostalCodeLookupResult,
+  ViaCepResult,
+} from './geocoding.types'
 
 @Injectable()
 export class GeocodingService {
@@ -118,10 +68,7 @@ export class GeocodingService {
       })
 
       if (response.status === 400) {
-        this.postalCodeCache.set(normalizedPostalCode, {
-          expiresAt: Date.now() + 5 * 60 * 1000,
-          result: null,
-        })
+        this.cachePostalCodeLookup(normalizedPostalCode, null, 5 * 60 * 1000)
         return null
       }
 
@@ -132,19 +79,13 @@ export class GeocodingService {
       const payload = (await response.json()) as ViaCepResult
 
       if (payload.erro === true) {
-        this.postalCodeCache.set(normalizedPostalCode, {
-          expiresAt: Date.now() + 30 * 60 * 1000,
-          result: null,
-        })
+        this.cachePostalCodeLookup(normalizedPostalCode, null, 30 * 60 * 1000)
         return null
       }
 
       const result = mapViaCepResult(payload, normalizedPostalCode)
 
-      this.postalCodeCache.set(normalizedPostalCode, {
-        expiresAt: Date.now() + this.getCacheTtlSeconds() * 1000,
-        result,
-      })
+      this.cachePostalCodeLookup(normalizedPostalCode, result, this.getCacheTtlSeconds() * 1000)
 
       return result
     } catch (error) {
@@ -199,17 +140,7 @@ export class GeocodingService {
     this.nextAllowedRequestAt = Date.now() + 1100
 
     try {
-      const url = new URL(this.getBaseUrl())
-      url.searchParams.set('format', 'jsonv2')
-      url.searchParams.set('limit', '1')
-      url.searchParams.set('addressdetails', '1')
-      url.searchParams.set('q', query)
-
-      const contactEmail = this.configService.get<string>('GEOCODING_CONTACT_EMAIL')?.trim()
-      if (contactEmail) {
-        url.searchParams.set('email', contactEmail)
-      }
-
+      const url = this.buildNominatimUrl(query)
       const response = await fetch(url, {
         headers: {
           'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.7',
@@ -225,10 +156,7 @@ export class GeocodingService {
       const firstResult = payload[0]
       const result = firstResult ? mapNominatimResult(firstResult, fallback, precision) : null
 
-      this.cache.set(cacheKey, {
-        expiresAt: Date.now() + this.getCacheTtlSeconds() * 1000,
-        result,
-      })
+      this.cacheGeocodeResult(cacheKey, result, this.getCacheTtlSeconds() * 1000)
 
       return result
     } catch (error) {
@@ -238,13 +166,39 @@ export class GeocodingService {
           : `Falha ao geocodificar "${query}".`,
       )
 
-      this.cache.set(cacheKey, {
-        expiresAt: Date.now() + 5 * 60 * 1000,
-        result: null,
-      })
+      this.cacheGeocodeResult(cacheKey, null, 5 * 60 * 1000)
 
       return null
     }
+  }
+
+  private buildNominatimUrl(query: string) {
+    const url = new URL(this.getBaseUrl())
+    url.searchParams.set('format', 'jsonv2')
+    url.searchParams.set('limit', '1')
+    url.searchParams.set('addressdetails', '1')
+    url.searchParams.set('q', query)
+
+    const contactEmail = this.configService.get<string>('GEOCODING_CONTACT_EMAIL')?.trim()
+    if (contactEmail) {
+      url.searchParams.set('email', contactEmail)
+    }
+
+    return url
+  }
+
+  private cacheGeocodeResult(cacheKey: string, result: GeocodedLocation | null, ttlMs: number) {
+    this.cache.set(cacheKey, {
+      expiresAt: Date.now() + ttlMs,
+      result,
+    })
+  }
+
+  private cachePostalCodeLookup(normalizedPostalCode: string, result: PostalCodeLookupResult | null, ttlMs: number) {
+    this.postalCodeCache.set(normalizedPostalCode, {
+      expiresAt: Date.now() + ttlMs,
+      result,
+    })
   }
 
   private getBaseUrl() {
@@ -271,10 +225,6 @@ function normalizePostalCode(value: string) {
   return /^\d{8}$/.test(digits) ? digits : null
 }
 
-function formatPostalCode(value: string) {
-  return `${value.slice(0, 5)}-${value.slice(5)}`
-}
-
 function buildCityQuery(input: {
   district?: string | null
   city?: string | null
@@ -294,62 +244,6 @@ function buildAddressQuery(input: GeocodeInput) {
     .map((value) => value?.trim())
     .filter(Boolean)
     .join(', ')
-}
-
-function mapNominatimResult(
-  result: NominatimResult,
-  fallback: GeocodeInput,
-  precision: 'city' | 'address',
-): GeocodedLocation | null {
-  const latitude = Number.parseFloat(result.lat)
-  const longitude = Number.parseFloat(result.lon)
-
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    return null
-  }
-
-  const streetLine1 = result.address?.road || fallback.streetLine1?.trim() || null
-  const streetNumber = result.address?.house_number || fallback.streetNumber?.trim() || null
-  const district =
-    result.address?.suburb ||
-    result.address?.neighbourhood ||
-    result.address?.quarter ||
-    result.address?.city_district ||
-    fallback.district?.trim() ||
-    null
-  const city = result.address?.city || result.address?.town || result.address?.village || fallback.city?.trim() || null
-  const state = result.address?.state || fallback.state?.trim() || null
-  const postalCode = result.address?.postcode || fallback.postalCode?.trim() || null
-  const country = result.address?.country || fallback.country?.trim() || null
-  const streetLabel = streetLine1 ? [streetLine1, streetNumber].filter(Boolean).join(', ') : null
-
-  return {
-    streetLine1,
-    streetNumber,
-    district,
-    city,
-    state,
-    postalCode,
-    country,
-    latitude,
-    longitude,
-    label: [streetLabel, district, city, state, postalCode, country].filter(Boolean).join(', '),
-    precision,
-  }
-}
-
-function mapViaCepResult(payload: ViaCepResult, normalizedPostalCode: string): PostalCodeLookupResult {
-  return {
-    postalCode: payload.cep?.trim() || formatPostalCode(normalizedPostalCode),
-    streetLine1: payload.logradouro?.trim() || null,
-    addressComplement: payload.complemento?.trim() || null,
-    district: payload.bairro?.trim() || null,
-    city: payload.localidade?.trim() || null,
-    state: payload.uf?.trim() || null,
-    stateName: payload.estado?.trim() || null,
-    country: 'Brasil',
-    source: 'viacep',
-  }
 }
 
 function wait(milliseconds: number) {

@@ -44,12 +44,64 @@ describe('OperationsRealtimeService', () => {
       }),
     )
     expect(listener).toHaveBeenCalledWith(envelope)
-    expect(namespace.to).toHaveBeenCalledWith('workspace:owner-1')
+    expect(namespace.to).toHaveBeenCalledWith('workspace:owner-1:cash')
     expect(emit).toHaveBeenCalledWith('cash.opened', envelope)
 
     unsubscribe()
     service.publishCashOpened(authWithWorkspace as any, payload as any)
     expect(listener).toHaveBeenCalledTimes(1)
+  })
+
+  it('segmenta canais de socket por dominio sem mudar o barramento local', () => {
+    const emit = jest.fn()
+    const namespace = {
+      to: jest.fn(() => ({ emit })),
+    }
+    service.attachNamespace(namespace as any)
+
+    service.publishKitchenItemQueued(
+      authWithWorkspace as any,
+      {
+        itemId: 'item-1',
+        comandaId: 'comanda-1',
+        mesaLabel: 'Mesa 1',
+        employeeId: null,
+        productName: 'Pastel',
+        quantity: 1,
+        notes: null,
+        kitchenStatus: 'QUEUED',
+        kitchenQueuedAt: '2026-04-01T09:00:00.000Z',
+        kitchenReadyAt: null,
+        businessDate: '2026-04-01',
+      } as any,
+    )
+    service.publishMesaUpserted(
+      authWithWorkspace as any,
+      {
+        mesaId: 'mesa-1',
+        label: 'Mesa 1',
+        status: 'livre',
+      } as any,
+    )
+    service.publishComandaUpdated(
+      authWithWorkspace as any,
+      {
+        comandaId: 'comanda-1',
+        mesaLabel: 'Mesa 1',
+        status: 'OPEN',
+        employeeId: null,
+        subtotal: 0,
+        discountAmount: 0,
+        serviceFeeAmount: 0,
+        totalAmount: 0,
+        totalItems: 0,
+        businessDate: '2026-04-01',
+      } as any,
+    )
+
+    expect(namespace.to).toHaveBeenNthCalledWith(1, 'workspace:owner-1:kitchen')
+    expect(namespace.to).toHaveBeenNthCalledWith(2, 'workspace:owner-1:mesa')
+    expect(namespace.to).toHaveBeenNthCalledWith(3, 'workspace:owner-1')
   })
 
   it('resolve workspace com fallback para companyOwnerUserId e userId', () => {
@@ -106,13 +158,13 @@ describe('OperationsRealtimeService', () => {
     service.publishKitchenItemUpdated(authWithWorkspace as any, {} as any)
     service.publishMesaUpserted(authWithWorkspace as any, {} as any)
 
-    expect(spy).toHaveBeenNthCalledWith(1, authWithWorkspace, 'cash.updated', {})
-    expect(spy).toHaveBeenNthCalledWith(2, authWithWorkspace, 'comanda.opened', {})
-    expect(spy).toHaveBeenNthCalledWith(3, authWithWorkspace, 'comanda.updated', {})
-    expect(spy).toHaveBeenNthCalledWith(4, authWithWorkspace, 'comanda.closed', {})
-    expect(spy).toHaveBeenNthCalledWith(5, authWithWorkspace, 'cash.closure.updated', {})
-    expect(spy).toHaveBeenNthCalledWith(6, authWithWorkspace, 'kitchen.item.queued', {})
-    expect(spy).toHaveBeenNthCalledWith(7, authWithWorkspace, 'kitchen.item.updated', {})
-    expect(spy).toHaveBeenNthCalledWith(8, authWithWorkspace, 'mesa.upserted', {})
+    expect(spy).toHaveBeenNthCalledWith(1, authWithWorkspace, 'cash.updated', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(2, authWithWorkspace, 'comanda.opened', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(3, authWithWorkspace, 'comanda.updated', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(4, authWithWorkspace, 'comanda.closed', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(5, authWithWorkspace, 'cash.closure.updated', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(6, authWithWorkspace, 'kitchen.item.queued', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(7, authWithWorkspace, 'kitchen.item.updated', {}, undefined)
+    expect(spy).toHaveBeenNthCalledWith(8, authWithWorkspace, 'mesa.upserted', {}, undefined)
   })
 })

@@ -1,10 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "target": "ES2022",
     "declaration": true,
+    "rootDir": "../../",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -13,8 +14,8 @@
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
-    "baseUrl": "./",
     "paths": {
+      "@/*": ["./src/*"],
       "@contracts/contracts": ["../../packages/types/src/index"]
     }
   },

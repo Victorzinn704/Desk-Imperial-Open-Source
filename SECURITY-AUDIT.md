@@ -21,6 +21,7 @@ Entrada do usuário → Zod schema → API fetch
 ```
 
 Exemplos:
+
 - `fullName`: `min(3)` · `max(120)`
 - `productName`: `min(2)` · `max(120)` — rejeita string vazia
 - `notes`: `max(280)` — só comprimento, sem caracteres especiais
@@ -66,16 +67,16 @@ React escapa automaticamente HTML em expressões `{valor}`. Nenhum `dangerouslyS
 
 Arquivo: `apps/web/next.config.ts`
 
-| Header | Valor | Proteção |
-|--------|-------|----------|
-| `X-Frame-Options` | `DENY` | Clickjacking |
-| `X-Content-Type-Options` | `nosniff` | MIME sniffing |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Vazamento de URL |
-| `HSTS` | `max-age=63072000; includeSubDomains; preload` | HTTPS forçado |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | APIs sensíveis |
-| `frame-ancestors` | `'none'` | Clickjacking (CSP) |
-| `base-uri` | `'self'` | Base tag injection |
-| `form-action` | `'self'` | Open redirect via form |
+| Header                   | Valor                                          | Proteção               |
+| ------------------------ | ---------------------------------------------- | ---------------------- |
+| `X-Frame-Options`        | `DENY`                                         | Clickjacking           |
+| `X-Content-Type-Options` | `nosniff`                                      | MIME sniffing          |
+| `Referrer-Policy`        | `strict-origin-when-cross-origin`              | Vazamento de URL       |
+| `HSTS`                   | `max-age=63072000; includeSubDomains; preload` | HTTPS forçado          |
+| `Permissions-Policy`     | `camera=(), microphone=(), geolocation=()`     | APIs sensíveis         |
+| `frame-ancestors`        | `'none'`                                       | Clickjacking (CSP)     |
+| `base-uri`               | `'self'`                                       | Base tag injection     |
+| `form-action`            | `'self'`                                       | Open redirect via form |
 
 ---
 
@@ -83,65 +84,65 @@ Arquivo: `apps/web/next.config.ts`
 
 ### 2.1 Módulo Auth
 
-| Campo | Coleta | Validação Frontend | Sanitização Backend | Renderização | Resultado |
-|-------|--------|--------------------|---------------------|--------------|-----------|
-| `fullName` | `register-form.tsx` | Zod min(3)/max(120) | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
-| `companyName` | `register-form.tsx` | Zod max(160) | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `email` | `login-form.tsx` | Zod `.email()` | `@IsEmail()` DTO | JSX text | ✅ Seguro |
-| `companyStreetLine1..State` | `register-form.tsx` | Zod min(2)/max(160) | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `companyPostalCode` | `register-form.tsx` | Regex `/^\d{5}-?\d{3}$/` | DTO `@Matches` | JSX text | ✅ Seguro |
-| `password` | `login-form.tsx` | Zod min(12) + regex forte | hash argon2id — nunca renderizado | — | ✅ Seguro |
-| `employeeCode` (login staff) | `login-form.tsx` | Zod min(2)/max(32) | `sanitizePlainText` | JSX text | ✅ Seguro |
+| Campo                        | Coleta              | Validação Frontend        | Sanitização Backend                 | Renderização | Resultado |
+| ---------------------------- | ------------------- | ------------------------- | ----------------------------------- | ------------ | --------- |
+| `fullName`                   | `register-form.tsx` | Zod min(3)/max(120)       | `sanitizePlainText` + rejectFormula | JSX text     | ✅ Seguro |
+| `companyName`                | `register-form.tsx` | Zod max(160)              | `sanitizePlainText`                 | JSX text     | ✅ Seguro |
+| `email`                      | `login-form.tsx`    | Zod `.email()`            | `@IsEmail()` DTO                    | JSX text     | ✅ Seguro |
+| `companyStreetLine1..State`  | `register-form.tsx` | Zod min(2)/max(160)       | `sanitizePlainText`                 | JSX text     | ✅ Seguro |
+| `companyPostalCode`          | `register-form.tsx` | Regex `/^\d{5}-?\d{3}$/`  | DTO `@Matches`                      | JSX text     | ✅ Seguro |
+| `password`                   | `login-form.tsx`    | Zod min(12) + regex forte | hash argon2id — nunca renderizado   | —            | ✅ Seguro |
+| `employeeCode` (login staff) | `login-form.tsx`    | Zod min(2)/max(32)        | `sanitizePlainText`                 | JSX text     | ✅ Seguro |
 
 ---
 
 ### 2.2 Módulo Produtos
 
-| Campo | Sanitização Backend | Renderização | Resultado |
-|-------|---------------------|--------------|-----------|
-| `name` | `sanitizePlainText` + rejectFormula | JSX text, cards, tabelas | ✅ Seguro |
-| `brand` | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
-| `category` | `sanitizePlainText` + rejectFormula | JSX text, filtros | ✅ Seguro |
-| `packagingClass` | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
-| `measurementUnit` | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
-| `description` | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
+| Campo             | Sanitização Backend                 | Renderização             | Resultado |
+| ----------------- | ----------------------------------- | ------------------------ | --------- |
+| `name`            | `sanitizePlainText` + rejectFormula | JSX text, cards, tabelas | ✅ Seguro |
+| `brand`           | `sanitizePlainText` + rejectFormula | JSX text                 | ✅ Seguro |
+| `category`        | `sanitizePlainText` + rejectFormula | JSX text, filtros        | ✅ Seguro |
+| `packagingClass`  | `sanitizePlainText` + rejectFormula | JSX text                 | ✅ Seguro |
+| `measurementUnit` | `sanitizePlainText` + rejectFormula | JSX text                 | ✅ Seguro |
+| `description`     | `sanitizePlainText` + rejectFormula | JSX text                 | ✅ Seguro |
 
 ---
 
 ### 2.3 Módulo Operações (PDV / Comandas / Mesas)
 
-| Campo | Sanitização Backend | Renderização | Resultado |
-|-------|---------------------|--------------|-----------|
-| `tableLabel` (mesa) | `sanitizePlainText` | JSX text, mobile grid | ✅ Seguro |
-| `section` (mesa) | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `customerName` | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `customerDocument` (CPF/CNPJ) | `sanitizePlainText` — mascarado via `maskBuyerDocument` na exibição | JSX text, mascarado `161.***.***-98` | ✅ Seguro |
-| `notes` (comanda) | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `productName` (item livre) | `sanitizePlainText` | JSX text | ✅ Seguro |
-| `notes` (item comanda) | `sanitizePlainText` | JSX text, kitchen view | ✅ Seguro |
-| `openingCashAmount`, `notes` (caixa) | `sanitizePlainText` (notes) | JSX text | ✅ Seguro |
+| Campo                                | Sanitização Backend                                                 | Renderização                         | Resultado |
+| ------------------------------------ | ------------------------------------------------------------------- | ------------------------------------ | --------- |
+| `tableLabel` (mesa)                  | `sanitizePlainText`                                                 | JSX text, mobile grid                | ✅ Seguro |
+| `section` (mesa)                     | `sanitizePlainText`                                                 | JSX text                             | ✅ Seguro |
+| `customerName`                       | `sanitizePlainText`                                                 | JSX text                             | ✅ Seguro |
+| `customerDocument` (CPF/CNPJ)        | `sanitizePlainText` — mascarado via `maskBuyerDocument` na exibição | JSX text, mascarado `161.***.***-98` | ✅ Seguro |
+| `notes` (comanda)                    | `sanitizePlainText`                                                 | JSX text                             | ✅ Seguro |
+| `productName` (item livre)           | `sanitizePlainText`                                                 | JSX text                             | ✅ Seguro |
+| `notes` (item comanda)               | `sanitizePlainText`                                                 | JSX text, kitchen view               | ✅ Seguro |
+| `openingCashAmount`, `notes` (caixa) | `sanitizePlainText` (notes)                                         | JSX text                             | ✅ Seguro |
 
 ---
 
 ### 2.4 Módulo Pedidos (Orders)
 
-| Campo | Sanitização Backend | Renderização | Resultado |
-|-------|---------------------|--------------|-----------|
-| `customerName` | `sanitizePlainText` | JSX text, tabelas | ✅ Seguro |
-| `buyerDocument` | CPF/CNPJ regex + dígito verificador | JSX text, mascarado | ✅ Seguro |
-| `buyerCity`, `buyerState`, `buyerCountry` | `sanitizePlainText` | JSX text, **mapa popup** | ⚠️ Ver §3.1 |
-| `buyerDistrict` | `sanitizePlainText` | JSX text, **mapa popup** | ⚠️ Ver §3.1 |
-| `channel` | `sanitizePlainText` | JSX text, filtros | ✅ Seguro |
-| `notes` | `sanitizePlainText` | JSX text | ✅ Seguro |
+| Campo                                     | Sanitização Backend                 | Renderização             | Resultado   |
+| ----------------------------------------- | ----------------------------------- | ------------------------ | ----------- |
+| `customerName`                            | `sanitizePlainText`                 | JSX text, tabelas        | ✅ Seguro   |
+| `buyerDocument`                           | CPF/CNPJ regex + dígito verificador | JSX text, mascarado      | ✅ Seguro   |
+| `buyerCity`, `buyerState`, `buyerCountry` | `sanitizePlainText`                 | JSX text, **mapa popup** | ⚠️ Ver §3.1 |
+| `buyerDistrict`                           | `sanitizePlainText`                 | JSX text, **mapa popup** | ⚠️ Ver §3.1 |
+| `channel`                                 | `sanitizePlainText`                 | JSX text, filtros        | ✅ Seguro   |
+| `notes`                                   | `sanitizePlainText`                 | JSX text                 | ✅ Seguro   |
 
 ---
 
 ### 2.5 Módulo Funcionários
 
-| Campo | Sanitização Backend | Renderização | Resultado |
-|-------|---------------------|--------------|-----------|
-| `displayName` | `sanitizePlainText` + rejectFormula | JSX text, ranking, mobile header | ✅ Seguro |
-| `employeeCode` | `sanitizePlainText` + rejectFormula | JSX text | ✅ Seguro |
+| Campo          | Sanitização Backend                 | Renderização                     | Resultado |
+| -------------- | ----------------------------------- | -------------------------------- | --------- |
+| `displayName`  | `sanitizePlainText` + rejectFormula | JSX text, ranking, mobile header | ✅ Seguro |
+| `employeeCode` | `sanitizePlainText` + rejectFormula | JSX text                         | ✅ Seguro |
 
 ---
 
@@ -176,6 +177,7 @@ Arquivo: `apps/web/next.config.ts`
 O padrão de rejeição é `/[<>]/` — captura apenas os caracteres ASCII `0x3C` (`<`) e `0x3E` (`>`).
 
 **Teste de bypass:**
+
 ```
 ＜script＞alert(1)＜/script＞
 ```
@@ -183,6 +185,7 @@ O padrão de rejeição é `/[<>]/` — captura apenas os caracteres ASCII `0x3C
 Os caracteres `＜` (U+FF1C) e `＞` (U+FF3E) são fullwidth e **não** são capturados.
 
 **Impacto real: zero.** Isso porque:
+
 1. React escapa todo conteúdo JSX — `＜script＞` é renderizado como texto literal, não executa
 2. Esses caracteres são Unicode inofensivos quando tratados como plain text
 3. O backend os armazena como texto e o frontend os exibe como texto
@@ -190,6 +193,7 @@ Os caracteres `＜` (U+FF1C) e `＞` (U+FF3E) são fullwidth e **não** são cap
 **Risco hipotético:** Se em alguma versão futura alguém usar `innerHTML` ou `dangerouslySetInnerHTML` diretamente com dados do banco sem passar pelo `escapeHtml()`, caracteres fullwidth não seriam bloqueados pelo sanitizador. O risco existe no futuro, não no código atual.
 
 **Recomendação:** Adicionar os fullwidth ao padrão de rejeição como defesa em profundidade:
+
 ```typescript
 // atual
 const htmlLikePattern = /[<>]/
@@ -207,7 +211,7 @@ const htmlLikePattern = /[<>\uFF1C\uFF3E\u2039\u203A]/
 
 ```typescript
 // map-canvas.tsx linha 137
-`<div><span>Vendas</span><strong>${point.orders}</strong></div>`
+;`<div><span>Vendas</span><strong>${point.orders}</strong></div>`
 //                                 ^ sem escapeHtml()
 ```
 
@@ -240,14 +244,17 @@ html: `<div class="map-marker-pulse" style="width:${radius * 2 + 16}px;...`
 Caracteres de controle Unicode bidirecionais como `\u202E` (RIGHT-TO-LEFT OVERRIDE) têm charCode > 127, portanto não são removidos pelo filtro de controle (que só remove 0x00–0x1F e 0x7F).
 
 **Teste:**
+
 ```
 Pedro‮odro‭P
 ```
+
 Poderia inverter visualmente o texto na interface — o nome exibido seria diferente do armazenado.
 
 **Impacto:** UI spoofing, sem execução de código. Um funcionário poderia cadastrar um nome de produto visualmente enganoso.
 
 **Recomendação:** Adicionar remoção de bidi overrides ao normalizador:
+
 ```typescript
 // Adicionar após a substituição de controle chars:
 const bidiOverrides = /[\u200F\u200E\u202A-\u202E\u2066-\u2069]/g
@@ -277,14 +284,14 @@ const revenue = formatCurrency(point.revenue, displayCurrency)
 
 **Payload:** `<script>alert(document.cookie)</script>`
 
-| Ponto de entrada | Chega ao banco? | Executa? |
-|-----------------|----------------|---------|
-| Nome do produto | ❌ Bloqueado pelo `sanitizePlainText` (detecta `<`) | — |
-| Observação da comanda | ❌ Bloqueado | — |
-| Nome do funcionário | ❌ Bloqueado | — |
-| Nome do cliente (pedido) | ❌ Bloqueado | — |
-| Mesa / tableLabel | ❌ Bloqueado | — |
-| Cidade/estado (pedido) | ❌ Bloqueado | — |
+| Ponto de entrada         | Chega ao banco?                                     | Executa? |
+| ------------------------ | --------------------------------------------------- | -------- |
+| Nome do produto          | ❌ Bloqueado pelo `sanitizePlainText` (detecta `<`) | —        |
+| Observação da comanda    | ❌ Bloqueado                                        | —        |
+| Nome do funcionário      | ❌ Bloqueado                                        | —        |
+| Nome do cliente (pedido) | ❌ Bloqueado                                        | —        |
+| Mesa / tableLabel        | ❌ Bloqueado                                        | —        |
+| Cidade/estado (pedido)   | ❌ Bloqueado                                        | —        |
 
 ---
 
@@ -349,18 +356,19 @@ const revenue = formatCurrency(point.revenue, displayCurrency)
 
 ## 5. Resumo Executivo
 
-| # | Achado | Severidade | Status |
-|---|--------|-----------|--------|
-| FINDING-01 | CSP com `unsafe-inline` — proteção de script fraca | Média | Limitação de plataforma (Next.js) |
-| FINDING-02 | Fullwidth Unicode `＜＞` passa no sanitizador | Baixa | Impacto zero (React escapa) |
-| FINDING-03 | `point.orders` sem escapeHtml no popup | Informacional | Seguro (inteiro, nunca texto de usuário) |
-| FINDING-04 | `divIcon` pulse com valores matemáticos em innerHTML | Nenhuma | Seguro (valores matemáticos puros) |
-| FINDING-05 | Bidi override chars passam pelo sanitizador | Baixa | Risco de UI spoofing, sem execução |
-| FINDING-06 | `escapeHtml` em formatCurrency — redundante mas correto | Positivo | Boa prática, manter |
+| #          | Achado                                                  | Severidade    | Status                                   |
+| ---------- | ------------------------------------------------------- | ------------- | ---------------------------------------- |
+| FINDING-01 | CSP com `unsafe-inline` — proteção de script fraca      | Média         | Limitação de plataforma (Next.js)        |
+| FINDING-02 | Fullwidth Unicode `＜＞` passa no sanitizador           | Baixa         | Impacto zero (React escapa)              |
+| FINDING-03 | `point.orders` sem escapeHtml no popup                  | Informacional | Seguro (inteiro, nunca texto de usuário) |
+| FINDING-04 | `divIcon` pulse com valores matemáticos em innerHTML    | Nenhuma       | Seguro (valores matemáticos puros)       |
+| FINDING-05 | Bidi override chars passam pelo sanitizador             | Baixa         | Risco de UI spoofing, sem execução       |
+| FINDING-06 | `escapeHtml` em formatCurrency — redundante mas correto | Positivo      | Boa prática, manter                      |
 
 ### Pontuação geral de segurança contra XSS/Injeção de script: **ALTA**
 
 O projeto tem defesa em 4 camadas independentes. Para que um XSS seja executado, um atacante precisaria quebrar **simultaneamente**:
+
 1. A validação Zod no frontend
 2. O `class-validator` no DTO do backend
 3. O `sanitizePlainText` no service
@@ -393,11 +401,11 @@ Em `comanda.service.ts`, o `openComanda` cria itens via `createMany` com `draftI
 
 ## 7. Arquivos-chave de Referência
 
-| Arquivo | Função de segurança |
-|---------|---------------------|
-| `apps/api/src/common/utils/input-hardening.util.ts` | Sanitizador principal |
-| `apps/web/lib/validation.ts` | Schemas Zod (frontend) |
-| `apps/web/next.config.ts` | Headers HTTP de segurança |
-| `apps/web/components/dashboard/map-canvas.tsx` | Único ponto de innerHTML controlado com escapeHtml |
-| `apps/web/components/dashboard/sales-map-canvas.tsx` | Idem |
-| `apps/web/lib/dashboard-format.ts` | Mascaramento de CPF/CNPJ (LGPD) |
+| Arquivo                                              | Função de segurança                                |
+| ---------------------------------------------------- | -------------------------------------------------- |
+| `apps/api/src/common/utils/input-hardening.util.ts`  | Sanitizador principal                              |
+| `apps/web/lib/validation.ts`                         | Schemas Zod (frontend)                             |
+| `apps/web/next.config.ts`                            | Headers HTTP de segurança                          |
+| `apps/web/components/dashboard/map-canvas.tsx`       | Único ponto de innerHTML controlado com escapeHtml |
+| `apps/web/components/dashboard/sales-map-canvas.tsx` | Idem                                               |
+| `apps/web/lib/dashboard-format.ts`                   | Mascaramento de CPF/CNPJ (LGPD)                    |

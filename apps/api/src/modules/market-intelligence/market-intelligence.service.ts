@@ -8,37 +8,22 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { RequestContext } from '../../common/utils/request-context.util'
-import { sanitizePlainText } from '../../common/utils/input-hardening.util'
 import { CacheService } from '../../common/services/cache.service'
+import { resolveAuthActorUserId } from '../auth/auth-shared.util'
 import { FinanceService } from '../finance/finance.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import type { AuthContext } from '../auth/auth.types'
+import {
+  buildGeminiInsightRequestBody,
+  extractGeminiResponseText,
+  type GeminiGenerateContentResponse,
+} from './market-intelligence-gemini.util'
+import { buildMarketInsightPrompt } from './market-intelligence.prompt'
+import { normalizeInsightPayload } from './market-intelligence.payload'
+import { resolveMarketInsightFocus } from './market-intelligence.scope'
+import type { MarketInsightFocus, MarketInsightResponse, RateLimitEntry } from './market-intelligence.types'
 
-type RateLimitEntry = {
-  count: number
-  firstAttemptAt: number
-  lockedUntil: number | null
-}
-
-export type MarketInsightResponse = {
-  generatedAt: string
-  model: string
-  focus: string
-  cached: boolean
-  summary: string
-  forecast: string
-  opportunities: string[]
-  risks: string[]
-  nextActions: string[]
-}
-
-type MarketInsightModelPayload = {
-  summary?: unknown
-  forecast?: unknown
-  opportunities?: unknown
-  risks?: unknown
-  nextActions?: unknown
-}
+export type { MarketInsightResponse } from './market-intelligence.types'
 
 @Injectable()
 export class MarketIntelligenceService {
@@ -56,27 +41,48 @@ export class MarketIntelligenceService {
     focus: string | undefined,
     context: RequestContext,
   ): Promise<MarketInsightResponse> {
-    const normalizedFocus =
-      sanitizePlainText(focus, 'Foco da analise', {
-        allowEmpty: true,
-        rejectFormula: true,
-      }) ?? 'Visao executiva geral'
-
-    const insightCacheKey = CacheService.geminiKey(auth.userId, auth.preferredCurrency, normalizedFocus)
-    const cached = await this.cache.get<MarketInsightResponse>(insightCacheKey)
+    const insightFocus = resolveMarketInsightFocus(focus)
+    const cacheKey = CacheService.geminiKey(auth.userId, auth.preferredCurrency, insightFocus.value)
+    const cached = await this.getCachedInsight({ auth, context, focus: insightFocus, cacheKey })
 
     if (cached) {
-      await this.auditLogService.record({
-        actorUserId: auth.userId,
-        event: 'market-intelligence.cached',
-        resource: 'market_intelligence',
-        metadata: { focus: normalizedFocus, model: cached.model },
-        ipAddress: context.ipAddress,
-        userAgent: context.userAgent,
-      })
-      return { ...cached, cached: true }
+      return cached
     }
 
+    const apiKey = this.requireApiKey()
+    const rateLimitState = await this.consumeRateLimit({ auth, context })
+    const result = await this.generateInsight({ auth, focus: insightFocus, apiKey })
+
+    await this.cache.set(cacheKey, result, this.getCacheTtlSeconds())
+    await this.recordGeneratedInsight({ auth, context, focus: insightFocus, result, rateLimitState })
+
+    return result
+  }
+
+  private async getCachedInsight(params: {
+    auth: AuthContext
+    context: RequestContext
+    focus: MarketInsightFocus
+    cacheKey: string
+  }) {
+    const cached = await this.cache.get<MarketInsightResponse>(params.cacheKey)
+    if (!cached) {
+      return null
+    }
+
+    await this.auditLogService.record({
+      actorUserId: resolveAuthActorUserId(params.auth),
+      event: 'market-intelligence.cached',
+      resource: 'market_intelligence',
+      metadata: { focus: params.focus.value, model: cached.model },
+      ipAddress: params.context.ipAddress,
+      userAgent: params.context.userAgent,
+    })
+
+    return { ...cached, cached: true }
+  }
+
+  private requireApiKey() {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY')
     if (!apiKey) {
       throw new ServiceUnavailableException(
@@ -84,52 +90,52 @@ export class MarketIntelligenceService {
       )
     }
 
-    const rateLimitKey = CacheService.ratelimitKey('gemini', this.buildRateLimitKey(auth.userId, context.ipAddress))
+    return apiKey
+  }
+
+  private async consumeRateLimit(params: { auth: AuthContext; context: RequestContext }) {
+    const rateLimitKey = CacheService.ratelimitKey(
+      'gemini',
+      this.buildRateLimitKey({ userId: params.auth.userId, ipAddress: params.context.ipAddress }),
+    )
+
     await this.assertRequestAllowed(rateLimitKey)
-    const rateLimitState = await this.recordRequest(rateLimitKey)
+    return this.recordRequest(rateLimitKey)
+  }
 
-    const finance = await this.financeService.getSummaryForUser(auth)
-    const model = this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash'
+  private async generateInsight(params: { auth: AuthContext; focus: MarketInsightFocus; apiKey: string }) {
+    const finance = await this.financeService.getSummaryForUser(params.auth)
+    const model = this.getModel()
+    const rawText = await this.requestProvider({
+      apiKey: params.apiKey,
+      auth: params.auth,
+      finance,
+      focus: params.focus,
+      model,
+    })
+    const insight = normalizeInsightPayload(rawText)
 
-    let response: Response
-    try {
-      response = await fetch(this.buildModelUrl(model, apiKey), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: buildPrompt({ auth, finance, focus: normalizedFocus }) }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.45,
-            topP: 0.9,
-            maxOutputTokens: this.getMaxOutputTokens(),
-            responseMimeType: 'application/json',
-            thinkingConfig: { thinkingBudget: this.getThinkingBudget() },
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                summary: { type: 'STRING' },
-                forecast: { type: 'STRING' },
-                opportunities: { type: 'ARRAY', items: { type: 'STRING' } },
-                risks: { type: 'ARRAY', items: { type: 'STRING' } },
-                nextActions: { type: 'ARRAY', items: { type: 'STRING' } },
-              },
-              required: ['summary', 'forecast', 'opportunities', 'risks', 'nextActions'],
-            },
-          },
-        }),
-      })
-    } catch (error) {
-      this.logger.warn(`Gemini nao respondeu: ${String(error)}`)
-      throw new ServiceUnavailableException(
-        'Nao foi possivel conectar ao servico de IA neste momento. Tente novamente em instantes.',
-      )
+    return {
+      generatedAt: new Date().toISOString(),
+      model,
+      focus: params.focus.value,
+      cached: false,
+      summary: insight.summary,
+      forecast: insight.forecast,
+      opportunities: insight.opportunities,
+      risks: insight.risks,
+      nextActions: insight.nextActions,
     }
+  }
+
+  private async requestProvider(params: {
+    apiKey: string
+    auth: AuthContext
+    finance: Awaited<ReturnType<FinanceService['getSummaryForUser']>>
+    focus: MarketInsightFocus
+    model: string
+  }) {
+    const response = await this.fetchProviderResponse(params)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -140,49 +146,75 @@ export class MarketIntelligenceService {
     }
 
     const payload = (await response.json()) as GeminiGenerateContentResponse
-    const rawText = payload.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text ?? '')
-      .join('')
-      ?.trim()
+    const rawText = extractGeminiResponseText(payload)
     if (!rawText) {
       throw new BadGatewayException('A IA nao retornou uma leitura valida para esta consulta.')
     }
 
-    const insight = normalizeInsightPayload(rawText)
-    const result: MarketInsightResponse = {
-      generatedAt: new Date().toISOString(),
-      model,
-      focus: normalizedFocus,
-      cached: false,
-      summary: insight.summary,
-      forecast: insight.forecast,
-      opportunities: insight.opportunities,
-      risks: insight.risks,
-      nextActions: insight.nextActions,
+    return rawText
+  }
+
+  private async fetchProviderResponse(params: {
+    apiKey: string
+    auth: AuthContext
+    finance: Awaited<ReturnType<FinanceService['getSummaryForUser']>>
+    focus: MarketInsightFocus
+    model: string
+  }) {
+    try {
+      return await fetch(this.buildModelUrl({ model: params.model, apiKey: params.apiKey }), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
+        body: JSON.stringify(
+          buildGeminiInsightRequestBody({
+            prompt: buildMarketInsightPrompt({
+              auth: params.auth,
+              finance: params.finance,
+              focus: params.focus,
+            }),
+            maxOutputTokens: this.getMaxOutputTokens(),
+            thinkingBudget: this.getThinkingBudget(),
+          }),
+        ),
+      })
+    } catch (error) {
+      this.logger.warn(`Gemini nao respondeu: ${String(error)}`)
+      throw new ServiceUnavailableException(
+        'Nao foi possivel conectar ao servico de IA neste momento. Tente novamente em instantes.',
+      )
     }
+  }
 
-    await this.cache.set(insightCacheKey, result, this.getCacheTtlSeconds())
-
+  private async recordGeneratedInsight(params: {
+    auth: AuthContext
+    context: RequestContext
+    focus: MarketInsightFocus
+    result: MarketInsightResponse
+    rateLimitState: RateLimitEntry
+  }) {
     await this.auditLogService.record({
-      actorUserId: auth.userId,
+      actorUserId: resolveAuthActorUserId(params.auth),
       event: 'market-intelligence.generated',
       resource: 'market_intelligence',
       metadata: {
-        focus: normalizedFocus,
-        model,
-        attempts: rateLimitState.count,
-        lockedUntil: rateLimitState.lockedUntil ? new Date(rateLimitState.lockedUntil).toISOString() : null,
+        focus: params.focus.value,
+        model: params.result.model,
+        attempts: params.rateLimitState.count,
+        lockedUntil: params.rateLimitState.lockedUntil
+          ? new Date(params.rateLimitState.lockedUntil).toISOString()
+          : null,
       },
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
+      ipAddress: params.context.ipAddress,
+      userAgent: params.context.userAgent,
     })
-
-    return result
   }
 
   private async assertRequestAllowed(redisKey: string): Promise<void> {
     const entry = await this.cache.get<RateLimitEntry>(redisKey)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     const now = Date.now()
 
@@ -213,7 +245,6 @@ export class MarketIntelligenceService {
     const shouldLock = newCount >= this.getMaxRequests()
     const lockedUntil = shouldLock ? now + this.getLockMs() : null
     const updated: RateLimitEntry = { count: newCount, firstAttemptAt: existing.firstAttemptAt, lockedUntil }
-
     const ttlSeconds = shouldLock
       ? Math.ceil(this.getLockMs() / 1000)
       : Math.ceil((existing.firstAttemptAt + this.getWindowMs() - now) / 1000)
@@ -222,8 +253,12 @@ export class MarketIntelligenceService {
     return updated
   }
 
-  private buildRateLimitKey(userId: string, ipAddress: string | null) {
-    return `market-intelligence:${userId}:${ipAddress ?? 'unknown'}`
+  private buildRateLimitKey(params: { userId: string; ipAddress: string | null }) {
+    return `market-intelligence:${params.userId}:${params.ipAddress ?? 'unknown'}`
+  }
+
+  private getModel() {
+    return this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash'
   }
 
   private getRequestTimeoutMs() {
@@ -239,10 +274,10 @@ export class MarketIntelligenceService {
     return Number.isFinite(configured) ? configured : 0
   }
 
-  private buildModelUrl(model: string, apiKey: string) {
+  private buildModelUrl(params: { model: string; apiKey: string }) {
     const baseUrl =
       this.configService.get<string>('GEMINI_API_URL') ?? 'https://generativelanguage.googleapis.com/v1beta/models'
-    return `${baseUrl}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
+    return `${baseUrl}/${params.model}:generateContent?key=${encodeURIComponent(params.apiKey)}`
   }
 
   private getCacheTtlSeconds() {
@@ -260,94 +295,4 @@ export class MarketIntelligenceService {
   private getLockMs() {
     return Math.max(Number(this.configService.get<string>('GEMINI_LOCK_MINUTES') ?? 60), 1) * 60 * 1000
   }
-}
-
-type GeminiGenerateContentResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>
-    }
-  }>
-}
-
-function buildPrompt(params: {
-  auth: AuthContext
-  finance: Awaited<ReturnType<FinanceService['getSummaryForUser']>>
-  focus: string
-}) {
-  const payload = {
-    companyName: params.auth.companyName ?? params.auth.fullName,
-    displayCurrency: params.finance.displayCurrency,
-    ratesUpdatedAt: params.finance.ratesUpdatedAt,
-    totals: params.finance.totals,
-    salesByChannel: params.finance.salesByChannel.slice(0, 5),
-    topCustomers: params.finance.topCustomers.slice(0, 5),
-    topProducts: params.finance.topProducts.slice(0, 5).map((product) => ({
-      name: product.name,
-      category: product.category,
-      stock: product.stock,
-      marginPercent: product.marginPercent,
-      inventorySalesValue: product.inventorySalesValue,
-      potentialProfit: product.potentialProfit,
-    })),
-    topEmployees: params.finance.topEmployees.slice(0, 5),
-    topRegions: params.finance.topRegions.slice(0, 5),
-    revenueTimeline: params.finance.revenueTimeline,
-    categoryBreakdown: params.finance.categoryBreakdown.slice(0, 6),
-    focus: params.focus,
-  }
-
-  return [
-    'Voce e um consultor executivo de mercado e previsao comercial para pequenas e medias operacoes.',
-    'Use apenas os dados internos abaixo. Nao invente noticias externas, cotacoes adicionais ou fatos nao fornecidos.',
-    'Quando fizer previsoes, trate-as como inferencias de curto prazo baseadas na operacao observada.',
-    'Responda em portugues do Brasil.',
-    'Entregue JSON valido com as chaves:',
-    '- summary: resumo executivo em 2 ou 3 frases',
-    '- forecast: previsao de curto prazo com explicacao objetiva',
-    '- opportunities: lista de 3 oportunidades',
-    '- risks: lista de 3 riscos',
-    '- nextActions: lista de 3 a 4 acoes praticas',
-    '',
-    `Foco principal da consulta: ${params.focus}`,
-    '',
-    'Dados da operacao:',
-    JSON.stringify(payload, null, 2),
-  ].join('\n')
-}
-
-function normalizeInsightPayload(rawText: string) {
-  let parsed: MarketInsightModelPayload
-
-  try {
-    parsed = JSON.parse(rawText) as MarketInsightModelPayload
-  } catch {
-    throw new BadGatewayException('A IA retornou um formato invalido para a leitura executiva.')
-  }
-
-  const summary = normalizeString(parsed.summary)
-  const forecast = normalizeString(parsed.forecast)
-  const opportunities = normalizeStringArray(parsed.opportunities, 3)
-  const risks = normalizeStringArray(parsed.risks, 3)
-  const nextActions = normalizeStringArray(parsed.nextActions, 4)
-
-  if (!summary || !forecast || !opportunities.length || !risks.length || !nextActions.length) {
-    throw new BadGatewayException('A resposta da IA veio incompleta para o dashboard executivo.')
-  }
-
-  return { summary, forecast, opportunities, risks, nextActions }
-}
-
-function normalizeString(value: unknown) {
-  if (typeof value !== 'string') return ''
-  return value.replace(/\s+/g, ' ').trim()
-}
-
-function normalizeStringArray(value: unknown, maxItems: number) {
-  if (!Array.isArray(value)) return []
-  return value
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .slice(0, maxItems)
 }

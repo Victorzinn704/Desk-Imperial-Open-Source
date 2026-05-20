@@ -24,7 +24,7 @@ export function CardSkeleton({ rows = 1 }: Readonly<{ rows?: number }>) {
   return (
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="imperial-card h-24 space-y-3 p-5">
+        <div className="imperial-card h-24 space-y-3 p-5" key={i}>
           <Skeleton className="h-6 w-40 rounded-lg" />
           <div className="space-y-2">
             <Skeleton className="h-4 w-32 rounded-full" />
@@ -60,7 +60,7 @@ export function ChartSkeleton() {
       <Skeleton className="h-64 rounded-2xl" />
       <div className="flex gap-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-4 flex-1 rounded-full" />
+          <Skeleton className="h-4 flex-1 rounded-full" key={i} />
         ))}
       </div>
     </div>
@@ -78,7 +78,7 @@ export function TableSkeleton({ rows = 5 }: Readonly<{ rows?: number }>) {
       </div>
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="imperial-card-soft flex gap-4 px-4 py-3">
+        <div className="imperial-card-soft flex gap-4 px-4 py-3" key={i}>
           <Skeleton className="h-4 w-20 flex-1 rounded-full" />
           <Skeleton className="h-4 w-20 flex-1 rounded-full" />
           <Skeleton className="h-4 w-20 rounded-full" />
