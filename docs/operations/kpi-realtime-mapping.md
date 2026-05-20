@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir de forma explícita quais KPIs do Desk Imperial devem reagir a cada evento operacional, sem misturar fechamento consolidado, caixa por sessão e projeção do salão.
+Definir de forma explicita quais KPIs do Desk Imperial devem reagir a cada evento operacional, sem misturar fechamento consolidado, caixa por sessao, pressao de cozinha e estado do salao.
 
 ## KPI por fonte de verdade
 
@@ -72,15 +72,43 @@ Definir de forma explícita quais KPIs do Desk Imperial devem reagir a cada even
   - `comanda.closed`
   - `cash.closure.updated`
 
+### 7. Pressao de cozinha
+
+- Fonte principal:
+  - `kitchen.statusCounts`
+  - ou agregacao equivalente do snapshot operacional
+- Significado: volume de itens em `QUEUED` e `IN_PREPARATION`
+- Deve reagir a:
+  - `kitchen.item.queued`
+  - `kitchen.item.updated`
+- Nao deve reagir a:
+  - `cash.updated`
+  - `cash.closure.updated`
+
+### 8. Ocupacao de mesas
+
+- Fonte principal:
+  - snapshot de `mesas`
+- Significado: salao livre vs ocupado e rotacao de mesa
+- Deve reagir a:
+  - `mesa.upserted`
+  - `comanda.opened`
+  - `comanda.closed`
+- Nao deve depender de:
+  - `cash.updated`
+
 ## Regra operacional
 
 - `comanda.updated` atualiza estado vivo do salao
 - `comanda.closed` atualiza estado vivo e resultado realizado
 - `cash.updated` atualiza caixa por sessão
 - `cash.closure.updated` atualiza consolidado executivo real
+- `kitchen.item.*` atualiza apenas pressao operacional de cozinha
+- `mesa.upserted` atualiza apenas estado/planta de mesa
 
 ## Diretriz de refinamento
 
 - Evitar usar `cash.closure.updated` como "evento universal"
 - Preferir que cada KPI seja atualizado pelo evento do seu dominio
 - Manter o servidor como fonte de verdade e o cache como espelho rápido
+- Em reconnect, o KPI deve aceitar refresh por baseline HTTP quando a malha realtime nao for suficiente para garantir consistencia

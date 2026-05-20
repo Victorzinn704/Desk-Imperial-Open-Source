@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { gotoWithConsent, test, expect, fillOwnerLogin } from './fixtures/auth-fixtures'
+import { expect, fillOwnerLogin, gotoWithConsent, test } from './fixtures/auth-fixtures'
 
 type E2EWindow = Window & {
   __E2E_UNHANDLED_REJECTIONS__?: string[]
@@ -49,6 +49,14 @@ test.describe('Critical Flows E2E - Chromium', () => {
 
   test('TC-E2E-CRIT-003: rota protegida redireciona sem exception em runtime', async ({ page }) => {
     const watch = await startSilentFailureWatch(page)
+
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Sessao expirada.' }),
+      })
+    })
 
     await gotoWithConsent(page, '/app')
 

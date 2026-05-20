@@ -34,6 +34,12 @@ type FeedbackReceiptTemplateParams = BaseTemplateParams & {
   ticketId: string
 }
 
+type TelegramLinkedTemplateParams = BaseTemplateParams & {
+  linkedAt: Date
+  telegramUsername?: string | null
+  telegramChatId: string
+}
+
 export function buildPasswordResetEmailContent(params: CodeTemplateParams) {
   return buildCodeEmail({
     appName: params.appName,
@@ -249,6 +255,50 @@ export function buildFeedbackReceiptEmailContent(params: FeedbackReceiptTemplate
   }
 }
 
+export function buildTelegramLinkedEmailContent(params: TelegramLinkedTemplateParams) {
+  const linkedAt = formatDateTime(params.linkedAt)
+  const usernameLine = params.telegramUsername ? `@${params.telegramUsername}` : 'username não informado'
+
+  const text = [
+    `Prezado(a) ${params.fullName},`,
+    '',
+    'Uma conta do Telegram foi vinculada ao seu acesso no DESK IMPERIAL.',
+    `Data e hora: ${linkedAt}`,
+    `Telegram: ${usernameLine}`,
+    `Chat ID: ${params.telegramChatId}`,
+    '',
+    'Se foi você, nenhuma ação adicional é necessária.',
+    `Se você não reconhece este vínculo, desvincule pelo portal e entre em contato com ${params.supportEmail}.`,
+  ].join('\n')
+
+  const html = buildEmailLayout({
+    appName: params.appName,
+    previewText: 'Uma conta Telegram foi vinculada ao seu acesso no DESK IMPERIAL.',
+    eyebrow: 'Alerta de integração',
+    title: 'Telegram vinculado à sua conta.',
+    intro:
+      'Este aviso confirma que um chat do Telegram foi conectado ao seu acesso do DESK IMPERIAL para leitura de relatórios e alertas operacionais.',
+    body: `
+      <div style="margin:24px 0;border:1px solid #dde4ee;border-radius:20px;background:#f7f9fc;padding:20px">
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Data e hora:</strong> ${escapeHtml(linkedAt)}</p>
+        <p style="margin:0 0 8px;color:#445264;font-size:14px"><strong>Telegram:</strong> ${escapeHtml(usernameLine)}</p>
+        <p style="margin:0;color:#445264;font-size:14px"><strong>Chat ID:</strong> ${escapeHtml(params.telegramChatId)}</p>
+      </div>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#4d5a6b">
+        Caso você não reconheça este vínculo, revogue a integração imediatamente no portal e acione o suporte.
+      </p>
+    `,
+    footerNote: `Suporte: ${params.supportEmail}`,
+  })
+
+  return {
+    subject: `${params.appName} | Telegram vinculado à sua conta`,
+    text,
+    html,
+    tags: ['security', 'telegram-linked'],
+  }
+}
+
 function buildCodeEmail(params: {
   appName: string
   supportEmail: string
@@ -356,15 +406,6 @@ function buildEmailLayout(params: {
   `
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
-}
-
 function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
@@ -380,3 +421,4 @@ function truncate(value: string, maxLength: number) {
 
   return `${value.slice(0, maxLength - 1)}...`
 }
+import escapeHtml from 'escape-html'

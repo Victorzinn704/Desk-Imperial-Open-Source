@@ -18,7 +18,9 @@ Fase inicial da migracao para stack OSS com foco em baixo overhead:
 - A API ja possui inicializacao real de OpenTelemetry no bootstrap
 - O frontend ja possui Grafana Faro integrado ao runtime e aos boundaries de erro
 - O stack local provisiona Alloy, Tempo, Loki, Prometheus, Alertmanager, Grafana e Blackbox
-- O collector do frontend ainda nao esta fechado dentro do compose do repositorio; `NEXT_PUBLIC_FARO_COLLECTOR_URL` continua sendo dependencia explicita de ambiente
+- O receiver Faro local agora esta fechado na Alloy oficial do stack OSS em `http://localhost:12347/collect`; `NEXT_PUBLIC_FARO_COLLECTOR_URL` continua sendo a variavel que aponta para esse endpoint no runtime do frontend
+- Em Oracle Cloud, a stack operacional persistente roda na `vm-free-02` em `/opt/desk-ops`, com UIs presas em `127.0.0.1` e ingestao OTLP exposta apenas no IP privado configurado em `OPS_PRIVATE_IP`
+- A API de producao na `vm-free-01` deve apontar para `OTEL_EXPORTER_OTLP_ENDPOINT=http://<OPS_PRIVATE_IP>:4318`
 
 ## Variaveis de ambiente
 
@@ -52,6 +54,10 @@ OTEL_TRACES_SAMPLE_RATE=0.03
 OTEL_METRICS_EXPORT_INTERVAL_MS=15000
 OTEL_SERVICE_NAME=desk-imperial-api
 OTEL_SERVICE_ENVIRONMENT=development
+NEXT_PUBLIC_FARO_COLLECTOR_URL=http://localhost:12347/collect
+NEXT_PUBLIC_FARO_APP_NAME=desk-imperial-web
+NEXT_PUBLIC_FARO_APP_VERSION=0.1.0
+NEXT_PUBLIC_FARO_ENVIRONMENT=development
 ```
 
 Subir stack OSS local:
@@ -69,8 +75,39 @@ Endpoints locais:
 - OTLP ingest (Alloy): `http://localhost:4318/v1/traces`
 - OTLP ingest metricas (Alloy): `http://localhost:4318/v1/metrics`
 - OTLP ingest logs (Alloy): `http://localhost:4318/v1/logs`
+- Faro receiver (Alloy): `http://localhost:12347/collect`
 - Alloy metrics/UI: `http://localhost:12345`
 - Blackbox exporter: `http://localhost:9115`
+
+## Oracle Cloud — stack operacional
+
+Artefatos no repositório:
+
+- compose: `infra/oracle/ops/compose.yaml`
+- Prometheus: `infra/oracle/ops/prometheus/prometheus.yml`
+- alertas: `infra/oracle/ops/prometheus/alert.rules.yml`
+- runbook: `infra/oracle/ops/README.md`
+- túnel local: `infra/scripts/oracle-ops-tunnel.ps1`
+
+Serviços na `vm-free-02`:
+
+- Grafana: `127.0.0.1:3001`
+- Prometheus: `127.0.0.1:9090`
+- Alertmanager: `127.0.0.1:9093`
+- SonarQube: `127.0.0.1:9000`
+- Loki: `127.0.0.1:3100`
+- Tempo: `127.0.0.1:3200`
+- Alloy UI: `127.0.0.1:12345`
+- Alloy OTLP HTTP: `<OPS_PRIVATE_IP>:4318`
+- Alloy OTLP gRPC: `<OPS_PRIVATE_IP>:4317`
+
+Abrir acesso local:
+
+```powershell
+.\infra\scripts\oracle-ops-tunnel.ps1
+```
+
+O `node-exporter` da `vm-free-01` fica preso em `127.0.0.1:9100` e é coletado pelo Prometheus por proxy SSH interno (`prod-node-exporter-proxy:19100`), evitando expor `9100` na rede pública.
 
 ## Fase 2 (Frontend Faro) - hardening
 
@@ -79,17 +116,17 @@ Estado real desta fase hoje:
 - cliente Faro implementado no codigo web
 - CSP preparada para liberar o dominio do collector
 - limitadores de ruido e sanitizacao aplicados no cliente
-- ingestao do browser ainda depende de um collector configurado fora do stack local atual
+- ingestao do browser agora pode apontar para o receiver Faro local da Alloy; para producao, continue usando um collector HTTPS externo
 
 Consequencia pratica:
 
 - sem `NEXT_PUBLIC_FARO_COLLECTOR_URL` valido no ambiente, o frontend continua seguro, mas nao envia eventos
-- a stack local atual cobre bem API/infra, porem ainda nao fecha sozinha a trilha browser -> collector -> Grafana
+- a stack local atual fecha a trilha browser -> collector -> Grafana quando o runtime do frontend aponta para `http://localhost:12347/collect`
 
 Variaveis recomendadas:
 
 ```env
-NEXT_PUBLIC_FARO_COLLECTOR_URL=https://seu-collector-faro/collect
+NEXT_PUBLIC_FARO_COLLECTOR_URL=http://localhost:12347/collect
 NEXT_PUBLIC_FARO_APP_NAME=desk-imperial-web
 NEXT_PUBLIC_FARO_APP_VERSION=0.1.0
 NEXT_PUBLIC_FARO_ENVIRONMENT=production
@@ -134,12 +171,13 @@ Prometheus e regras:
 - health da API via probe HTTP real (`desk-api-health`) com blackbox exporter
 - alertas para indisponibilidade de serviços de observabilidade
 - alerta para falha recorrente do probe de health da API
+- Sentry agora convive com essa trilha e cobre erro/tracing/sourcemaps em API e web; a stack OSS continua focada em OTEL, Faro e dashboards operacionais
 
 Limitacoes atuais:
 
 - dashboard provisionado hoje e mais forte em saude da infraestrutura do que em fluxo de produto
-- Alertmanager ainda nao sai para destino externo por padrao
-- o probe `desk-api-health` pressupoe a API local respondendo em `http://host.docker.internal:4000/api/health`
+- Alertmanager ainda nao sai para destino externo por padrao, a menos que `ALERTMANAGER_WEBHOOK_URL` seja definido no ambiente do compose
+- no stack Oracle, os probes `desk-api-health` e `desk-app-health` usam os endpoints publicos `https://api.deskimperial.online/api/v1/health` e `https://app.deskimperial.online/`
 
 Arquivos de referencia:
 
@@ -179,5 +217,5 @@ npm run obs:down
 - enriquecer labels de logs no Alloy com contexto de dominio por modulo
 - adicionar metricas de negocio (RED) no backend para dashboards de produto
 - ampliar alertas com SLO de latencia/erro de API
-- fechar collector do frontend dentro do desenho oficial da stack
+- padronizar o receiver Faro local na stack oficial e manter a URL HTTPS externa para producao
 - publicar dashboards separados para browser, auth e operacao

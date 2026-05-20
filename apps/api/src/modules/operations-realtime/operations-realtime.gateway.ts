@@ -1,15 +1,43 @@
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common'
-import type { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets'
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
-import { createAdapter } from '@socket.io/redis-adapter'
-import Redis from 'ioredis'
+import {
+  type OnGatewayConnection,
+  type OnGatewayDisconnect,
+  type OnGatewayInit,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets'
+import type Redis from 'ioredis'
 import type { Namespace, Socket } from 'socket.io'
 import { AuthService } from '../auth/auth.service'
+import { AuthRateLimitService } from '../auth/auth-rate-limit.service'
+import { recordOperationsRealtimeSocketDisconnected } from '../../common/observability/business-telemetry.util'
 import { getAllowedOriginsFromValues, isAllowedOrigin } from '../../common/utils/origin.util'
 import { resolveRedisUrl } from '../../common/utils/redis-url.util'
-import { OPERATIONS_REALTIME_NAMESPACE, type OperationsRealtimeNamespaceLike } from './operations-realtime.types'
+import {
+  OPERATIONS_REALTIME_NAMESPACE,
+  type OperationsRealtimeNamespaceLike,
+  resolveOperationsRealtimeSocketChannels,
+} from './operations-realtime.types'
+import {
+  configureOperationsRealtimeRedisTransport,
+  publishOperationsRealtimeSessionRevoke,
+} from './operations-realtime.redis-transport'
 import { OperationsRealtimeService } from './operations-realtime.service'
-import { authenticateOperationsRealtimeSocket } from './operations-realtime.socket-auth'
+import { OperationsRealtimeSessionsService } from './operations-realtime-sessions.service'
+import {
+  assertOperationsRealtimeSocketRateLimit,
+  joinOperationsRealtimeSocketChannels,
+  logOperationsRealtimeSocketConnected,
+  recordOperationsRealtimeSocketAccepted,
+  registerOperationsRealtimeAckHandler,
+  rejectOperationsRealtimeSocketAuth,
+  rejectUnauthorizedOperationsSocketOrigin,
+  trackOperationsRealtimeSessionSocket,
+} from './operations-realtime.socket-lifecycle'
+import {
+  authenticateOperationsRealtimeSocket,
+  extractOperationsRealtimeBearerToken,
+} from './operations-realtime.socket-auth'
 import type {
   OperationsRealtimeConnectionContext,
   OperationsRealtimeSocketLike,
@@ -54,6 +82,22 @@ export class OperationsRealtimeGateway
   private readonly logger = new Logger(OperationsRealtimeGateway.name)
   private redisPubClient: Redis | null = null
   private redisSubClient: Redis | null = null
+  /** Cliente dedicado ao canal de revogação de sessão cross-pod. Separado do adapter para evitar interferência. */
+  private redisSessionRevokeClient: Redis | null = null
+  /** Cliente pub dedicado ao canal de revogação — publica mensagens recebidas do domain. */
+  private redisSessionRevokePubClient: Redis | null = null
+
+  /** TTL do cache de validação de token — reduz DB hits em reconexões em massa. */
+  private static readonly TOKEN_AUTH_CACHE_TTL_MS = 60_000
+  /**
+   * Cache in-process de contextos de autenticação de token.
+   * Chave: rawToken; Valor: contexto + timer de expiração.
+   * Não é compartilhado entre nós — ok em multi-pod (cada nó aquece seu próprio cache).
+   */
+  private readonly tokenAuthCache = new Map<
+    string,
+    { context: OperationsRealtimeConnectionContext; timer: ReturnType<typeof setTimeout> }
+  >()
 
   @WebSocketServer()
   server!: Namespace
@@ -61,37 +105,37 @@ export class OperationsRealtimeGateway
   constructor(
     @Inject(OperationsRealtimeService) private readonly operationsRealtimeService: OperationsRealtimeService,
     @Inject(AuthService) private readonly authService: AuthService,
+    @Inject(AuthRateLimitService) private readonly authRateLimitService: AuthRateLimitService,
+    @Inject(OperationsRealtimeSessionsService)
+    private readonly realtimeSessions: OperationsRealtimeSessionsService,
   ) {}
 
   afterInit(server: Namespace) {
+    this.warnIfProductionOriginsAreMissing()
+    this.configureRedisTransport(server)
+    this.bindNamespace(server)
+  }
+
+  private warnIfProductionOriginsAreMissing() {
     if (process.env.NODE_ENV === 'production' && ALLOWED_ORIGINS.length === 0) {
       this.logger.warn(
         'Nenhuma origem permitida foi configurada para realtime. Defina APP_URL/NEXT_PUBLIC_APP_URL para evitar conexões indevidas.',
       )
     }
+  }
 
-    const redisUrl = resolveRedisUrl(process.env)
-    if (redisUrl) {
-      try {
-        const pubClient = new Redis(redisUrl)
-        const subClient = pubClient.duplicate()
-        this.redisPubClient = pubClient
-        this.redisSubClient = subClient
-        pubClient.on('error', (error) => this.logger.error(`Redis pub/sub erro (pub): ${error.message}`))
-        subClient.on('error', (error) => this.logger.error(`Redis pub/sub erro (sub): ${error.message}`))
-        server.server.adapter(createAdapter(pubClient, subClient))
-        this.logger.log('Redis adapter ativo — Socket.IO pronto para escalonamento horizontal.')
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        this.logger.warn(`Redis adapter não inicializado — usando adapter padrão em memória: ${msg}`)
-      }
-    } else {
-      this.logger.log(
-        'Redis não definido (REDIS_URL/REDIS_PRIVATE_URL/REDIS_PUBLIC_URL) — Socket.IO usando adapter em memória (instância única).',
-      )
-    }
-
-    this.bindNamespace(server)
+  private configureRedisTransport(server: Namespace) {
+    const clients = configureOperationsRealtimeRedisTransport({
+      server,
+      redisUrl: resolveRedisUrl(process.env),
+      nodeEnv: process.env.NODE_ENV,
+      logger: this.logger,
+      disconnectSessionsLocally: (sessionIds) => this.revokeSessionsLocally(sessionIds),
+    })
+    this.redisPubClient = clients.redisPubClient
+    this.redisSubClient = clients.redisSubClient
+    this.redisSessionRevokeClient = clients.redisSessionRevokeClient
+    this.redisSessionRevokePubClient = clients.redisSessionRevokePubClient
   }
 
   bindNamespace(namespace: OperationsRealtimeNamespaceLike) {
@@ -100,36 +144,125 @@ export class OperationsRealtimeGateway
   }
 
   async authenticateConnection(socket: OperationsRealtimeSocketLike): Promise<OperationsRealtimeConnectionContext> {
-    return authenticateOperationsRealtimeSocket(socket, (rawToken) => this.authService.validateSessionToken(rawToken))
+    const normalizedToken = extractOperationsRealtimeBearerToken(socket.handshake)
+
+    if (normalizedToken) {
+      const cached = this.getCachedConnectionContext(normalizedToken, socket)
+      if (cached) {
+        return cached
+      }
+    }
+
+    const context = await authenticateOperationsRealtimeSocket(socket, (token) =>
+      this.authService.validateSessionToken(token),
+    )
+
+    // Popula cache com TTL — entrada expirará automaticamente.
+    if (normalizedToken) {
+      this.cacheConnectionContext(normalizedToken, context, socket)
+    }
+
+    return context
+  }
+
+  private getCachedConnectionContext(
+    normalizedToken: string,
+    socket: OperationsRealtimeSocketLike,
+  ): OperationsRealtimeConnectionContext | null {
+    const cached = this.tokenAuthCache.get(normalizedToken)
+    if (!cached) {
+      return null
+    }
+
+    socket.data.auth = cached.context.auth
+    socket.data.workspaceOwnerUserId = cached.context.workspaceOwnerUserId
+    socket.data.workspaceChannel = cached.context.workspaceChannel
+    socket.data.rawToken = normalizedToken
+    return cached.context
+  }
+
+  private cacheConnectionContext(
+    normalizedToken: string,
+    context: OperationsRealtimeConnectionContext,
+    socket: OperationsRealtimeSocketLike,
+  ) {
+    const timer = setTimeout(() => {
+      this.tokenAuthCache.delete(normalizedToken)
+    }, OperationsRealtimeGateway.TOKEN_AUTH_CACHE_TTL_MS)
+    unrefTimer(timer)
+    this.tokenAuthCache.set(normalizedToken, { context, timer })
+    socket.data.rawToken = normalizedToken
+  }
+
+  /** Invalida a entrada de cache de um token após disconnect (evita servir contexto obsoleto). */
+  private invalidateTokenAuthCache(rawToken: string | null | undefined) {
+    if (!rawToken) {
+      return
+    }
+    const normalizedToken = rawToken.replace(/^Bearer\s+/i, '').trim()
+    const cached = this.tokenAuthCache.get(normalizedToken)
+    if (cached) {
+      clearTimeout(cached.timer)
+      this.tokenAuthCache.delete(normalizedToken)
+    }
+  }
+
+  private invalidateTokenAuthCacheBySessionIds(sessionIds: string[]) {
+    const revokedSessionIds = new Set(sessionIds)
+    for (const [token, cached] of this.tokenAuthCache.entries()) {
+      if (!revokedSessionIds.has(cached.context.auth.sessionId)) {
+        continue
+      }
+
+      clearTimeout(cached.timer)
+      this.tokenAuthCache.delete(token)
+    }
+  }
+
+  private revokeSessionsLocally(sessionIds: string[]) {
+    this.invalidateTokenAuthCacheBySessionIds(sessionIds)
+    this.realtimeSessions.disconnectSessionsLocally(sessionIds)
   }
 
   async handleConnection(socket: Socket) {
-    const socketOriginHeader = socket.handshake.headers.origin
-    const socketOrigin = Array.isArray(socketOriginHeader) ? socketOriginHeader[0] : socketOriginHeader
-    if (socketOrigin && !isAllowedOrigin(socketOrigin, ALLOWED_ORIGINS)) {
-      this.logger.warn(`Socket ${socket.id} recusado por origem não autorizada: ${socketOrigin}`)
-      socket.disconnect(true)
+    if (rejectUnauthorizedOperationsSocketOrigin(socket, ALLOWED_ORIGINS, this.logger)) {
       return
     }
 
-    try {
-      const connection = await this.authenticateConnection(socket)
-      await socket.join(connection.workspaceChannel)
+    const startedAt = performance.now()
 
-      this.logger.debug(
-        `Socket ${socket.id} conectado em ${connection.workspaceChannel} (${connection.auth.userId} -> ${connection.workspaceOwnerUserId})`,
-      )
+    try {
+      await assertOperationsRealtimeSocketRateLimit(socket, this.authRateLimitService)
+      const connection = await this.authenticateConnection(socket)
+      const scopedChannels = resolveOperationsRealtimeSocketChannels({
+        workspaceOwnerUserId: connection.workspaceOwnerUserId,
+        role: connection.auth.role,
+        employeeId: connection.auth.employeeId,
+      })
+      recordOperationsRealtimeSocketAccepted(startedAt, connection)
+      await joinOperationsRealtimeSocketChannels(socket, scopedChannels)
+      trackOperationsRealtimeSessionSocket(socket, connection, this.realtimeSessions)
+      registerOperationsRealtimeAckHandler(socket, this.logger)
+      logOperationsRealtimeSocketConnected(socket, connection, scopedChannels, this.logger)
     } catch (error) {
-      const reason = error instanceof Error ? error.message : 'Falha ao autenticar socket operacional.'
-      this.logger.warn(`Falha ao autenticar socket ${socket.id}: ${reason}`)
-      socket.emit('operations.error', { message: 'Falha ao autenticar sessao realtime.' })
-      socket.disconnect(true)
+      rejectOperationsRealtimeSocketAuth(socket, startedAt, error, this.logger)
     }
   }
 
   handleDisconnect(socket: Pick<Socket, 'id' | 'data'>) {
+    const sessionId = socket.data.auth?.sessionId
+    if (sessionId) {
+      this.realtimeSessions.untrackSessionSocket(sessionId, socket.id)
+    }
+
+    // Invalida cache de auth para este token — evita servir contexto obsoleto em re-autenticacao.
+    this.invalidateTokenAuthCache(socket.data.rawToken)
+
     const workspaceChannel = socket.data.workspaceChannel
     if (workspaceChannel) {
+      recordOperationsRealtimeSocketDisconnected({
+        'desk.operations.realtime.had_workspace': true,
+      })
       this.logger.debug(`Socket ${socket.id} desconectado de ${workspaceChannel}`)
       return
     }
@@ -137,10 +270,28 @@ export class OperationsRealtimeGateway
     this.logger.debug(`Socket ${socket.id} desconectado sem workspace resolvido`)
   }
 
+  /**
+   * Revoga sessões localmente E publica cross-pod via Redis pub/sub (C3).
+   * Chamar este método nos controllers/services que precisam revogar sessão.
+   */
+  async revokeSessionsCrossPod(sessionIds: string[]): Promise<void> {
+    // Revogação local imediata
+    this.revokeSessionsLocally(sessionIds)
+
+    await publishOperationsRealtimeSessionRevoke(this.redisSessionRevokePubClient, sessionIds, this.logger)
+  }
+
   async onModuleDestroy() {
-    const clients = [this.redisPubClient, this.redisSubClient].filter((client): client is Redis => Boolean(client))
+    const clients = [
+      this.redisPubClient,
+      this.redisSubClient,
+      this.redisSessionRevokeClient,
+      this.redisSessionRevokePubClient,
+    ].filter((client): client is Redis => Boolean(client))
     this.redisPubClient = null
     this.redisSubClient = null
+    this.redisSessionRevokeClient = null
+    this.redisSessionRevokePubClient = null
 
     await Promise.all(
       clients.map(async (client) => {
@@ -152,4 +303,13 @@ export class OperationsRealtimeGateway
       }),
     )
   }
+}
+
+function unrefTimer(timer: ReturnType<typeof setTimeout>) {
+  const maybeTimer = timer as { unref?: unknown }
+  if (typeof maybeTimer.unref !== 'function') {
+    return
+  }
+
+  maybeTimer.unref()
 }

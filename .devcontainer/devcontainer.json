@@ -1,19 +1,13 @@
 {
   "name": "test1-sandbox",
-  "dockerComposeFile": [
-    "../infra/docker/docker-compose.sandbox.yml"
-  ],
+  "dockerComposeFile": ["../infra/docker/docker-compose.sandbox.yml"],
   "service": "sandbox",
   "workspaceFolder": "/workspace",
   "remoteUser": "workspace",
   "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
-      "extensions": [
-        "continue.continue",
-        "ms-azuretools.vscode-docker",
-        "ms-vscode-remote.remote-containers"
-      ],
+      "extensions": ["continue.continue", "ms-azuretools.vscode-docker", "ms-vscode-remote.remote-containers"],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash",
         "files.eol": "\n"

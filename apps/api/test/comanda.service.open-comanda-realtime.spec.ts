@@ -1,214 +1,110 @@
-import { CashSessionStatus, ComandaStatus, KitchenItemStatus } from '@prisma/client'
-import { CacheService } from '../src/common/services/cache.service'
-import { ComandaService } from '../src/modules/operations/comanda.service'
-import type { PrismaService } from '../src/database/prisma.service'
-import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import type { OperationsRealtimeService } from '../src/modules/operations-realtime/operations-realtime.service'
-import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import { CashSessionStatus, KitchenItemStatus } from '@prisma/client'
+import {
+  COMANDA_ID,
+  makeComanda,
+  makeComandaItem,
+  makeOwnerAuth,
+  makeRequest,
+  OWNER_ID,
+  WITHOUT_LIVE_SNAPSHOT,
+} from './helpers/comanda-service-fixtures'
+import { type ComandaServiceHarness, createComandaServiceHarness } from './helpers/comanda-service-harness'
+
+const KITCHEN_QUEUED_AT = new Date('2026-03-30T10:00:00.000Z')
 
 describe('ComandaService - openComanda realtime', () => {
-  const realtimeService = {
-    publishComandaOpened: jest.fn(),
-    publishKitchenItemQueued: jest.fn(),
-    publishComandaUpdated: jest.fn(),
-    publishComandaClosed: jest.fn(),
-    publishKitchenItemUpdated: jest.fn(),
-    publishCashUpdated: jest.fn(),
-    publishCashClosureUpdated: jest.fn(),
-  }
-
-  const auditLogService = {
-    record: jest.fn(async () => {}),
-  }
-
-  const cache = {
-    delByPrefix: jest.fn(async () => {}),
-    del: jest.fn(async () => {}),
-    get: jest.fn(),
-    set: jest.fn(),
-  }
-
-  const helpers = {
-    resolveComandaDraftItems: jest.fn(),
-    assertBusinessDayOpen: jest.fn(async () => {}),
-    assertOpenTableAvailability: jest.fn(async () => {}),
-    resolveEmployeeForStaff: jest.fn(async () => null),
-    resolveOwnedCashSession: jest.fn(),
-    requireOwnedEmployee: jest.fn(),
-    recalculateComanda: jest.fn(),
-    resolveComandaBusinessDate: jest.fn(async (_tx: unknown, comanda: { openedAt: Date }) => comanda.openedAt),
-  }
-
-  function createPrismaMock() {
-    const queuedItems: Array<{
-      id: string
-      comandaId: string
-      productName: string
-      quantity: number
-      notes: string | null
-      kitchenStatus: KitchenItemStatus | null
-      kitchenQueuedAt: Date | null
-      kitchenReadyAt: Date | null
-    }> = []
-
-    const tx = {
-      comanda: {
-        create: jest.fn(async ({ data }: any) => ({
-          id: 'comanda-1',
-          ...data,
-        })),
-      },
-      product: {
-        findMany: jest.fn(async () => [
-          {
-            id: 'product-1',
-            category: 'food',
-            requiresKitchen: true,
-          },
-        ]),
-      },
-      comandaItem: {
-        createMany: jest.fn(async ({ data }: any) => {
-          data.forEach((item: any, index: number) => {
-            if (item.kitchenStatus) {
-              queuedItems.push({
-                id: `item-${index + 1}`,
-                comandaId: item.comandaId,
-                productName: item.productName,
-                quantity: item.quantity,
-                notes: item.notes ?? null,
-                kitchenStatus: item.kitchenStatus,
-                kitchenQueuedAt: item.kitchenQueuedAt ?? null,
-                kitchenReadyAt: null,
-              })
-            }
-          })
-          return { count: data.length }
-        }),
-        findMany: jest.fn(async ({ where }: any) => {
-          return queuedItems.filter((item) => {
-            if (where?.comandaId && item.comandaId !== where.comandaId) return false
-            if (where?.kitchenStatus?.not !== undefined && item.kitchenStatus === null) return false
-            return true
-          })
-        }),
-      },
-      comandaAssignment: {
-        create: jest.fn(async () => ({})),
-      },
-    }
-
-    return {
-      mesa: {
-        findUnique: jest.fn(async () => ({
-          id: 'mesa-1',
-          label: 'Mesa 1',
-          active: true,
-          companyOwnerId: 'owner-1',
-        })),
-      },
-      comanda: {
-        findFirst: jest.fn(async () => null),
-      },
-      cashSession: {
-        findFirst: jest.fn(async () => ({
-          id: 'session-1',
-          businessDate: new Date(2026, 2, 30),
-          status: CashSessionStatus.OPEN,
-        })),
-      },
-      product: {
-        findMany: tx.product.findMany,
-      },
-      comandaItem: {
-        createMany: tx.comandaItem.createMany,
-        findMany: tx.comandaItem.findMany,
-      },
-      comandaAssignment: {
-        create: tx.comandaAssignment.create,
-      },
-      $transaction: jest.fn(async (callback: any) => callback(tx)),
-    }
-  }
+  let harness: ComandaServiceHarness
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    harness = createComandaServiceHarness()
+
+    harness.prisma.mesa.findUnique.mockResolvedValue({
+      id: 'mesa-1',
+      label: 'Mesa 1',
+      active: true,
+      companyOwnerId: OWNER_ID,
+    })
+    harness.prisma.comanda.findFirst.mockResolvedValue(null)
+    harness.prisma.comanda.create.mockImplementation(async (input: unknown) => {
+      const { data } = input as { data: Record<string, unknown> }
+      return {
+        id: COMANDA_ID,
+        ...data,
+      }
+    })
+    harness.prisma.cashSession.findFirst.mockResolvedValue({
+      id: 'session-1',
+      businessDate: KITCHEN_QUEUED_AT,
+      status: CashSessionStatus.OPEN,
+    })
+    harness.prisma.comandaItem.createMany.mockResolvedValue({ count: 1 })
+    harness.prisma.comandaItem.findMany.mockResolvedValue([
+      makeComandaItem({
+        id: 'item-1',
+        productName: 'Pizza',
+        quantity: 2,
+        notes: 'Sem cebola',
+        kitchenStatus: KitchenItemStatus.QUEUED,
+        kitchenQueuedAt: KITCHEN_QUEUED_AT,
+      }),
+    ])
+    harness.prisma.comandaAssignment.create.mockResolvedValue({})
+
+    harness.helpers.resolveComandaBusinessDate.mockImplementation(
+      async (_tx: unknown, comanda: unknown) => (comanda as { openedAt: Date }).openedAt,
+    )
   })
 
   it('publica kitchen.item.queued na abertura quando há itens que entram na cozinha', async () => {
-    const prisma = createPrismaMock()
-    const service = new ComandaService(
-      prisma as unknown as PrismaService,
-      cache as unknown as CacheService,
-      auditLogService as unknown as AuditLogService,
-      realtimeService as unknown as OperationsRealtimeService,
-      helpers as unknown as OperationsHelpersService,
-    )
-
-    ;(helpers.resolveComandaDraftItems as jest.Mock).mockResolvedValue([
+    harness.helpers.resolveComandaDraftItems.mockResolvedValue([
       {
         productId: 'product-1',
         productName: 'Pizza',
         quantity: 2,
+        requiresKitchen: true,
         unitPrice: 10,
         totalAmount: 20,
         notes: 'Sem cebola',
       },
     ])
-    ;(helpers.recalculateComanda as jest.Mock).mockResolvedValue({
-      id: 'comanda-1',
-      companyOwnerId: 'owner-1',
-      cashSessionId: 'session-1',
-      mesaId: 'mesa-1',
-      currentEmployeeId: null,
-      tableLabel: 'Mesa 1',
-      customerName: 'Cliente',
-      customerDocument: null,
-      participantCount: 2,
-      status: ComandaStatus.OPEN,
-      subtotalAmount: 20,
-      discountAmount: 0,
-      serviceFeeAmount: 0,
-      totalAmount: 20,
-      notes: null,
-      openedAt: new Date('2026-03-30T10:00:00.000Z'),
-      closedAt: null,
-      items: [
-        {
-          id: 'item-1',
-          productName: 'Pizza',
-          quantity: 2,
-          notes: 'Sem cebola',
-          kitchenStatus: KitchenItemStatus.QUEUED,
-          kitchenQueuedAt: new Date('2026-03-30T10:00:00.000Z'),
-          kitchenReadyAt: null,
-        },
-      ],
-    })
+    harness.helpers.recalculateComanda.mockResolvedValue(
+      makeComanda({
+        cashSessionId: 'session-1',
+        subtotalAmount: 20,
+        totalAmount: 20,
+        openedAt: KITCHEN_QUEUED_AT,
+        items: [
+          makeComandaItem({
+            id: 'item-1',
+            productName: 'Pizza',
+            quantity: 2,
+            notes: 'Sem cebola',
+            kitchenStatus: KitchenItemStatus.QUEUED,
+            kitchenQueuedAt: KITCHEN_QUEUED_AT,
+          }),
+        ],
+      }),
+    )
 
-    await service.openComanda(
-      {
-        userId: 'user-1',
-        role: 'OWNER',
-        workspaceOwnerUserId: 'owner-1',
-        companyOwnerUserId: 'owner-1',
-      } as any,
+    await harness.service.openComanda(
+      makeOwnerAuth(),
       {
         tableLabel: 'Mesa 1',
         participantCount: 2,
         items: [{ productId: 'product-1', quantity: 2 }],
-      } as any,
-      { ipAddress: '127.0.0.1', userAgent: 'jest' } as any,
-      { includeSnapshot: false } as any,
+      } as never,
+      makeRequest(),
+      WITHOUT_LIVE_SNAPSHOT,
     )
 
-    expect(realtimeService.publishComandaOpened).toHaveBeenCalledTimes(1)
-    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
-    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledWith(
+    expect(harness.realtime.publishComandaOpened).toHaveBeenCalledTimes(1)
+    expect(harness.prisma.product.findMany).not.toHaveBeenCalled()
+    expect(harness.realtime.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
+    expect(harness.realtime.publishKitchenItemQueued).toHaveBeenCalledWith(
       expect.any(Object),
       expect.objectContaining({
         itemId: 'item-1',
-        comandaId: 'comanda-1',
+        comandaId: COMANDA_ID,
         mesaLabel: 'Mesa 1',
         employeeId: null,
         productName: 'Pizza',
@@ -219,6 +115,7 @@ describe('ComandaService - openComanda realtime', () => {
         kitchenReadyAt: null,
         businessDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       }),
+      undefined,
     )
   })
 })

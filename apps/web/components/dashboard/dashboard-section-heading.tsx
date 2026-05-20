@@ -12,16 +12,15 @@ export function DashboardSectionHeading({
   title: string
 }>) {
   return (
-    <div className="imperial-card-soft flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
-      <span className="flex size-12 items-center justify-center rounded-[20px] border border-[rgba(52,242,127,0.24)] bg-[rgba(52,242,127,0.09)] text-[#36f57c] shadow-[0_0_30px_rgba(52,242,127,0.12)]">
-        <Icon className="size-5" />
-      </span>
-
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)]">{eyebrow}</p>
-        <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-soft)]">{description}</p>
+    <div className="space-y-1.5 border-b border-dashed border-[var(--border-strong)] pb-3">
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-[var(--text-muted)]">
+        <Icon className="size-3.5" />
+        <span>{eyebrow}</span>
       </div>
+      <h2 className="font-['Architects_Daughter','Patrick_Hand',sans-serif] text-[1.45rem] font-semibold leading-tight text-[var(--text-primary)] md:text-[1.55rem]">
+        {title}
+      </h2>
+      <p className="max-w-2xl text-[0.84rem] leading-5 text-[var(--text-soft)]">{description}</p>
     </div>
   )
 }

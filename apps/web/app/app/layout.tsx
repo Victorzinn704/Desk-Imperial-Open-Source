@@ -15,10 +15,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: 'cover',
-  themeColor: '#0a0a0a',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
 }
 
 /**
@@ -33,9 +36,9 @@ export default function AppMobileLayout({
   children: React.ReactNode
 }>) {
   return (
-    <>
+    <div className="app-mobile-route">
       <ServiceWorkerRegistrar />
       {children}
-    </>
+    </div>
   )
 }

@@ -55,6 +55,7 @@ describe('MailerService', () => {
 
     expect(result.mode).toBe('log')
     expect(loggerWarnSpy).toHaveBeenCalledTimes(1)
+    expect(loggerWarnSpy.mock.calls[0][0]).not.toContain('12345678')
     expect((global as any).fetch).not.toHaveBeenCalled()
   })
 
@@ -68,6 +69,7 @@ describe('MailerService', () => {
 
     expect(result.mode).toBe('log')
     expect(loggerWarnSpy).toHaveBeenCalledTimes(1)
+    expect(loggerWarnSpy.mock.calls[0][0]).not.toContain('87654321')
   })
 
   it('falha em producao sem API key da Brevo', async () => {
@@ -97,7 +99,6 @@ describe('MailerService', () => {
   it('envia por Brevo quando configuracao esta valida', async () => {
     configValues.EMAIL_PROVIDER = 'brevo'
     configValues.BREVO_API_KEY = 'brevo-key'
-
     ;(global as any).fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ messageId: 'brevo-message-1' }),
@@ -121,7 +122,6 @@ describe('MailerService', () => {
   it('retorna erro explicativo quando Brevo responde 401 key not found', async () => {
     configValues.EMAIL_PROVIDER = 'brevo'
     configValues.BREVO_API_KEY = 'bad-key'
-
     ;(global as any).fetch.mockResolvedValue({
       ok: false,
       status: 401,
@@ -144,7 +144,6 @@ describe('MailerService', () => {
   it('retorna erro explicativo quando remetente nao esta validado', async () => {
     configValues.EMAIL_PROVIDER = 'brevo'
     configValues.BREVO_API_KEY = 'valid-key'
-
     ;(global as any).fetch.mockResolvedValue({
       ok: false,
       status: 400,
@@ -164,7 +163,6 @@ describe('MailerService', () => {
   it('retorna timeout quando fetch falha com erro de rede', async () => {
     configValues.EMAIL_PROVIDER = 'brevo'
     configValues.BREVO_API_KEY = 'valid-key'
-
     ;(global as any).fetch.mockRejectedValue(new Error('network-down'))
 
     await expect(

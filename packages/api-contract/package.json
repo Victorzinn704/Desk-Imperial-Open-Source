@@ -1,0 +1,8 @@
+{
+  "name": "@partner/api-contract",
+  "private": true,
+  "version": "0.1.0",
+  "exports": {
+    "./openapi.json": "./openapi.json"
+  }
+}

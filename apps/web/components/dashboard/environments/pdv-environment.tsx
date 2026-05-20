@@ -1,109 +1,118 @@
 'use client'
 
-import { Tags } from 'lucide-react'
-import dynamic from 'next/dynamic'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { ApiError, fetchOperationsLive } from '@/lib/api'
-import { useDashboardQueries } from '@/components/dashboard/hooks/useDashboardQueries'
-import { buildOperationsViewModel, OPERATIONS_LIVE_COMPACT_QUERY_KEY } from '@/lib/operations'
-import { DashboardSectionHeading } from '@/components/dashboard/dashboard-section-heading'
+import { LabPanel } from '@/components/design-lab/lab-primitives'
 import { CaixaPanel } from '@/components/dashboard/caixa-panel'
 import { PdvBoard } from '@/components/pdv/pdv-board'
+import type { PdvMesaIntent } from '@/components/pdv/pdv-navigation-intent'
+import type { PdvEnvironmentVariant } from './pdv-environment.model'
+import { PdvKitchenQueuePanel, PdvLockedState, PdvOperationalHeader } from './pdv-environment.panels'
+import { usePdvEnvironmentController } from './use-pdv-environment-controller'
 
-const OperationsExecutiveGrid = dynamic(
-  () => import('@/components/operations/operations-executive-grid').then((module) => module.OperationsExecutiveGrid),
-  {
-    ssr: false,
-    loading: () => <OperationsPanelSkeleton lines={5} />,
-  },
-)
+type PdvEnvironmentProps = {
+  mesaIntent?: PdvMesaIntent | null
+  onConsumeMesaIntent?: () => void
+  variant?: PdvEnvironmentVariant
+}
 
-const OperationsTimeline = dynamic(
-  () => import('@/components/operations/operations-timeline').then((module) => module.OperationsTimeline),
-  {
-    ssr: false,
-    loading: () => <OperationsPanelSkeleton lines={4} />,
-  },
-)
+export function PdvEnvironment({
+  mesaIntent = null,
+  onConsumeMesaIntent,
+  variant = 'grid',
+}: Readonly<PdvEnvironmentProps>) {
+  const controller = usePdvEnvironmentController(variant)
 
-export function PdvEnvironment() {
-  const { productsQuery, sessionQuery } = useDashboardQueries()
+  if (controller.isSessionLoading) {
+    return (
+      <LabPanel padding="md">
+        <p className="text-sm text-[var(--text-soft)]">Carregando a sessão do PDV...</p>
+      </LabPanel>
+    )
+  }
 
-  const user = sessionQuery.data?.user
-  const operationsQuery = useQuery({
-    queryKey: OPERATIONS_LIVE_COMPACT_QUERY_KEY,
-    queryFn: () => fetchOperationsLive({ includeCashMovements: false, compactMode: true }),
-    enabled: Boolean(user?.userId),
-    placeholderData: keepPreviousData,
-    staleTime: 10_000,
-    refetchOnWindowFocus: false,
-  })
-
-  const products = productsQuery.data?.items ?? []
-  const operations = operationsQuery.data
-  const operationsError = operationsQuery.error instanceof ApiError ? operationsQuery.error.message : null
-
-  const boardProducts = products
-    .filter((product) => product.active)
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      unitPrice: p.unitPrice,
-      currency: String(p.currency),
-      stock: p.stock,
-      isLowStock: p.isLowStock,
-      isCombo: p.isCombo ?? false,
-      comboDescription: p.comboDescription ?? null,
-      comboItems: p.comboItems ?? [],
-    }))
-  const operationsView = buildOperationsViewModel(operations)
-  const showExecutiveOperations = user?.role === 'OWNER'
-
-  if (!user) return null
+  if (!controller.user) {
+    return <PdvLockedState error={controller.sessionError} heading={controller.heading} />
+  }
 
   return (
     <section className="space-y-6">
-      <DashboardSectionHeading
-        description="Gerencie comandas abertas, em preparo e prontas. Arraste entre colunas para atualizar o status em tempo real."
-        eyebrow="Kanban de comandas"
-        icon={Tags}
-        title="PDV — Ponto de Venda"
+      <PdvOperationalHeader
+        dataUpdatedAt={controller.operationsUpdatedAt}
+        description={controller.heading.description}
+        eyebrow={controller.heading.eyebrow}
+        isFetching={controller.operationsFetching}
+        metrics={controller.metrics}
+        title={controller.heading.title}
       />
-      <PdvBoard operations={operations} products={boardProducts} />
-      {showExecutiveOperations ? (
-        <div className="space-y-6">
-          <CaixaPanel operations={operations} />
-          {operationsError ? (
-            <div className="imperial-card px-5 py-4 text-sm text-[var(--text-soft)]">
-              Nao foi possivel carregar a operacao viva agora. {operationsError}
-            </div>
-          ) : null}
-          <OperationsExecutiveGrid
-            description={
-              operationsQuery.isLoading
-                ? 'Carregando a camada operacional para conectar funcionario, mesa e caixa em uma unica leitura.'
-                : 'Leitura consolidada do caixa e das mesas por funcionario, pronta para crescer com o realtime.'
-            }
-            rows={operationsView.rows}
-          />
-          <OperationsTimeline
-            description="Linha do tempo dos atendimentos por funcionario e mesa, desenhada para evoluir junto do FullCalendar Timeline."
-            items={operationsView.timelineItems}
-            resources={operationsView.resources}
-          />
-        </div>
+
+      {controller.operationsError ? (
+        <LabPanel padding="md">
+          <p className="text-sm text-[var(--danger)]">
+            Não foi possível carregar a operação viva agora. {controller.operationsError}
+          </p>
+        </LabPanel>
       ) : null}
+
+      <PdvVariantContent
+        controller={controller}
+        mesaIntent={mesaIntent}
+        variant={variant}
+        onConsumeMesaIntent={onConsumeMesaIntent}
+      />
     </section>
   )
 }
 
-function OperationsPanelSkeleton({ lines }: { lines: number }) {
+function PdvVariantContent({
+  controller,
+  mesaIntent,
+  onConsumeMesaIntent,
+  variant,
+}: Readonly<{
+  controller: ReturnType<typeof usePdvEnvironmentController>
+  mesaIntent: PdvMesaIntent | null
+  onConsumeMesaIntent?: () => void
+  variant: PdvEnvironmentVariant
+}>) {
+  if (variant === 'kds') {
+    return (
+      <PdvKitchenQueuePanel items={controller.operationsView.timelineItems} loading={controller.operationsLoading} />
+    )
+  }
+
+  if (variant === 'cobranca') {
+    return (
+      <div className="space-y-6">
+        {controller.showExecutiveOperations ? <CaixaPanel operations={controller.operations} /> : null}
+        <PdvBoard
+          mesaIntent={mesaIntent}
+          operations={controller.operations}
+          products={controller.boardProducts}
+          variant="cobranca"
+          onConsumeMesaIntent={onConsumeMesaIntent}
+        />
+      </div>
+    )
+  }
+
+  if (variant === 'comandas') {
+    return (
+      <PdvBoard
+        mesaIntent={mesaIntent}
+        operations={controller.operations}
+        products={controller.boardProducts}
+        variant="comandas"
+        onConsumeMesaIntent={onConsumeMesaIntent}
+      />
+    )
+  }
+
   return (
-    <div className="imperial-card space-y-3 p-5">
-      {Array.from({ length: lines }).map((_, index) => (
-        <div key={index} className="h-10 animate-pulse rounded-xl bg-[rgba(255,255,255,0.05)]" />
-      ))}
-    </div>
+    <PdvBoard
+      mesaIntent={mesaIntent}
+      operations={controller.operations}
+      products={controller.boardProducts}
+      variant="grid"
+      onConsumeMesaIntent={onConsumeMesaIntent}
+    />
   )
 }

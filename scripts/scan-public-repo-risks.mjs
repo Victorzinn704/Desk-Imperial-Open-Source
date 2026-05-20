@@ -50,11 +50,20 @@ const regexFindings = [
     description: 'Brevo key exposta',
     regex: /\bxkeysib-[A-Za-z0-9_-]{20,}\b/g,
     ignoreMatch: (match) =>
-      match.includes('your-') || match.includes('real-key') || match.includes('actual-api-key') || match.includes('abc123'),
+      match.includes('your-') ||
+      match.includes('real-key') ||
+      match.includes('actual-api-key') ||
+      match.includes('abc123'),
   },
 ]
 
-const connectionStringKeys = new Set(['DATABASE_URL', 'DIRECT_URL', 'REDIS_URL', 'REDIS_PRIVATE_URL', 'REDIS_PUBLIC_URL'])
+const connectionStringKeys = new Set([
+  'DATABASE_URL',
+  'DIRECT_URL',
+  'REDIS_URL',
+  'REDIS_PRIVATE_URL',
+  'REDIS_PUBLIC_URL',
+])
 
 for (const relativeFile of trackedFiles) {
   if (relativeFile === 'scripts/scan-public-repo-risks.mjs') {

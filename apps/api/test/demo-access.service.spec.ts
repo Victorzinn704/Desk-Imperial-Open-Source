@@ -26,6 +26,7 @@ describe('DemoAccessService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    configValues.DEMO_DAILY_LIMIT_MINUTES = '20'
   })
 
   it('identifica conta demo sem sensibilidade a caixa e espacos', () => {
@@ -169,5 +170,21 @@ describe('DemoAccessService', () => {
     expect(demoAccess?.dailyLimitMinutes).toBe(20)
     expect(typeof demoAccess?.remainingSeconds).toBe('number')
     expect(normalAccess).toBeNull()
+  })
+
+  it('mantem demo sem cronometro quando o limite diario esta desativado', async () => {
+    configValues.DEMO_DAILY_LIMIT_MINUTES = '0'
+
+    const reservation = await service.reserveWindow({
+      email: 'demo@deskimperial.online',
+      ipAddress: '   ',
+      userAgent: 'Jest',
+      sessionTtlMs: 30 * 60 * 1000,
+    })
+    const evaluationAccess = service.buildEvaluationAccess('demo@deskimperial.online', new Date(Date.now() + 60_000))
+
+    expect(reservation).toBeNull()
+    expect(evaluationAccess).toBeNull()
+    expect(prisma.demoAccessGrant.findMany).not.toHaveBeenCalled()
   })
 })

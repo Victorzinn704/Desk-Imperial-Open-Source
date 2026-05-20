@@ -11,7 +11,7 @@ services:
       SANDBOX_HOME: /sandbox-home
       XDG_CACHE_HOME: /sandbox-cache
       TMPDIR: /sandbox-tmp
-      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONDONTWRITEBYTECODE: '1'
     volumes:
       - ../..:/workspace
       - sandbox-home:/sandbox-home

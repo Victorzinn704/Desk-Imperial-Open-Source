@@ -4,6 +4,8 @@ import {
   IsEnum,
   IsNotEmpty,
   IsString,
+  Matches,
+  MaxLength,
   Validate,
   ValidateIf,
   type ValidationArguments,
@@ -24,14 +26,17 @@ class LoginPasswordLengthConstraint implements ValidatorConstraintInterface {
     }
 
     const loginMode = (args.object as LoginDto).loginMode
-    const minimumLength = loginMode === LoginModeDto.STAFF ? 6 : 8
-    return value.length >= minimumLength
+    if (loginMode === LoginModeDto.STAFF) {
+      return /^\d{8}$/.test(value)
+    }
+
+    return value.length >= 8
   }
 
   defaultMessage(args: ValidationArguments) {
     const loginMode = (args.object as LoginDto).loginMode
     return loginMode === LoginModeDto.STAFF
-      ? 'PIN do funcionário deve ter no mínimo 6 caracteres'
+      ? 'A senha do funcionário deve ter exatamente 8 dígitos numéricos'
       : 'Senha da empresa deve ter no mínimo 8 caracteres'
   }
 }
@@ -49,12 +54,18 @@ export class LoginDto {
 
   @ApiPropertyOptional({ example: 'ceo@empresa.com' })
   @ValidateIf((value: LoginDto) => value.loginMode === LoginModeDto.STAFF)
-  @IsString()
+  @IsNotEmpty({ message: 'Email da empresa é obrigatório' })
+  @IsEmail({}, { message: 'Email da empresa inválido' })
   companyEmail?: string
 
   @ApiPropertyOptional({ example: 'VD-001' })
   @ValidateIf((value: LoginDto) => value.loginMode === LoginModeDto.STAFF)
+  @IsNotEmpty({ message: 'Código do funcionário é obrigatório' })
   @IsString()
+  @MaxLength(32)
+  @Matches(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, {
+    message: 'Código do funcionário inválido',
+  })
   employeeCode?: string
 
   @ApiProperty({ example: 'Strong@123' })

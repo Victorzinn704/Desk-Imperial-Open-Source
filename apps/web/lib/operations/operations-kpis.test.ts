@@ -11,6 +11,7 @@ import {
   buildOperationsExecutiveKpis,
   buildPerformerKpis,
   buildPerformerRanking,
+  buildPerformerStanding,
   buildTopProducts,
   countKitchenPendingItems,
 } from './operations-kpis'
@@ -101,6 +102,30 @@ describe('operations-kpis', () => {
     expect(performer.receitaRealizada).toBe(120)
     expect(performer.receitaEsperada).toBe(200)
     expect(performer.openComandasCount).toBe(1)
+  })
+
+  it('calcula posicao do performer contra lider', () => {
+    const standing = buildPerformerStanding(snapshot, 'emp-2')
+
+    expect(standing).toMatchObject({
+      position: 2,
+      totalPerformers: 2,
+      leaderName: 'Marina',
+      leaderValue: 200,
+      performerValue: 50,
+      deltaToLeader: 150,
+    })
+  })
+
+  it('retorna standing vazio sem performer selecionado', () => {
+    expect(buildPerformerStanding(snapshot, null)).toMatchObject({
+      position: null,
+      totalPerformers: 0,
+      leaderName: null,
+      leaderValue: 0,
+      performerValue: 0,
+      deltaToLeader: 0,
+    })
   })
 
   it('conta itens pendentes de cozinha', () => {

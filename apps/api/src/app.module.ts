@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
+import { SentryModule } from '@sentry/nestjs/setup'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { LoggerModule } from 'nestjs-pino'
 import { resolve } from 'node:path'
@@ -16,12 +17,15 @@ import { CurrencyModule } from './modules/currency/currency.module'
 import { EmployeesModule } from './modules/employees/employees.module'
 import { FinanceModule } from './modules/finance/finance.module'
 import { GeocodingModule } from './modules/geocoding/geocoding.module'
+import { IntelligencePlatformModule } from './modules/intelligence-platform/intelligence-platform.module'
 import { MarketIntelligenceModule } from './modules/market-intelligence/market-intelligence.module'
 import { MonitoringModule } from './modules/monitoring/monitoring.module'
+import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OperationsModule } from './modules/operations/operations.module'
 import { OperationsRealtimeModule } from './modules/operations-realtime.module'
 import { OrdersModule } from './modules/orders/orders.module'
 import { ProductsModule } from './modules/products/products.module'
+import { HealthModule } from './modules/health/health.module'
 import { validateEnvironment } from './config/env.validation'
 
 const DEFAULT_THROTTLER_TTL_MS = 60_000
@@ -81,6 +85,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
             'req.headers.cookie',
             'req.headers.x-csrf-token',
             'req.headers.x-admin-pin',
+            'req.headers.x-telegram-bot-api-secret-token',
             'req.body.fullName',
             'req.body.companyName',
             'req.body.email',
@@ -107,6 +112,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
             'req.body.token',
             'req.body.code',
             'req.body.customerDocument',
+            'req.body.buyerDocument',
             'req.body.document',
             'req.body.cpf',
             'req.body.cnpj',
@@ -118,12 +124,15 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
         },
       },
     }),
+    SentryModule.forRoot(),
     PrismaModule,
     CacheModule,
     CurrencyModule,
     EmployeesModule,
     GeocodingModule,
+    NotificationsModule,
     MarketIntelligenceModule,
+    IntelligencePlatformModule,
     MonitoringModule,
     ConsentModule,
     AuthModule,
@@ -133,6 +142,7 @@ const throttlerLimit = parsePositiveIntegerEnv(process.env.THROTTLER_LIMIT, DEFA
     OperationsModule,
     OperationsRealtimeModule,
     FinanceModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

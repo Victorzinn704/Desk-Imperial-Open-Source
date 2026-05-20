@@ -1,48 +1,95 @@
 # Dicas para novos desenvolvedores
 
-**Por João Victor — criador do Desk Imperial**
+**Por Joao Victor — criador do Desk Imperial**
 
-Ninguém me ajudou quando comecei. Aprendi errando, batendo cabeça e ficando sem dormir.
-Essas dicas são o que eu queria ter lido antes de começar.
-
-Vou atualizando conforme o projeto avança.
+Este arquivo nao e uma especificacao tecnica do produto. Ele e um ponto de entrada humano para quem chegou agora no projeto e quer entender as ferramentas que de fato ficaram de pe.
 
 ---
 
-## Ferramentas que usei e o que aprendi com cada uma
+## Ferramentas que sustentam o Desk Imperial hoje
 
-### E-mail — Brevo
+### Banco de dados — PostgreSQL + Prisma
 
-Gratuito. Limite de 300 e-mails por mês — suficiente para começar e testar sem gastar nada.
-Fácil de integrar via API. Se você está no começo, não precisa de outra coisa.
+Prisma continua sendo a camada principal de modelagem e migrations.
 
-### Banco de dados — PostgreSQL + Prisma + Neon
+No ambiente local, a trilha simples ainda e:
 
-O Prisma torna o PostgreSQL simples de configurar. O Neon é serverless e intuitivo — você sobe um banco em minutos sem precisar gerenciar servidor.
-Para quem está aprendendo, essa combinação é a melhor porta de entrada.
+- PostgreSQL via `npm run db:up`
+- Prisma via `prisma migrate deploy`
+- seed/demo via scripts do workspace da API
 
-### Deploy — Railway
+Em producao, o banco atual segue este desenho:
 
-Suporta frontend e backend juntos no mesmo projeto. Ainda acopla um segundo banco de dados sem complicação.
-Eu rodei a API NestJS e o Next.js no mesmo lugar, com Redis e PostgreSQL acoplados. Funciona.
+- PostgreSQL 17 na Ampere da Lohana
+- PgBouncer no mesmo host
+- acesso privado por WireGuard
 
-### DNS e segurança — Cloudflare
+### Runtime — Oracle + Docker Compose
 
-Comprei meu primeiro domínio e aprendi a configurar DNS pelo Cloudflare.
-Além do DNS, ele te dá uma camada real de proteção — aprendi a me defender com isso sem precisar de infraestrutura cara.
+Hoje o projeto roda com:
+
+- `web`, `api`, `redis`, `nginx` e `certbot` na Oracle `vm-free-01`
+- builder, observabilidade, SonarQube e Metabase na Oracle `vm-free-02`
+- banco dedicado na Ampere
+
+Referencias:
+
+- [infra/oracle/README.md](../infra/oracle/README.md)
+- [infra/oracle/db/README.md](../infra/oracle/db/README.md)
+
+### Observabilidade — OpenTelemetry, Faro e Sentry
+
+Hoje o projeto ja tem trilha real de observabilidade:
+
+- OpenTelemetry na API
+- Faro no frontend para sinais do browser
+- Sentry na API e no web para erro, tracing e sourcemaps
+
+Isso importa porque boa parte da manutencao do Desk Imperial ja depende de diagnostico de runtime, nao so de leitura estatica do codigo.
+
+### DNS e borda — Cloudflare
+
+Cloudflare continua relevante para:
+
+- DNS
+- borda publica
+- protecao basica da superficie exposta
+
+Mas ele nao substitui o endurecimento da malha Oracle/WireGuard nem a higiene de segredos.
 
 ---
 
-## Sobre dar o primeiro passo
+## O que vale aprender aqui
 
-Todo esse conjunto — cada ferramenta, cada erro, cada configuração — vira conhecimento que você carrega para a carreira toda.
+O valor deste projeto nao esta em uma stack "bonita". Esta em aprender a segurar um sistema real com:
 
-Você não precisa saber tudo antes de começar. Você aprende construindo.
-Às vezes o único jeito de entender um sistema é quebrá-lo, consertar e quebrar de novo.
+- auth de sessao
+- realtime
+- operacao de caixa/comanda/cozinha
+- observabilidade
+- banco transacional + BI
+- deploy de verdade
 
-O primeiro passo vai te moldar como profissional. Porque ele desperta uma vontade maior de aprender — e essa vontade não para mais.
+Se voce estiver chegando agora, a sequencia que mais paga dividendo e:
+
+1. entender `README.md`
+2. entender `docs/README.md`
+3. subir o backend local
+4. abrir `/app/owner` e `/app/staff`
+5. seguir os fluxos de produto e operacao
 
 ---
 
-_Mais dicas serão adicionadas aqui conforme o projeto avança._
-_Se tiver dúvida sobre algo que usei nesse projeto, abre uma issue no repositório._
+## Guardrail
+
+Nao use este arquivo como fonte canonica de arquitetura ou deploy. Para isso, prefira:
+
+- [README.md](../README.md)
+- [docs/README.md](./README.md)
+- [docs/architecture/local-development.md](./architecture/local-development.md)
+- [docs/architecture/database.md](./architecture/database.md)
+- [docs/operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)
+
+---
+
+_Se algo aqui divergir do runtime, o runtime vence._

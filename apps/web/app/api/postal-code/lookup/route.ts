@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 }
 
 function normalizePostalCode(value: string | undefined) {
-  const digits = (value ?? '').replace(/\D/g, '').slice(0, 8)
+  const digits = (value ?? '').replaceAll(/\D/g, '').slice(0, 8)
   return /^\d{8}$/.test(digits) ? digits : null
 }
 

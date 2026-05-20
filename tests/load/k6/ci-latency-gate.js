@@ -30,13 +30,13 @@ export const options = {
 }
 
 export default function () {
-  const healthResponse = http.get(`${baseUrl}/api/health`)
+  const healthResponse = http.get(`${baseUrl}/api/v1/health`)
   check(healthResponse, {
     'health returns 200': (response) => response.status === 200,
     'health contains status field': (response) => response.body.includes('"status"'),
   })
 
-  const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, authRequestParams)
+  const loginResponse = http.post(`${baseUrl}/api/v1/auth/login`, loginPayload, authRequestParams)
   check(loginResponse, {
     'auth deterministic status': (response) => [200, 201, 401, 403, 429].includes(response.status),
     'auth latency under 1500ms': (response) => response.timings.duration < 1500,

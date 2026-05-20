@@ -8,9 +8,11 @@
  * Para labels especiais (VIP, BAR, etc.), retorna em uppercase.
  *   "vip", "VIP", "mesa vip" → "VIP"
  */
-export function normalizeTableLabel(raw: string): string {
-  const trimmed = raw.trim()
-  if (!trimmed) return trimmed
+export function normalizeTableLabel(raw?: string | null): string {
+  const trimmed = raw?.trim() ?? ''
+  if (!trimmed) {
+    return trimmed
+  }
 
   // Remove prefixos comuns: "mesa", "ms", "m", "nº", "n", "#", "-", espaços
   const cleaned = trimmed

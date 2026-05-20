@@ -1,4 +1,6 @@
 export * from './mobile-table-grid'
 export * from './mobile-order-builder'
 export * from './mobile-comanda-list'
+export * from './mobile-historico-view'
+export * from './kitchen-orders-view'
 export * from './staff-mobile-shell'

@@ -1,11 +1,12 @@
-import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common'
-import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
+import { SentryExceptionCaptured } from '@sentry/nestjs'
 import type { Request, Response } from 'express'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name)
 
+  @SentryExceptionCaptured()
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
     const response = ctx.getResponse<Response>()
@@ -31,10 +32,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = body
       } else if (typeof body === 'object' && body !== null) {
         const bodyObj = body as Record<string, unknown>
-        if (typeof bodyObj['message'] === 'string') {
-          message = bodyObj['message']
-        } else if (Array.isArray(bodyObj['message'])) {
-          message = bodyObj['message'] as string[]
+        if (typeof bodyObj.message === 'string') {
+          message = bodyObj.message
+        } else if (Array.isArray(bodyObj.message)) {
+          message = bodyObj.message as string[]
         }
       }
     }

@@ -11,7 +11,7 @@ export function CheckboxField({ label, description, error, className, ...props }
   return (
     <label
       className={cn(
-        'flex gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[var(--border-strong)]',
+        'flex gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition-colors hover:border-[var(--border-strong)]',
         error && 'border-[var(--danger)]',
         className,
       )}

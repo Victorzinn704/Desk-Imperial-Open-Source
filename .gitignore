@@ -58,6 +58,11 @@ CLAUDE.md
 docker-compose.override.yml
 docker-compose.local.yml
 infra/docker/.env
+infra/oracle/db/.runtime/
+infra/oracle/runner/.runtime/
+infra/oracle/runner/reports/
+infra/oracle/runner/restore/
+nul
 
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log
@@ -86,9 +91,25 @@ Desktop.ini
 /apps/web/blob-report/
 /playwright/.cache/
 
+# ─── Artefatos locais de auditoria / screenshots ────────────────────────────
+.tmp/
+.tmp-wireframes/
+artifacts/
+apps/**/.tmp/
+apps/**/artifacts/
+20??-??-??-*.txt
+CON
+
 # ─── Misc ────────────────────────────────────────────────────────────────────
 *.tgz
 *.zip
 .vercel
 .netlify
 .aider*
+.scannerwork/
+.fallow/
+.local-tools/
+
+# ─── WIP / design drafts ────────────────────────────────────────────────────
+apps/web/components/charts/
+.dual-graph/

@@ -1,6 +1,6 @@
 # Demo — Desk Imperial
 
-**Versão:** 1.0  
+**Versão:** 1.0
 **Última atualização:** 2026-04-01
 
 ---
@@ -9,8 +9,8 @@
 
 Você pode explorar o Desk Imperial agora sem criar uma conta.
 
-**URL:** [app.deskimperial.online](https://app.deskimperial.online)  
-**E-mail:** `demo@deskimperial.online`  
+**URL:** [app.deskimperial.online](https://app.deskimperial.online)
+**E-mail:** `demo@deskimperial.online`
 **Senha:** `Demo@2024`
 
 ---

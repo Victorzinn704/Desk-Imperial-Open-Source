@@ -10,11 +10,7 @@ const sharp = require('sharp')
 
 const PATHS = {
   publicSrc: 'apps/web/public',
-  buildArtifacts: [
-    'apps/web/.next',
-    'apps/web/out',
-    'apps/api/dist',
-  ],
+  buildArtifacts: ['apps/web/.next', 'apps/web/out', 'apps/api/dist'],
 }
 
 // ─── Clean ────────────────────────────────────────────────────────────────────
@@ -96,7 +92,7 @@ function watch() {
   gulp.watch(
     [`${PATHS.publicSrc}/**/*.{jpg,jpeg,png}`],
     { ignoreInitial: false },
-    gulp.series(imagesCompress, imagesWebp)
+    gulp.series(imagesCompress, imagesWebp),
   )
 }
 

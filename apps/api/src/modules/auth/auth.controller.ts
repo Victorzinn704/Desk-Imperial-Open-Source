@@ -4,6 +4,7 @@ import type { Request, Response } from 'express'
 import { CurrentAuth } from './decorators/current-auth.decorator'
 import type { AuthContext } from './auth.types'
 import { extractRequestContext } from '../../common/utils/request-context.util'
+import { resolveAuthActorUserId } from './auth-shared.util'
 import { ForgotPasswordDto } from './dto/forgot-password.dto'
 import { DemoLoginDto } from './dto/demo-login.dto'
 import { LoginDto } from './dto/login.dto'
@@ -80,7 +81,7 @@ export class AuthController {
   @UseGuards(SessionGuard)
   @Get('activity')
   getActivity(@CurrentAuth() auth: AuthContext) {
-    return this.auditLogService.getLastLoginsForUser(auth.userId)
+    return this.auditLogService.getLastLoginsForUser(resolveAuthActorUserId(auth))
   }
 
   @UseGuards(SessionGuard)

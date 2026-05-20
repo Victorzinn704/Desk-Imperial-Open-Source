@@ -1,5 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common'
-import type { ExecutionContext } from '@nestjs/common'
+import { type ExecutionContext, UnauthorizedException } from '@nestjs/common'
 import { SessionGuard } from '../src/modules/auth/guards/session.guard'
 import type { AuthService } from '../src/modules/auth/auth.service'
 import { makeAuthContext } from './helpers/auth-context.factory'

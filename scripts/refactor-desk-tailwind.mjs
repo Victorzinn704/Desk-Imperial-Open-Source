@@ -1,5 +1,5 @@
 /**
- * Substitui classes arbitrárias baseadas em var(--*) por utilitários do @theme (desk-theme.css).
+ * Substitui classes arbitrárias baseadas em var(--*) por utilitários de tokens ativos do CSS global.
  * Uso: node scripts/refactor-desk-tailwind.mjs
  */
 import fs from 'node:fs'

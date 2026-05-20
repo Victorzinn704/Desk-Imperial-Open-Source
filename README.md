@@ -9,7 +9,7 @@
 
 PDV ao vivo, controle financeiro, folha de pagamento automática, mapa de vendas e muito mais — tudo no mesmo painel, sem pagar nada.
 
-> Feito para tirar o comerciante brasileiro da planilha.  
+> Feito para tirar o comerciante brasileiro da planilha.
 > Código aberto. Licença MIT. Construído e mantido por uma pessoa só.
 
 ---
@@ -116,7 +116,7 @@ CSRF_SECRET=troque-por-um-csrf-secret-longo-e-aleatorio
 ENCRYPTION_KEY=troque-por-uma-chave-de-32-caracteres-ou-mais
 ```
 
-Integrações externas (Brevo, Gemini, AwesomeAPI) são **opcionais** em desenvolvimento.  
+Integrações externas (Brevo, Gemini, AwesomeAPI) são **opcionais** em desenvolvimento.
 Veja [docs/architecture/local-development.md](./docs/architecture/local-development.md) para o guia completo.
 
 ### 3. Suba o banco e o Redis
@@ -312,7 +312,7 @@ npm run security:audit-runtime
 
 Leia [CONTRIBUTING.md](./CONTRIBUTING.md) para o fluxo completo.
 
-Neste projeto, mudanças entram por **pull request revisado**.  
+Neste projeto, mudanças entram por **pull request revisado**.
 O repositório é aberto para colaboração, mas a direção do produto continua centralizada para preservar a identidade e a qualidade do Desk Imperial.
 
 Checklist mínimo antes de abrir PR:
@@ -352,7 +352,7 @@ Veja [ROADMAP.md](./ROADMAP.md) para o que está feito, o que está em andamento
 
 **João Victor de Moraes da Cruz** — estudante de Engenharia de Software.
 
-Construído e mantido sozinho, com foco em segurança, lógica e produto real para quem precisa.  
+Construído e mantido sozinho, com foco em segurança, lógica e produto real para quem precisa.
 Leia a história completa em [docs/CREATOR.md](./docs/CREATOR.md).
 
 ---

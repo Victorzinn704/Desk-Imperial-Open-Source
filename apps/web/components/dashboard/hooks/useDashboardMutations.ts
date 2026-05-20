@@ -1,20 +1,26 @@
-import { useQueryClient, useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   archiveEmployee,
   archiveProduct,
+  bulkRestockProducts,
   cancelOrder,
   createEmployee,
   createOrder,
   createProduct,
+  deleteProductPermanently,
   importProducts,
+  issueEmployeeAccess,
   logout,
+  rotateEmployeePassword,
+  revokeEmployeeAccess,
   restoreEmployee,
   restoreProduct,
-  updateProfile,
   updateCookiePreferences,
   updateProduct,
+  updateProfile,
 } from '@/lib/api'
 import { clearAdminPinVerification } from '@/lib/admin-pin'
+import { invalidateOperationsWorkspace, OPERATIONS_LIVE_QUERY_PREFIX } from '@/lib/operations'
 
 /**
  * Hook centralizado para todas as mutations do dashboard
@@ -61,6 +67,13 @@ export function useDashboardMutations() {
     onSuccess: (payload) => {
       queryClient.setQueryData(['auth', 'me'], payload)
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] })
+      queryClient.invalidateQueries({ queryKey: ['finance'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      void invalidateOperationsWorkspace(queryClient, OPERATIONS_LIVE_QUERY_PREFIX, {
+        includeOrders: true,
+        includeFinance: true,
+      })
     },
   })
 
@@ -80,8 +93,18 @@ export function useDashboardMutations() {
     onSuccess: () => invalidateCatalog(),
   })
 
+  const bulkRestockProductsMutation = useMutation({
+    mutationFn: bulkRestockProducts,
+    onSuccess: () => invalidateCatalog(),
+  })
+
   const restoreProductMutation = useMutation({
     mutationFn: restoreProduct,
+    onSuccess: () => invalidateCatalog(),
+  })
+
+  const deleteProductMutation = useMutation({
+    mutationFn: deleteProductPermanently,
     onSuccess: () => invalidateCatalog(),
   })
 
@@ -115,6 +138,21 @@ export function useDashboardMutations() {
     onSuccess: () => invalidateEmployees(),
   })
 
+  const issueEmployeeAccessMutation = useMutation({
+    mutationFn: issueEmployeeAccess,
+    onSuccess: () => invalidateEmployees(),
+  })
+
+  const revokeEmployeeAccessMutation = useMutation({
+    mutationFn: revokeEmployeeAccess,
+    onSuccess: () => invalidateEmployees(),
+  })
+
+  const rotateEmployeePasswordMutation = useMutation({
+    mutationFn: rotateEmployeePassword,
+    onSuccess: () => invalidateEmployees(),
+  })
+
   return {
     logoutMutation,
     preferenceMutation,
@@ -122,13 +160,18 @@ export function useDashboardMutations() {
     createProductMutation,
     updateProductMutation,
     archiveProductMutation,
+    bulkRestockProductsMutation,
     restoreProductMutation,
+    deleteProductMutation,
     importProductsMutation,
     createOrderMutation,
     cancelOrderMutation,
     createEmployeeMutation,
     archiveEmployeeMutation,
     restoreEmployeeMutation,
+    issueEmployeeAccessMutation,
+    revokeEmployeeAccessMutation,
+    rotateEmployeePasswordMutation,
     queryClient,
   }
 }

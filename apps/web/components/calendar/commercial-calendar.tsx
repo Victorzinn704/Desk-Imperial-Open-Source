@@ -1,353 +1,70 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Calendar, dateFnsLocalizer, type View } from 'react-big-calendar'
-import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { format, parse, startOfWeek, getDay } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { CalendarDays, Plus, X } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import type { View } from 'react-big-calendar'
+import type { withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
+import { addDays, endOfDay, isWithinInterval } from 'date-fns'
+import { Plus, Trophy } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
+import { Button } from '@/components/shared/button'
+import { VascoCalendarWidget } from '@/components/shared/football-widgets'
+import {
+  LabFilterChip,
+  LabMetricStrip,
+  LabMetricStripItem,
+  LabPanel,
+  LabStatusPill,
+} from '@/components/design-lab/lab-primitives'
+import { ActivityEventContent, FootballGameRail, groupFootballGameDays } from './commercial-calendar-football'
+import { ActivityModal } from './commercial-calendar-modal'
+import {
+  ACTIVITY_LABELS,
+  ACTIVITY_STYLES,
+  type ActivityFilter,
+  type ActivityType,
+  type CommercialActivity,
+  compareActivities,
+  DnDCalendar,
+  eventStyleGetter,
+  formatDateTime,
+  getPeriodRange,
+  INITIAL_ACTIVITIES,
+  isSameCalendarDay,
+  localizer,
+  VIEW_LABELS,
+} from './commercial-calendar.model'
+import { PlanningRadar } from './commercial-calendar-radar'
+import { CALENDAR_THEME } from './commercial-calendar.theme'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type ActivityType = 'evento' | 'jogo' | 'promocao' | 'reuniao' | 'outro'
-
-export type CommercialActivity = {
-  id: string
-  title: string
-  type: ActivityType
-  start: Date
-  end: Date
-  descricao?: string
-  impactoEsperado?: number
-}
-
-// ─── Setup ────────────────────────────────────────────────────────────────────
-
-const locales = { 'pt-BR': ptBR }
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { locale: ptBR }),
-  getDay,
-  locales,
-})
-
-const DnDCalendar = withDragAndDrop<CommercialActivity>(Calendar)
-
-// ─── Colors ───────────────────────────────────────────────────────────────────
-
-const ACTIVITY_COLORS: Record<ActivityType, { bg: string; border: string; text: string; dot: string }> = {
-  evento: { bg: 'rgba(239,68,68,0.16)', border: 'rgba(239,68,68,0.4)', text: '#fca5a5', dot: '#ef4444' },
-  jogo: { bg: 'rgba(234,179,8,0.16)', border: 'rgba(234,179,8,0.4)', text: '#fde047', dot: '#eab308' },
-  promocao: { bg: 'rgba(54,245,124,0.14)', border: 'rgba(54,245,124,0.38)', text: '#86efac', dot: '#36f57c' },
-  reuniao: { bg: 'rgba(96,165,250,0.14)', border: 'rgba(96,165,250,0.38)', text: '#93c5fd', dot: '#60a5fa' },
-  outro: { bg: 'rgba(168,85,247,0.14)', border: 'rgba(168,85,247,0.38)', text: '#c4b5fd', dot: '#a855f7' },
-}
-
-const ACTIVITY_LABELS: Record<ActivityType, string> = {
-  evento: 'Evento',
-  jogo: 'Jogo',
-  promocao: 'Promoção',
-  reuniao: 'Reunião',
-  outro: 'Outro',
-}
-
-const INITIAL_ACTIVITIES: CommercialActivity[] = [
-  {
-    id: '1',
-    title: 'Happy Hour Sexta',
-    type: 'promocao',
-    start: new Date(2026, 2, 21, 17, 0),
-    end: new Date(2026, 2, 21, 20, 0),
-    descricao: 'Desconto de 20% em bebidas',
-    impactoEsperado: 35,
-  },
-  {
-    id: '2',
-    title: 'Jogo do Brasileirão',
-    type: 'jogo',
-    start: new Date(2026, 2, 23, 16, 0),
-    end: new Date(2026, 2, 23, 18, 0),
-    descricao: 'Transmissão no telão',
-    impactoEsperado: 60,
-  },
-  {
-    id: '3',
-    title: 'Lançamento Cardápio Verão',
-    type: 'evento',
-    start: new Date(2026, 2, 28, 19, 0),
-    end: new Date(2026, 2, 28, 23, 0),
-    descricao: 'Novos pratos e bebidas sazonais',
-    impactoEsperado: 45,
-  },
-]
-
-// ─── Event styling ────────────────────────────────────────────────────────────
-
-function eventStyleGetter(event: CommercialActivity) {
-  const colors = ACTIVITY_COLORS[event.type]
-  return {
-    style: {
-      background: colors.bg,
-      border: `1px solid ${colors.border}`,
-      color: colors.text,
-      borderRadius: '8px',
-      fontSize: '12px',
-      fontWeight: 600,
-      padding: '2px 6px',
-      cursor: 'grab',
-    },
-  }
-}
-
-// ─── New/Edit Activity Modal ──────────────────────────────────────────────────
-
-type ActivityModalProps = {
-  activity?: CommercialActivity | null
-  initialStart?: Date
-  onSave: (data: Omit<CommercialActivity, 'id'>) => void
-  onDelete?: (id: string) => void
-  onClose: () => void
-}
-
-function ActivityModal({ activity, initialStart, onSave, onDelete, onClose }: Readonly<ActivityModalProps>) {
-  const isEditing = Boolean(activity)
-  const [title, setTitle] = useState(activity?.title ?? '')
-  const [type, setType] = useState<ActivityType>(activity?.type ?? 'evento')
-  const [descricao, setDescricao] = useState(activity?.descricao ?? '')
-  const [impacto, setImpacto] = useState<number | ''>(activity?.impactoEsperado ?? '')
-
-  const defaultDate = initialStart ?? activity?.start ?? new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const toInput = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-
-  const [startStr, setStartStr] = useState(toInput(activity?.start ?? defaultDate))
-  const [endStr, setEndStr] = useState(toInput(activity?.end ?? new Date(defaultDate.getTime() + 2 * 60 * 60 * 1000)))
-
-  function handleSave() {
-    if (!title.trim()) return
-    onSave({
-      title: title.trim(),
-      type,
-      start: new Date(startStr),
-      end: new Date(endStr),
-      descricao: descricao || undefined,
-      impactoEsperado: impacto !== '' ? Number(impacto) : undefined,
-    })
-  }
-
-  const colors = ACTIVITY_COLORS[type]
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div className="imperial-card relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] p-6">
-          <h2 className="text-lg font-semibold text-white">
-            {isEditing ? 'Editar Atividade' : 'Nova Atividade Comercial'}
-          </h2>
-          <button
-            className="flex size-8 items-center justify-center rounded-[12px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:text-white"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4 p-6">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-              Nome
-            </label>
-            <input
-              autoFocus
-              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
-              placeholder="Ex: Happy Hour, Jogo do Flamengo..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-              Tipo
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-                const isActive = type === t
-                const c = ACTIVITY_COLORS[t]
-                return (
-                  <button
-                    key={t}
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all"
-                    style={{
-                      background: isActive ? c.bg : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${isActive ? c.border : 'rgba(255,255,255,0.08)'}`,
-                      color: isActive ? c.text : 'var(--text-soft)',
-                    }}
-                    type="button"
-                    onClick={() => setType(t)}
-                  >
-                    <span className="size-2 rounded-full" style={{ background: isActive ? c.dot : '#7a8896' }} />
-                    {ACTIVITY_LABELS[t]}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-                Início
-              </label>
-              <input
-                className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
-                type="datetime-local"
-                value={startStr}
-                onChange={(e) => setStartStr(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-                Fim
-              </label>
-              <input
-                className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] [color-scheme:dark]"
-                type="datetime-local"
-                value={endStr}
-                onChange={(e) => setEndStr(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-              Descrição (opcional)
-            </label>
-            <textarea
-              className="w-full resize-none rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
-              placeholder="Detalhes da atividade..."
-              rows={2}
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">
-              Impacto esperado em vendas %
-            </label>
-            <input
-              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-sm text-white outline-none focus:border-[rgba(52,242,127,0.3)] placeholder:text-[var(--text-soft)]"
-              max="200"
-              min="0"
-              placeholder="Ex: 30"
-              type="number"
-              value={impacto}
-              onChange={(e) => setImpacto(e.target.value === '' ? '' : Number(e.target.value))}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-3 border-t border-[rgba(255,255,255,0.06)] p-6">
-          {isEditing && onDelete && activity && (
-            <button
-              className="rounded-[14px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm font-semibold text-[#fca5a5] hover:bg-[rgba(239,68,68,0.14)]"
-              type="button"
-              onClick={() => {
-                onDelete(activity.id)
-                onClose()
-              }}
-            >
-              Excluir
-            </button>
-          )}
-          <button
-            className="flex-1 rounded-[14px] py-3 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={!title.trim()}
-            style={{
-              background: colors.bg,
-              border: `1px solid ${colors.border}`,
-              color: colors.text,
-            }}
-            type="button"
-            onClick={handleSave}
-          >
-            {isEditing ? 'Salvar Alterações' : 'Criar Atividade'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Próximos eventos widget ──────────────────────────────────────────────────
-
-function UpcomingEvents({ activities }: { activities: CommercialActivity[] }) {
-  const upcoming = activities
-    .filter((a) => a.start >= new Date())
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-    .slice(0, 4)
-
-  if (upcoming.length === 0) return null
-
-  return (
-    <div className="imperial-card-soft rounded-[20px] p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Próximas atividades</p>
-      <div className="space-y-2">
-        {upcoming.map((a) => {
-          const c = ACTIVITY_COLORS[a.type]
-          return (
-            <div key={a.id} className="flex items-center gap-3">
-              <span className="size-2 shrink-0 rounded-full" style={{ background: c.dot }} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{a.title}</p>
-              </div>
-              <p className="shrink-0 text-xs text-[var(--text-soft)]">{format(a.start, 'dd/MM', { locale: ptBR })}</p>
-              {a.impactoEsperado && (
-                <span className="shrink-0 rounded-full bg-[rgba(52,242,127,0.1)] px-2 py-0.5 text-[10px] font-bold text-[#36f57c]">
-                  +{a.impactoEsperado}%
-                </span>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Main Calendar ─────────────────────────────────────────────────────────────
+export { ActivityModal } from './commercial-calendar-modal'
 
 export function CommercialCalendar() {
   const [activities, setActivities] = useState<CommercialActivity[]>(INITIAL_ACTIVITIES)
   const [view, setView] = useState<View>('month')
   const [date, setDate] = useState(new Date())
+  const [filter, setFilter] = useState<ActivityFilter>('all')
   const [showModal, setShowModal] = useState(false)
   const [selectedSlotStart, setSelectedSlotStart] = useState<Date | undefined>()
   const [editingActivity, setEditingActivity] = useState<CommercialActivity | null>(null)
 
-  // ── Drag: move event ──────────────────────────────────────────────────────
   const onEventDrop = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventDrop']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
+        prev.map((activity) =>
+          activity.id === event.id ? { ...activity, start: new Date(start), end: new Date(end) } : activity,
+        ),
       )
     },
     [],
   )
 
-  // ── Drag: resize event ────────────────────────────────────────────────────
   const onEventResize = useCallback<NonNullable<withDragAndDropProps<CommercialActivity>['onEventResize']>>(
     ({ event, start, end }) => {
       setActivities((prev) =>
-        prev.map((a) => (a.id === event.id ? { ...a, start: new Date(start), end: new Date(end) } : a)),
+        prev.map((activity) =>
+          activity.id === event.id ? { ...activity, start: new Date(start), end: new Date(end) } : activity,
+        ),
       )
     },
     [],
@@ -360,71 +77,166 @@ export function CommercialCalendar() {
 
   function handleSave(data: Omit<CommercialActivity, 'id'>) {
     if (editingActivity) {
-      setActivities((prev) => prev.map((a) => (a.id === editingActivity.id ? { ...a, ...data } : a)))
+      setActivities((prev) =>
+        prev.map((activity) => (activity.id === editingActivity.id ? { ...activity, ...data } : activity)),
+      )
       setEditingActivity(null)
-    } else {
-      setActivities((prev) => [...prev, { ...data, id: String(Date.now()) }])
-      setShowModal(false)
-      setSelectedSlotStart(undefined)
+      return
     }
+
+    setActivities((prev) => [...prev, { ...data, id: String(Date.now()) }])
+    setShowModal(false)
+    setSelectedSlotStart(undefined)
   }
 
   function handleDelete(id: string) {
-    setActivities((prev) => prev.filter((a) => a.id !== id))
+    setActivities((prev) => prev.filter((activity) => activity.id !== id))
   }
 
   const messages = {
-    month: 'Mês',
+    month: 'Mes',
     week: 'Semana',
+    work_week: 'Semana',
     day: 'Dia',
     agenda: 'Agenda',
     today: 'Hoje',
     previous: '‹',
     next: '›',
-    noEventsInRange: 'Nenhuma atividade neste período.',
+    noEventsInRange: 'Nenhuma atividade neste periodo.',
     showMore: (total: number) => `+ ${total} mais`,
   }
 
-  const totalImpacto = activities
-    .filter((a) => a.impactoEsperado !== undefined)
-    .reduce((sum, a) => sum + (a.impactoEsperado ?? 0), 0)
+  const filteredActivities = useMemo(() => {
+    const scoped = filter === 'all' ? activities : activities.filter((activity) => activity.type === filter)
+    return [...scoped].sort(compareActivities)
+  }, [activities, filter])
+
+  const periodRange = useMemo(() => getPeriodRange(view, date), [date, view])
+
+  const now = new Date()
+  const todayActivities = filteredActivities.filter((activity) => isSameCalendarDay(activity.start, now))
+  const upcomingActivities = filteredActivities
+    .filter((activity) => activity.start >= now)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+  const nextActivity = upcomingActivities[0]
+  const nextSevenDaysActivities = upcomingActivities.filter((activity) =>
+    isWithinInterval(activity.start, { start: now, end: endOfDay(addDays(now, 7)) }),
+  )
+  const periodActivities = filteredActivities.filter((activity) =>
+    isWithinInterval(activity.start, { start: periodRange.start, end: periodRange.end }),
+  )
+  const periodFootballGameDays = groupFootballGameDays(periodActivities)
+  const periodImpacto = periodActivities.reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
+  const nextSevenDaysImpact = nextSevenDaysActivities.reduce(
+    (sum, activity) => sum + (activity.impactoEsperado ?? 0),
+    0,
+  )
+
+  const summaryRows = (Object.keys(ACTIVITY_LABELS) as ActivityType[])
+    .map((type) => {
+      const style = ACTIVITY_STYLES[type]
+      const count = periodActivities.filter((activity) => activity.type === type).length
+      const impact = periodActivities
+        .filter((activity) => activity.type === type && activity.impactoEsperado)
+        .reduce((sum, activity) => sum + (activity.impactoEsperado ?? 0), 0)
+
+      return { type, style, count, impact }
+    })
+    .filter((row) => row.count > 0)
+
+  const leadingType = (Object.keys(ACTIVITY_LABELS) as ActivityType[]).reduce<ActivityType | undefined>(
+    (leader, type) => {
+      const leaderCount = leader ? periodActivities.filter((activity) => activity.type === leader).length : -1
+      const typeCount = periodActivities.filter((activity) => activity.type === type).length
+
+      return typeCount > leaderCount ? type : leader
+    },
+    undefined,
+  )
+  const calendarHeight =
+    view === 'month'
+      ? 'clamp(520px, 66vh, 610px)'
+      : view === 'agenda'
+        ? 'clamp(500px, 62vh, 560px)'
+        : 'clamp(560px, 72vh, 680px)'
 
   return (
-    <div className="space-y-4">
-      {/* Top bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Legenda */}
-          <div className="flex flex-wrap gap-3">
-            {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-              const c = ACTIVITY_COLORS[t]
-              const count = activities.filter((a) => a.type === t).length
-              return (
-                <span key={t} className="flex items-center gap-1.5 text-xs font-medium" style={{ color: c.text }}>
-                  <span className="size-2.5 rounded-full" style={{ background: c.dot }} />
-                  {ACTIVITY_LABELS[t]}
-                  {count > 0 && (
-                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: c.bg }}>
-                      {count}
-                    </span>
-                  )}
-                </span>
-              )
-            })}
-          </div>
+    <div className="space-y-5">
+      <LabMetricStrip columnsClassName="lg:grid-cols-2 2xl:grid-cols-4">
+        <LabMetricStripItem
+          description={
+            todayActivities.length > 0
+              ? `${todayActivities.length} atividade${todayActivities.length > 1 ? 's' : ''} no dia.`
+              : 'Sem atividade agendada hoje.'
+          }
+          label="Hoje"
+          value={
+            todayActivities.length > 0 ? (
+              String(todayActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
+          }
+        />
+        <LabMetricStripItem
+          description={nextActivity ? nextActivity.title : 'Nao ha novo gatilho comercial programado.'}
+          label="Proxima atividade"
+          value={nextActivity ? formatDateTime(nextActivity.start) : 'Sem agenda'}
+        />
+        <LabMetricStripItem
+          description={
+            nextSevenDaysActivities.length > 0
+              ? `Impacto somado de +${nextSevenDaysImpact}%.`
+              : 'Nenhuma atividade na proxima janela.'
+          }
+          label="7 dias"
+          value={
+            nextSevenDaysActivities.length > 0 ? (
+              String(nextSevenDaysActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
+          }
+        />
+        <LabMetricStripItem
+          description={`${VIEW_LABELS[view]} aberta em ${periodRange.label}.`}
+          label="Recorte atual"
+          value={
+            periodActivities.length > 0 ? (
+              String(periodActivities.length)
+            ) : (
+              <span className="text-[var(--lab-fg-muted)]">0</span>
+            )
+          }
+        />
+      </LabMetricStrip>
 
-          {/* Impact total badge */}
-          {totalImpacto > 0 && (
-            <span className="rounded-full border border-[rgba(52,242,127,0.2)] bg-[rgba(52,242,127,0.07)] px-2.5 py-1 text-xs font-semibold text-[#8fffb9]">
-              +{totalImpacto}% impacto planejado
-            </span>
-          )}
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <LabFilterChip
+            active={filter === 'all'}
+            count={activities.length}
+            label="Todas"
+            onClick={() => setFilter('all')}
+          />
+          {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((type) => (
+            <LabFilterChip
+              active={filter === type}
+              count={activities.filter((activity) => activity.type === type).length}
+              key={type}
+              label={ACTIVITY_LABELS[type]}
+              onClick={() => setFilter(type)}
+            />
+          ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--text-soft)]">Arraste para mover eventos</span>
-          <button
-            className="flex items-center gap-2 rounded-[14px] border border-[rgba(52,242,127,0.4)] bg-[rgba(52,242,127,0.1)] px-4 py-2.5 text-sm font-semibold text-[#36f57c] transition-all hover:bg-[rgba(52,242,127,0.18)]"
+        <div className="flex flex-wrap items-center gap-2">
+          {filter !== 'all' ? (
+            <LabStatusPill tone={ACTIVITY_STYLES[filter].tone}>Filtro: {ACTIVITY_LABELS[filter]}</LabStatusPill>
+          ) : null}
+          {periodImpacto > 0 ? <LabStatusPill tone="success">+{periodImpacto}% no recorte</LabStatusPill> : null}
+          <Button
+            size="md"
             type="button"
             onClick={() => {
               setSelectedSlotStart(new Date())
@@ -432,141 +244,78 @@ export function CommercialCalendar() {
             }}
           >
             <Plus className="size-4" />
-            Nova Atividade
-          </button>
+            Nova atividade
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
-        {/* Calendar */}
-        <div className="imperial-cal imperial-card-soft overflow-hidden rounded-[24px]">
-          <style>{`
-            .imperial-cal .rbc-calendar { background: transparent !important; color: #e2ddd6; font-family: inherit; }
-            .imperial-cal .rbc-toolbar { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); background: transparent !important; }
-            .imperial-cal .rbc-toolbar button { color: #7a8896; background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-            .imperial-cal .rbc-toolbar button:hover { color: #fff; border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.04); }
-            .imperial-cal .rbc-toolbar button.rbc-active { color: #36f57c; border-color: rgba(52,242,127,0.4); background: rgba(52,242,127,0.1); }
-            .imperial-cal .rbc-toolbar button.rbc-active:hover { background: rgba(52,242,127,0.16); }
-            .imperial-cal .rbc-toolbar-label { font-size: 15px; font-weight: 600; color: #fff; }
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <LabPanel
+          action={<LabStatusPill tone="info">{VIEW_LABELS[view]}</LabStatusPill>}
+          className="overflow-hidden"
+          contentClassName="p-0"
+          padding="none"
+          subtitle={`${periodActivities.length} atividade${periodActivities.length === 1 ? '' : 's'} no recorte aberto em ${periodRange.label}.`}
+          title="Agenda do periodo"
+        >
+          <FootballGameRail gameDays={periodFootballGameDays} onOpenGame={setEditingActivity} />
 
-            .imperial-cal .rbc-header { padding: 10px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #7a8896; border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: transparent !important; }
-            .imperial-cal .rbc-header + .rbc-header { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-header a, .imperial-cal .rbc-header a:visited { color: #7a8896; text-decoration: none; }
+          <div className="imperial-cal overflow-hidden">
+            <style>{CALENDAR_THEME}</style>
+            <DnDCalendar
+              resizable
+              selectable
+              components={{
+                event: ActivityEventContent,
+              }}
+              culture="pt-BR"
+              date={date}
+              defaultView="month"
+              eventPropGetter={eventStyleGetter}
+              events={filteredActivities}
+              localizer={localizer}
+              messages={messages}
+              style={{ height: calendarHeight }}
+              view={view}
+              onEventDrop={onEventDrop}
+              onEventResize={onEventResize}
+              onNavigate={setDate}
+              onSelectEvent={(event) => setEditingActivity(event as CommercialActivity)}
+              onSelectSlot={handleSelectSlot}
+              onView={setView}
+            />
+          </div>
+        </LabPanel>
 
-            .imperial-cal .rbc-month-view { border: none !important; background: transparent !important; }
-            .imperial-cal .rbc-month-row + .rbc-month-row { border-top: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-day-bg + .rbc-day-bg { border-left: 1px solid rgba(255,255,255,0.04) !important; }
-            .imperial-cal .rbc-off-range-bg { background: rgba(0,0,0,0.25) !important; }
-            .imperial-cal .rbc-today { background: rgba(52,242,127,0.04) !important; }
-            .imperial-cal .rbc-date-cell { padding: 6px 8px; font-size: 12px; font-weight: 600; color: #7a8896; }
-            .imperial-cal .rbc-date-cell.rbc-now a { color: #36f57c; }
-
-            .imperial-cal .rbc-time-view { border: none !important; background: transparent !important; }
-            .imperial-cal .rbc-time-view .rbc-row { background: transparent !important; }
-            .imperial-cal .rbc-time-header { border-bottom: 1px solid rgba(255,255,255,0.06) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-header-content { border-left: 1px solid rgba(255,255,255,0.05) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-header-gutter { background: transparent !important; }
-            .imperial-cal .rbc-allday-cell { background: transparent !important; }
-            .imperial-cal .rbc-time-content { background: transparent !important; border-top: 1px solid rgba(255,255,255,0.06) !important; }
-            .imperial-cal .rbc-time-content > * + * > * { border-left: 1px solid rgba(255,255,255,0.05) !important; }
-            .imperial-cal .rbc-time-gutter { background: transparent !important; }
-            .imperial-cal .rbc-time-column { background: transparent !important; }
-            .imperial-cal .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.04) !important; background: transparent !important; }
-            .imperial-cal .rbc-time-slot { color: #4a5568; font-size: 11px; background: transparent !important; }
-            .imperial-cal .rbc-label { color: #4a5568; font-size: 11px; padding: 0 8px; background: transparent !important; }
-            .imperial-cal .rbc-day-slot { background: transparent !important; }
-            .imperial-cal .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.025) !important; background: transparent !important; }
-            .imperial-cal .rbc-day-slot .rbc-events-container { margin-right: 8px; }
-            .imperial-cal .rbc-current-time-indicator { background: #36f57c !important; height: 2px; box-shadow: 0 0 6px rgba(52,242,127,0.5); }
-            .imperial-cal .rbc-slot-selection { background: rgba(52,242,127,0.1) !important; border: 1px solid rgba(52,242,127,0.3) !important; }
-
-            .imperial-cal .rbc-event { outline: none !important; }
-            .imperial-cal .rbc-event:focus { outline: 2px solid rgba(52,242,127,0.4) !important; }
-            .imperial-cal .rbc-event-label { font-size: 11px; }
-            .imperial-cal .rbc-show-more { color: #36f57c; font-size: 11px; font-weight: 600; background: transparent; }
-
-            .imperial-cal .rbc-agenda-view { background: transparent !important; }
-            .imperial-cal .rbc-agenda-view table { color: #e2ddd6; border-color: rgba(255,255,255,0.06) !important; width: 100%; background: transparent !important; }
-            .imperial-cal .rbc-agenda-view table thead { background: rgba(255,255,255,0.03) !important; }
-            .imperial-cal .rbc-agenda-view table thead th { color: #7a8896; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.06) !important; padding: 8px 12px; }
-            .imperial-cal .rbc-agenda-view tbody > tr > td { border-bottom: 1px solid rgba(255,255,255,0.04) !important; padding: 8px 12px; background: transparent !important; }
-            .imperial-cal .rbc-agenda-view tbody > tr > td + td { border-left: 1px solid rgba(255,255,255,0.04) !important; }
-            .imperial-cal .rbc-agenda-date-cell, .imperial-cal .rbc-agenda-time-cell { color: #7a8896; font-size: 12px; }
-            .imperial-cal .rbc-agenda-event-cell { color: #e2ddd6; }
-
-            .imperial-cal .rbc-addons-dnd .rbc-addons-dnd-drag-preview { opacity: 0.75; }
-            .imperial-cal .rbc-addons-dnd-resizable { cursor: grab; }
-            .imperial-cal .rbc-addons-dnd-resize-ns-anchor { height: 6px; background: rgba(52,242,127,0.4); cursor: ns-resize; border-radius: 0 0 6px 6px; }
-            .imperial-cal .rbc-addons-dnd-resize-ew-anchor { width: 6px; background: rgba(52,242,127,0.4); cursor: ew-resize; }
-          `}</style>
-
-          <DnDCalendar
-            culture="pt-BR"
-            date={date}
-            defaultView="month"
-            eventPropGetter={eventStyleGetter}
-            events={activities}
-            localizer={localizer}
-            messages={messages}
-            resizable
-            selectable
-            style={{ height: 620 }}
-            view={view}
-            onEventDrop={onEventDrop}
-            onEventResize={onEventResize}
-            onNavigate={setDate}
-            onSelectEvent={(event) => setEditingActivity(event as CommercialActivity)}
-            onSelectSlot={handleSelectSlot}
-            onView={setView}
-          />
-        </div>
-
-        {/* Sidebar */}
         <div className="space-y-4">
-          <UpcomingEvents activities={activities} />
+          <PlanningRadar
+            filteredActivitiesCount={filteredActivities.length}
+            leadingType={leadingType}
+            nextActivity={nextActivity}
+            nextSevenDaysActivities={nextSevenDaysActivities}
+            periodActivities={periodActivities}
+            summaryRows={summaryRows}
+          />
 
-          {/* Stats */}
-          <div className="imperial-card-soft rounded-[20px] p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-soft)]">Resumo do mês</p>
-            {(Object.keys(ACTIVITY_LABELS) as ActivityType[]).map((t) => {
-              const c = ACTIVITY_COLORS[t]
-              const count = activities.filter((a) => a.type === t).length
-              const impact = activities
-                .filter((a) => a.type === t && a.impactoEsperado)
-                .reduce((sum, a) => sum + (a.impactoEsperado ?? 0), 0)
-              if (count === 0) return null
-              return (
-                <div key={t} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full" style={{ background: c.dot }} />
-                    <span className="text-sm text-white">{ACTIVITY_LABELS[t]}</span>
-                    <span className="text-xs text-[var(--text-soft)]">({count})</span>
-                  </div>
-                  {impact > 0 && <span className="text-xs font-semibold text-[#36f57c]">+{impact}%</span>}
-                </div>
-              )
-            })}
-            <div className="flex items-center gap-2 border-t border-[rgba(255,255,255,0.06)] pt-3">
-              <CalendarDays className="size-3.5 text-[var(--text-soft)]" />
-              <span className="text-xs text-[var(--text-soft)]">{activities.length} atividades no total</span>
-            </div>
-          </div>
-
-          {/* Tip */}
-          <div className="rounded-[16px] border border-[rgba(52,242,127,0.12)] bg-[rgba(52,242,127,0.04)] p-4">
-            <p className="text-xs font-semibold text-[#8fffb9]">Como usar</p>
-            <ul className="mt-2 space-y-1.5 text-xs text-[var(--text-soft)]">
-              <li>• Clique em um dia para criar</li>
-              <li>• Arraste para mover de data</li>
-              <li>• Arraste a borda para redimensionar</li>
-              <li>• Clique no evento para editar</li>
-            </ul>
-          </div>
+          {filter === 'all' || filter === 'jogo' ? (
+            <LabPanel
+              action={
+                <LabStatusPill icon={<Trophy className="size-3" />} tone="info">
+                  vasco
+                </LabStatusPill>
+              }
+              contentClassName="p-0"
+              padding="none"
+              subtitle="A agenda interna prioriza os cariocas; o widget mantém a leitura oficial do Vasco."
+              title="Widget oficial do Vasco"
+            >
+              <VascoCalendarWidget className="rounded-none border-0 bg-transparent" />
+            </LabPanel>
+          ) : null}
         </div>
       </div>
 
-      {/* Modals */}
-      {showModal && (
+      {showModal ? (
         <ActivityModal
           initialStart={selectedSlotStart}
           onClose={() => {
@@ -575,16 +324,16 @@ export function CommercialCalendar() {
           }}
           onSave={handleSave}
         />
-      )}
+      ) : null}
 
-      {editingActivity && (
+      {editingActivity ? (
         <ActivityModal
           activity={editingActivity}
           onClose={() => setEditingActivity(null)}
           onDelete={handleDelete}
           onSave={handleSave}
         />
-      )}
+      ) : null}
     </div>
   )
 }

@@ -23,14 +23,28 @@ import type { AuthContext } from '../auth/auth.types'
 import { CsrfGuard } from '../auth/guards/csrf.guard'
 import { SessionGuard } from '../auth/guards/session.guard'
 import { CreateProductDto } from './dto/create-product.dto'
+import { BulkRestockProductsDto } from './dto/bulk-restock-products.dto'
 import { ListProductsQueryDto } from './dto/list-products.query'
+import { SmartProductDraftDto } from './dto/smart-product-draft.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
+import { ProductsSmartDraftService } from './products-smart-draft.service'
 import { ProductsService } from './products.service'
+
+const PRODUCT_IMPORT_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+const productImportUploadOptions = {
+  limits: {
+    fileSize: PRODUCT_IMPORT_MAX_FILE_SIZE_BYTES,
+    files: 1,
+  },
+}
 
 @ApiTags('products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly productsSmartDraftService: ProductsSmartDraftService,
+  ) {}
 
   @UseGuards(SessionGuard)
   @Get()
@@ -45,9 +59,15 @@ export class ProductsController {
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
+  @Post('smart-draft')
+  generateSmartDraft(@CurrentAuth() auth: AuthContext, @Body() body: SmartProductDraftDto, @Req() request: Request) {
+    return this.productsSmartDraftService.generateDraft(auth, body, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
   @Post('import')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', productImportUploadOptions))
   importProducts(
     @CurrentAuth() auth: AuthContext,
     @UploadedFile() file: { buffer: Buffer; originalname: string } | undefined,
@@ -68,9 +88,21 @@ export class ProductsController {
   }
 
   @UseGuards(SessionGuard, CsrfGuard)
+  @Post('restock-bulk')
+  bulkRestockProducts(@CurrentAuth() auth: AuthContext, @Body() body: BulkRestockProductsDto, @Req() request: Request) {
+    return this.productsService.bulkRestockForUser(auth, body, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
   @Delete(':productId')
   archiveProduct(@CurrentAuth() auth: AuthContext, @Param('productId') productId: string, @Req() request: Request) {
     return this.productsService.archiveForUser(auth, productId, extractRequestContext(request))
+  }
+
+  @UseGuards(SessionGuard, CsrfGuard)
+  @Delete(':productId/permanent')
+  deleteProduct(@CurrentAuth() auth: AuthContext, @Param('productId') productId: string, @Req() request: Request) {
+    return this.productsService.deleteForUser(auth, productId, extractRequestContext(request))
   }
 
   @UseGuards(SessionGuard, CsrfGuard)

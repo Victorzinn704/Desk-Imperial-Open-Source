@@ -1,4 +1,4 @@
-import { gotoWithConsent, test, expect, ownerEmailInput, passwordInput } from './fixtures/auth-fixtures'
+import { expect, gotoWithConsent, ownerEmailInput, passwordInput, test } from './fixtures/auth-fixtures'
 
 test.describe('UI UX E2E - Chromium Smoke', () => {
   test('TC-E2E-UI-001: login mantém hierarquia visual principal', async ({ page }) => {
@@ -6,7 +6,7 @@ test.describe('UI UX E2E - Chromium Smoke', () => {
 
     await expect(page.getByRole('heading', { level: 1, name: 'Entre e comande seu comércio' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 2, name: 'Entre e comande seu comércio' })).toBeVisible()
-    await expect(page.getByText('Seu acesso seguro')).toBeVisible()
+    await expect(page.getByText('Seu acesso seguro').first()).toBeVisible()
   })
 
   test('TC-E2E-UI-002: login permanece utilizável em mobile', async ({ page }) => {

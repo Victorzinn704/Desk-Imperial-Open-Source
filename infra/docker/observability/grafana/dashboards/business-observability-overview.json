@@ -1,0 +1,492 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 800
+              },
+              {
+                "color": "red",
+                "value": 1500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_finance_summary_duration.*_bucket\"}[10m])))",
+          "legendFormat": "finance-summary-p95",
+          "refId": "A"
+        }
+      ],
+      "title": "Finance Summary p95",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 600
+              },
+              {
+                "color": "red",
+                "value": 1200
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_operations_live_duration.*_bucket\"}[10m])))",
+          "legendFormat": "operations-live-p95",
+          "refId": "A"
+        }
+      ],
+      "title": "Operations Live p95",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_operations_kitchen_duration.*_bucket\"}[10m])))",
+          "legendFormat": "operations-kitchen-p95",
+          "refId": "A"
+        }
+      ],
+      "title": "Kitchen View p95",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "sum(rate({__name__=~\"desk_finance_summary_duration.*_count\"}[10m])) + sum(rate({__name__=~\"desk_operations_live_duration.*_count\"}[10m])) + sum(rate({__name__=~\"desk_operations_kitchen_duration.*_count\"}[10m]))",
+          "legendFormat": "business-requests",
+          "refId": "A"
+        }
+      ],
+      "title": "Business Requests/s",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_finance_summary_duration.*_bucket\"}[10m])))",
+          "legendFormat": "finance-summary-p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_operations_live_duration.*_bucket\"}[10m])))",
+          "legendFormat": "operations-live-p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate({__name__=~\"desk_operations_kitchen_duration.*_bucket\"}[10m])))",
+          "legendFormat": "operations-kitchen-p95",
+          "refId": "C"
+        }
+      ],
+      "title": "Business Latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "sum(rate({__name__=~\"desk_finance_summary_duration.*_count\"}[10m]))",
+          "legendFormat": "finance-summary",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_live_duration.*_count\"}[10m]))",
+          "legendFormat": "operations-live",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_kitchen_duration.*_count\"}[10m]))",
+          "legendFormat": "operations-kitchen",
+          "refId": "C"
+        }
+      ],
+      "title": "Business Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "sum(rate({__name__=~\"desk_finance_summary_active_products.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_finance_summary_active_products.*_count\"}[10m])), 1)",
+          "legendFormat": "active-products",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_live_comandas.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_operations_live_comandas.*_count\"}[10m])), 1)",
+          "legendFormat": "open-comandas",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_live_mesas.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_operations_live_mesas.*_count\"}[10m])), 1)",
+          "legendFormat": "mesas-no-snapshot",
+          "refId": "C"
+        }
+      ],
+      "title": "Average Snapshot Shape",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.0.1",
+      "targets": [
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_live_employees.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_operations_live_employees.*_count\"}[10m])), 1)",
+          "legendFormat": "employees-live",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_operations_kitchen_items.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_operations_kitchen_items.*_count\"}[10m])), 1)",
+          "legendFormat": "kitchen-items",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate({__name__=~\"desk_finance_summary_timeline_points.*_sum\"}[10m])) / clamp_min(sum(rate({__name__=~\"desk_finance_summary_timeline_points.*_count\"}[10m])), 1)",
+          "legendFormat": "timeline-points",
+          "refId": "C"
+        }
+      ],
+      "title": "Average Returned Shape",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["observability", "business", "desk-imperial"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Desk Imperial - Business Observability",
+  "uid": "desk-business-observability",
+  "version": 1,
+  "weekStart": ""
+}

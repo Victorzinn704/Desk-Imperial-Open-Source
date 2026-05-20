@@ -35,12 +35,12 @@ Configuração é a fronteira entre o código que funciona no dev e o sistema qu
 
 ## Mapa de ambientes
 
-| Ambiente | Propósito | Cuidados |
-|----------|-----------|----------|
-| **Local (dev)** | Desenvolvimento diário | Dados fictícios, nunca credencial real |
-| **Sandbox / AI Sandbox** | Testes isolados de integrações | Sem dados reais, chaves de teste |
-| **Staging** | Validação pré-produção | Espelho de produção, sem dados reais de usuário |
-| **Produção** | Sistema real | Credenciais reais, máximo cuidado, auditoria |
+| Ambiente                 | Propósito                      | Cuidados                                        |
+| ------------------------ | ------------------------------ | ----------------------------------------------- |
+| **Local (dev)**          | Desenvolvimento diário         | Dados fictícios, nunca credencial real          |
+| **Sandbox / AI Sandbox** | Testes isolados de integrações | Sem dados reais, chaves de teste                |
+| **Staging**              | Validação pré-produção         | Espelho de produção, sem dados reais de usuário |
+| **Produção**             | Sistema real                   | Credenciais reais, máximo cuidado, auditoria    |
 
 ## Foco técnico generalista
 

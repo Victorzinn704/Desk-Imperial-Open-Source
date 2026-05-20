@@ -1,6 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { MesaRecord } from '@contracts/contracts'
-import { CANVAS_H, CARD_H, CARD_W, clamp, getAutoPosition, type DragState } from '../constants'
+import type { DragState } from '../constants'
+import {
+  buildMesaDragState,
+  type MesaDragOverrides,
+  type MesaPosition,
+  resolveMesaPosition,
+  shouldStartMesaDrag,
+} from './use-mesa-drag.model'
+import { useLatestRef, useMesaDragEvents } from './use-mesa-drag-events'
 
 interface UseMesaDragOptions {
   onPositionSave: (id: string, x: number, y: number) => void
@@ -9,103 +17,51 @@ interface UseMesaDragOptions {
 
 export function useMesaDrag({ onPositionSave, canvasRef }: UseMesaDragOptions) {
   const [dragging, setDragging] = useState<DragState | null>(null)
-  const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({})
-  const [dragPosition, setDragPosition] = useState<{ mesaId: string; x: number; y: number } | null>(null)
-  const dragOverridesRef = useRef(dragOverrides)
-  const dragPositionRef = useRef(dragPosition)
-  const pendingPositionRef = useRef<{ x: number; y: number } | null>(null)
-  const animationFrameRef = useRef<number | null>(null)
-
-  useLayoutEffect(() => {
-    dragOverridesRef.current = dragOverrides
-  })
-
-  useLayoutEffect(() => {
-    dragPositionRef.current = dragPosition
-  }, [dragPosition])
+  const [dragOverrides, setDragOverrides] = useState<MesaDragOverrides>({})
+  const [dragPosition, setDragPosition] = useState<(MesaPosition & { mesaId: string }) | null>(null)
+  const dragOverridesRef = useLatestRef(dragOverrides)
+  const dragPositionRef = useLatestRef(dragPosition)
 
   const getMesaPosition = useCallback(
     (mesa: MesaRecord, autoIndex: number): { x: number; y: number } => {
-      if (dragOverrides[mesa.id]) return dragOverrides[mesa.id]
-      if (mesa.positionX !== null && mesa.positionY !== null) return { x: mesa.positionX, y: mesa.positionY }
-      return getAutoPosition(autoIndex)
+      return resolveMesaPosition(mesa, autoIndex, dragOverrides)
     },
     [dragOverrides],
   )
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent, mesa: MesaRecord, autoIndex: number) => {
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, mesa: MesaRecord, autoIndex: number) => {
+      if (!shouldStartMesaDrag(e)) {
+        return
+      }
+
       e.preventDefault()
+      if ('setPointerCapture' in e.currentTarget) {
+        e.currentTarget.setPointerCapture(e.pointerId)
+      }
       const pos = getMesaPosition(mesa, autoIndex)
-      setDragging({
-        mesaId: mesa.id,
-        startMouseX: e.clientX,
-        startMouseY: e.clientY,
-        origX: pos.x,
-        origY: pos.y,
-      })
+      setDragging(buildMesaDragState(e, mesa.id, pos))
       setDragPosition({ mesaId: mesa.id, x: pos.x, y: pos.y })
     },
     [getMesaPosition],
   )
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!dragging) return
-      const canvasEl = canvasRef.current
-      const canvasW = canvasEl ? canvasEl.offsetWidth : 800
-      const newX = clamp(dragging.origX + (e.clientX - dragging.startMouseX), 0, canvasW - CARD_W)
-      const newY = clamp(dragging.origY + (e.clientY - dragging.startMouseY), 0, CANVAS_H - CARD_H)
-      pendingPositionRef.current = { x: newX, y: newY }
-      if (animationFrameRef.current != null) {
-        return
-      }
-
-      animationFrameRef.current = window.requestAnimationFrame(() => {
-        const nextPosition = pendingPositionRef.current
-        animationFrameRef.current = null
-        if (!nextPosition) {
-          return
-        }
-        setDragPosition({ mesaId: dragging.mesaId, x: nextPosition.x, y: nextPosition.y })
-      })
-    },
-    [dragging, canvasRef],
-  )
-
-  const handleMouseUp = useCallback(() => {
-    if (!dragging) return
-    const pos = dragPositionRef.current
-      ? { x: dragPositionRef.current.x, y: dragPositionRef.current.y }
-      : dragOverridesRef.current[dragging.mesaId]
-    if (pos) {
-      setDragOverrides((prev) => ({ ...prev, [dragging.mesaId]: { x: pos.x, y: pos.y } }))
-      onPositionSave(dragging.mesaId, Math.round(pos.x), Math.round(pos.y))
-    }
-    if (animationFrameRef.current != null) {
-      cancelAnimationFrame(animationFrameRef.current)
-      animationFrameRef.current = null
-    }
-    pendingPositionRef.current = null
-    setDragPosition(null)
-    setDragging(null)
-  }, [dragging, onPositionSave])
-
-  useEffect(() => {
-    if (!dragging) return
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [dragging, handleMouseMove, handleMouseUp])
+  useMesaDragEvents({
+    canvasRef,
+    dragOverridesRef,
+    dragging,
+    dragPositionRef,
+    onPositionSave,
+    setDragging,
+    setDragOverrides,
+    setDragPosition,
+  })
 
   return {
     dragging,
     dragPosition,
     dragOverrides,
     getMesaPosition,
-    handleMouseDown,
+    handlePointerDown,
   }
 }

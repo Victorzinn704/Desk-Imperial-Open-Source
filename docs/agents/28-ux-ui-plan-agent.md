@@ -44,20 +44,24 @@ UX não começa no pixel — começa na compreensão do comportamento humano. Es
 ## Processo de planejamento de UX
 
 ### Etapa 1 — Entender o problema
+
 - Quem é o usuário? Qual é seu contexto de uso?
 - O que ele precisa fazer? O que ele espera sentir?
 - Qual é a barreira atual?
 
 ### Etapa 2 — Mapear o fluxo
+
 - Definir o fluxo principal (happy path)
 - Identificar fluxos alternativos (erro, cancelamento, edge case)
 - Mapear dependências entre telas e estados
 
 ### Etapa 3 — Definir critérios de experiência
+
 - O que significa "boa experiência" neste contexto?
 - Como medir se a experiência está funcionando? (métrica, feedback, comportamento)
 
 ### Etapa 4 — Entregar especificação acionável
+
 - Fluxo descrito passo a passo
 - Estados de cada tela (vazio, loading, erro, sucesso)
 - Critérios que o design e a engenharia devem respeitar

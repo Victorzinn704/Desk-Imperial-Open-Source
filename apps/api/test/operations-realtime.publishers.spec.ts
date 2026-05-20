@@ -1,88 +1,69 @@
 import { ComandaStatus, KitchenItemStatus } from '@prisma/client'
-import { CacheService } from '../src/common/services/cache.service'
-import { OperationsRealtimeService } from '../src/modules/operations-realtime/operations-realtime.service'
-import { ComandaService } from '../src/modules/operations/comanda.service'
-import type { PrismaService } from '../src/database/prisma.service'
-import type { AuditLogService } from '../src/modules/monitoring/audit-log.service'
-import type { OperationsHelpersService } from '../src/modules/operations/operations-helpers.service'
+import { makeOwnerAuth } from './helpers/comanda-service-fixtures'
+import {
+  PUBLISHER_BUSINESS_DATE as BUSINESS_DATE,
+  PUBLISHER_CLOSED_AT as CLOSED_AT,
+  createPublisherTestEnv,
+  makePublishedComanda,
+  makePublishedComandaItem,
+  makePublishedComandaPayment,
+} from './helpers/publisher-test-env'
 
 describe('Operations realtime publishers', () => {
-  const realtimeService = {
-    publishComandaOpened: jest.fn(),
-    publishComandaUpdated: jest.fn(),
-    publishComandaClosed: jest.fn(),
-    publishKitchenItemQueued: jest.fn(),
-    publishKitchenItemUpdated: jest.fn(),
-    publishCashUpdated: jest.fn(),
-    publishCashClosureUpdated: jest.fn(),
-  }
-
-  const service = new ComandaService(
-    {} as PrismaService,
-    {} as CacheService,
-    { record: jest.fn() } as unknown as AuditLogService,
-    realtimeService as unknown as OperationsRealtimeService,
-    {} as OperationsHelpersService,
-  )
-
-  const auth = {
-    userId: 'user-1',
-    role: 'OWNER' as const,
-    workspaceOwnerUserId: 'user-1',
-    companyOwnerUserId: 'user-1',
-  }
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-  })
+  const auth = makeOwnerAuth()
 
   it('emite comanda aberta sem payload legada completa', () => {
-    ;(service as any).publishComandaOpenedRealtime(
-      auth,
-      {
-        id: 'comanda-1',
-        tableLabel: 'Mesa 01',
-        status: ComandaStatus.OPEN,
-        currentEmployeeId: 'emp-1',
-        subtotalAmount: 120,
-        discountAmount: 10,
-        serviceFeeAmount: 5,
-        totalAmount: 115,
-        openedAt: new Date('2026-03-30T10:00:00.000Z'),
-        items: [{ quantity: 2 }, { quantity: 1 }],
-      },
-      new Date(2026, 2, 30),
-    )
+    const { publisher, realtimeService } = createPublisherTestEnv()
 
-    expect(realtimeService.publishComandaOpened).toHaveBeenCalledWith(
+    publisher.publishOpened({
       auth,
+      comanda: makePublishedComanda({
+        cashSessionId: 'cash-1',
+        customerName: 'Ana',
+        items: [makePublishedComandaItem({ notes: 'Sem gelo' })],
+        mesaId: 'mesa-1',
+        participantCount: 2,
+        payments: [makePublishedComandaPayment()],
+      }),
+      businessDate: BUSINESS_DATE,
+    })
+
+    expect(realtimeService.publishComandaOpened).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaOpened.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaOpened.mock.calls[0][1]).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         mesaLabel: 'Mesa 01',
         openedAt: '2026-03-30T10:00:00.000Z',
         employeeId: 'emp-1',
-        status: 'ABERTA',
+        status: 'OPEN',
         subtotal: 120,
         discountAmount: 10,
         serviceFeeAmount: 5,
         totalAmount: 115,
-        totalItems: 3,
+        totalItems: 2,
         businessDate: '2026-03-30',
+        cashSessionId: 'cash-1',
+        customerName: 'Ana',
+        mesaId: 'mesa-1',
+        participantCount: 2,
+        paidAmount: 40,
+        remainingAmount: 75,
+        paymentStatus: 'PARTIAL',
+        items: [expect.objectContaining({ id: 'item-1', productName: 'Coca-Cola', quantity: 2 })],
+        payments: [expect.objectContaining({ id: 'payment-1', method: 'PIX', amount: 40 })],
       }),
     )
-    const payload = realtimeService.publishComandaOpened.mock.calls[0][1]
-    expect(payload).not.toHaveProperty('comanda')
+    expect(realtimeService.publishComandaOpened.mock.calls[0][1]).not.toHaveProperty('comanda')
   })
 
   it('emite item de cozinha sem snapshot completo', () => {
-    ;(service as any).publishKitchenItemQueuedRealtime(
+    const { publisher, realtimeService } = createPublisherTestEnv()
+
+    publisher.publishKitchenQueued({
       auth,
-      {
-        id: 'comanda-1',
-        tableLabel: 'Mesa 01',
-        currentEmployeeId: null,
-      },
-      {
+      comanda: { id: 'comanda-1', tableLabel: 'Mesa 01', currentEmployeeId: null } as never,
+      item: {
         id: 'item-1',
         productName: 'Pizza',
         quantity: 2,
@@ -91,11 +72,13 @@ describe('Operations realtime publishers', () => {
         kitchenQueuedAt: new Date('2026-03-30T10:01:00.000Z'),
         kitchenReadyAt: null,
       },
-      new Date(2026, 2, 30),
-    )
+      businessDate: BUSINESS_DATE,
+    })
 
-    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishKitchenItemQueued).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishKitchenItemQueued.mock.calls[0][0]).toBe(auth)
+    const payload = realtimeService.publishKitchenItemQueued.mock.calls[0][1]
+    expect(payload).toEqual(
       expect.objectContaining({
         itemId: 'item-1',
         comandaId: 'comanda-1',
@@ -110,56 +93,35 @@ describe('Operations realtime publishers', () => {
         businessDate: '2026-03-30',
       }),
     )
-    const payload = realtimeService.publishKitchenItemQueued.mock.calls[0][1]
     expect(payload).not.toHaveProperty('item')
     expect(payload).not.toHaveProperty('comanda')
   })
 
   it('permite sinalizar refresh de cozinha apenas nos fluxos que realmente precisam', () => {
-    ;(service as any).publishComandaUpdatedRealtime(
-      auth,
-      {
-        id: 'comanda-1',
-        tableLabel: 'Mesa 01',
-        status: ComandaStatus.OPEN,
-        currentEmployeeId: 'emp-1',
-        subtotalAmount: 120,
-        discountAmount: 10,
-        serviceFeeAmount: 5,
-        totalAmount: 115,
-        items: [{ quantity: 2 }, { quantity: 1 }],
-      },
-      new Date(2026, 2, 30),
-      {
-        requiresKitchenRefresh: true,
-      },
-    )
+    const { publisher, realtimeService } = createPublisherTestEnv()
 
-    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledWith(
+    publisher.publishUpdated({
       auth,
-      expect.objectContaining({
-        comandaId: 'comanda-1',
-        requiresKitchenRefresh: true,
-      }),
+      comanda: makePublishedComanda(),
+      businessDate: BUSINESS_DATE,
+      options: { requiresKitchenRefresh: true },
+    })
+
+    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][0]).toBe(auth)
+    expect(realtimeService.publishComandaUpdated.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ comandaId: 'comanda-1', requiresKitchenRefresh: true }),
     )
   })
 
   it('emite replaceKitchenItems enxuto para replaceComanda sem snapshot completo', () => {
-    ;(service as any).publishComandaUpdatedRealtime(
+    const { publisher, realtimeService } = createPublisherTestEnv()
+
+    publisher.publishUpdated({
       auth,
-      {
-        id: 'comanda-1',
-        tableLabel: 'Mesa 01',
-        status: ComandaStatus.IN_PREPARATION,
-        currentEmployeeId: 'emp-1',
-        subtotalAmount: 120,
-        discountAmount: 10,
-        serviceFeeAmount: 5,
-        totalAmount: 115,
-        items: [{ quantity: 2 }, { quantity: 1 }],
-      },
-      new Date(2026, 2, 30),
-      {
+      comanda: makePublishedComanda({ status: ComandaStatus.IN_PREPARATION }),
+      businessDate: BUSINESS_DATE,
+      options: {
         replaceKitchenItems: true,
         kitchenItems: [
           {
@@ -177,46 +139,49 @@ describe('Operations realtime publishers', () => {
           },
         ],
       },
-    )
+    })
 
-    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaUpdated).toHaveBeenCalledTimes(1)
+    const payload = realtimeService.publishComandaUpdated.mock.calls[0][1]
+    expect(payload).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         replaceKitchenItems: true,
-        kitchenItems: [
-          expect.objectContaining({
-            itemId: 'item-1',
-            productName: 'Pizza',
-            kitchenStatus: 'READY',
-          }),
-        ],
+        kitchenItems: [expect.objectContaining({ itemId: 'item-1', productName: 'Pizza', kitchenStatus: 'READY' })],
       }),
     )
-    const payload = realtimeService.publishComandaUpdated.mock.calls[0][1]
     expect(payload).not.toHaveProperty('comanda')
   })
 
   it('emite comanda fechada com deltas mínimos e totais', () => {
-    ;(service as any).publishComandaCloseRealtime(
+    const { publisher, realtimeService } = createPublisherTestEnv()
+
+    publisher.publishClosed({
       auth,
-      {
-        id: 'comanda-1',
-        tableLabel: 'Mesa 01',
-        currentEmployeeId: 'emp-1',
-        subtotalAmount: 120,
-        discountAmount: 10,
-        serviceFeeAmount: 5,
-        totalAmount: 115,
-        closedAt: new Date('2026-03-30T11:00:00.000Z'),
-        items: [{ quantity: 2 }, { quantity: 1 }],
-      },
-      null,
-      {
+      comanda: makePublishedComanda({
+        cashSessionId: 'cash-1',
+        closedAt: CLOSED_AT,
+        customerName: 'Maria',
+        items: [makePublishedComandaItem({ notes: 'Sem gelo' })],
+        mesaId: 'mesa-1',
+        notes: 'Entregar rapido',
+        openedAt: new Date('2026-03-30T10:00:00.000Z'),
+        participantCount: 2,
+        payments: [
+          makePublishedComandaPayment({
+            amount: 115,
+            method: 'CREDIT',
+            note: 'Mercado Pago Point - CREDIT. Transacao MP payment-provider-1',
+            paidAt: new Date('2026-03-30T11:00:00.000Z'),
+          }),
+        ],
+      }),
+      refreshedSession: null,
+      closure: {
         id: 'closure-1',
         status: 'CLOSED',
         createdAt: new Date('2026-03-30T08:00:00.000Z'),
-        closedAt: new Date('2026-03-30T11:00:00.000Z'),
+        closedAt: CLOSED_AT,
         expectedCashAmount: 100,
         grossRevenueAmount: 115,
         realizedProfitAmount: 30,
@@ -224,28 +189,37 @@ describe('Operations realtime publishers', () => {
         differenceAmount: 0,
         openComandasCount: 0,
         openSessionsCount: 0,
-      } as any,
-      new Date(2026, 2, 30),
-    )
+      } as never,
+      businessDate: BUSINESS_DATE,
+    })
 
-    expect(realtimeService.publishComandaClosed).toHaveBeenCalledWith(
-      auth,
+    expect(realtimeService.publishComandaClosed).toHaveBeenCalledTimes(1)
+    expect(realtimeService.publishComandaClosed.mock.calls[0][0]).toBe(auth)
+    const payload = realtimeService.publishComandaClosed.mock.calls[0][1]
+    expect(payload).toEqual(
       expect.objectContaining({
         comandaId: 'comanda-1',
         mesaLabel: 'Mesa 01',
         closedAt: '2026-03-30T11:00:00.000Z',
         employeeId: 'emp-1',
-        status: 'FECHADA',
+        status: 'CLOSED',
         subtotal: 120,
         discountAmount: 10,
         serviceFeeAmount: 5,
         totalAmount: 115,
-        totalItems: 3,
-        paymentMethod: null,
+        totalItems: 2,
+        paymentMethod: 'CREDIT',
         businessDate: '2026-03-30',
+        customerName: 'Maria',
+        cashSessionId: 'cash-1',
+        mesaId: 'mesa-1',
+        paidAmount: 115,
+        remainingAmount: 0,
+        paymentStatus: 'PAID',
+        payments: [expect.objectContaining({ id: 'payment-1', method: 'CREDIT' })],
+        items: [expect.objectContaining({ id: 'item-1', productName: 'Coca-Cola' })],
       }),
     )
-    const payload = realtimeService.publishComandaClosed.mock.calls[0][1]
     expect(payload).not.toHaveProperty('comanda')
   })
 })

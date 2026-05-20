@@ -43,4 +43,36 @@ describe('faro internals', () => {
     expect(__faroInternals.parsePositiveInteger('2.4', 30)).toBe(30)
     expect(__faroInternals.parsePositiveInteger('45', 30)).toBe(45)
   })
+
+  it('sanitizes transport payload objects in place', () => {
+    const item = {
+      payload: {
+        context: {
+          email: 'owner@example.com',
+          path: '/orders/123456?secret=1',
+        },
+      },
+    }
+
+    __faroInternals.sanitizeTransportItemInPlace(item)
+
+    expect(item.payload.context).toEqual({
+      email: '[redacted]',
+      path: '/orders/:id',
+    })
+  })
+
+  it('ignores malformed transport payloads without throwing', () => {
+    expect(() => __faroInternals.sanitizeTransportItemInPlace(undefined)).not.toThrow()
+    expect(() => __faroInternals.sanitizeTransportItemInPlace({})).not.toThrow()
+    expect(() =>
+      __faroInternals.sanitizeTransportItemInPlace({
+        payload: {
+          attributes: {
+            note: 'x'.repeat(300),
+          },
+        },
+      }),
+    ).not.toThrow()
+  })
 })

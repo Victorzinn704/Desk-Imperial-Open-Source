@@ -26,12 +26,12 @@ Testes não são burocracia — são a única forma objetiva de saber se o siste
 
 ## Pirâmide de testes
 
-| Tipo | Foco | Quando usar |
-|------|------|-------------|
-| **Unitário** | Função, método, lógica isolada | Regras de negócio, transformações, validações |
-| **Integração** | Módulo com dependências reais | Service + banco, controller + service, API real |
-| **End-to-End (E2E)** | Fluxo completo do usuário | Cadastro, login, fluxo crítico de negócio |
-| **Contrato** | Interface entre sistemas | API entre frontend e backend, integração com terceiro |
+| Tipo                 | Foco                           | Quando usar                                           |
+| -------------------- | ------------------------------ | ----------------------------------------------------- |
+| **Unitário**         | Função, método, lógica isolada | Regras de negócio, transformações, validações         |
+| **Integração**       | Módulo com dependências reais  | Service + banco, controller + service, API real       |
+| **End-to-End (E2E)** | Fluxo completo do usuário      | Cadastro, login, fluxo crítico de negócio             |
+| **Contrato**         | Interface entre sistemas       | API entre frontend e backend, integração com terceiro |
 
 ## Perspectivas de cobertura disponíveis
 

@@ -1,7 +1,7 @@
 # 📱 DESK IMPERIAL — Auditoria de Performance Mobile
 
-**Data:** 2026-03-28  
-**Autor:** Tech Leader Performance Mobile  
+**Data:** 2026-03-28
+**Autor:** Tech Leader Performance Mobile
 **Status:** ✅ IMPLEMENTADO
 
 ---

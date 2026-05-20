@@ -69,7 +69,7 @@ export function passwordInput(page: Page) {
 }
 
 export function staffPasswordInput(page: Page) {
-  return page.getByPlaceholder('••••••')
+  return page.getByPlaceholder('••••••••')
 }
 
 export function passwordToggleButton(page: Page, input: Locator) {

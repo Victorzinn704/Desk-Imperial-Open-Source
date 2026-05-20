@@ -1,5 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common'
-import type { ArgumentsHost } from '@nestjs/common'
+import { type ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter'
 
 describe('HttpExceptionFilter', () => {
@@ -56,7 +55,10 @@ describe('HttpExceptionFilter', () => {
     request.headers['x-request-id'] = 'header-req'
     const host = makeHost(response, request)
 
-    const exception = new HttpException({ message: ['campo obrigatorio', 'formato invalido'] }, HttpStatus.UNPROCESSABLE_ENTITY)
+    const exception = new HttpException(
+      { message: ['campo obrigatorio', 'formato invalido'] },
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    )
 
     filter.catch(exception, host)
 

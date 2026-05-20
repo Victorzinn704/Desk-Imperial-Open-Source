@@ -17,7 +17,7 @@ export class AppService {
     const redisHealthy = await this.cacheService.ping()
     const elapsedMs = Date.now() - start
 
-    if (!dbHealthy || !redisHealthy) {
+    if (!(dbHealthy && redisHealthy)) {
       const message = `healthcheck failed: db=${dbHealthy} redis=${redisHealthy}`
       this.logger.warn(message)
       return {

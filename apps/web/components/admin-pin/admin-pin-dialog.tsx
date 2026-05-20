@@ -1,16 +1,17 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
-import { LockKeyhole, X, ShieldAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { LockKeyhole, ShieldAlert, X } from 'lucide-react'
 import { rememberAdminPinVerification, verifyAdminPin } from '@/lib/admin-pin'
 import { ApiError } from '@/lib/api'
+import { getLastDigit, parseRetryAfterSeconds } from '@/lib/pin-input'
 
-type AdminPinDialogProps = {
+type AdminPinDialogProps = Readonly<{
   title?: string
   description?: string
   onConfirm: () => void
   onCancel: () => void
-}
+}>
 
 export function AdminPinDialog({
   title = 'Ação protegida',
@@ -18,6 +19,7 @@ export function AdminPinDialog({
   onConfirm,
   onCancel,
 }: Readonly<AdminPinDialogProps>) {
+  const pinInputIds = ['admin-pin-digit-0', 'admin-pin-digit-1', 'admin-pin-digit-2', 'admin-pin-digit-3'] as const
   const [digits, setDigits] = useState(['', '', '', ''])
   const [error, setError] = useState('')
   const [isBlocked, setIsBlocked] = useState(false)
@@ -31,7 +33,9 @@ export function AdminPinDialog({
 
   // Countdown interval when blocked by server (423)
   useEffect(() => {
-    if (!isBlocked || secondsLeft <= 0) return
+    if (!isBlocked || secondsLeft <= 0) {
+      return
+    }
     const id = setInterval(() => {
       setSecondsLeft((prev) => {
         const next = prev - 1
@@ -53,7 +57,7 @@ export function AdminPinDialog({
   }, [isBlocked, ref0])
 
   function handleChange(idx: number, value: string) {
-    const digit = value.replace(/\D/g, '').slice(-1)
+    const digit = getLastDigit(value)
     const next = [...digits]
     next[idx] = digit
     setDigits(next)
@@ -87,8 +91,7 @@ export function AdminPinDialog({
         if (err.status === 423) {
           // Rate-limited — server sends retry-after in seconds via message or
           // we fall back to a default of 300 seconds (5 minutes).
-          const match = err.message.match(/(\d+)\s*s/i)
-          const secs = match ? Number(match[1]) : 300
+          const secs = parseRetryAfterSeconds(err.message, 300)
           setIsBlocked(true)
           setSecondsLeft(secs)
           setError('')
@@ -120,10 +123,15 @@ export function AdminPinDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <button
+        aria-label="Fechar verificação de PIN"
+        className="absolute inset-0 border-0 bg-black/75 p-0 backdrop-blur-sm"
+        type="button"
+        onClick={onCancel}
+      />
 
-      <div className="imperial-card relative w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+      <div className="imperial-card relative z-10 w-full max-w-xs">
         <button
           className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.08)] text-[var(--text-soft)] hover:text-white"
           type="button"
@@ -157,13 +165,14 @@ export function AdminPinDialog({
             <div className="flex justify-center gap-3 px-6 pb-2">
               {digits.map((digit, idx) => (
                 <input
-                  key={idx}
-                  ref={refs[idx]}
                   className="size-14 rounded-[16px] border text-center text-xl font-bold text-white outline-none transition-all"
                   disabled={isLoading}
+                  id={pinInputIds[idx]}
                   inputMode="numeric"
+                  key={pinInputIds[idx]}
                   maxLength={1}
                   pattern="[0-9]"
+                  ref={refs[idx]}
                   style={{
                     background: digit ? 'rgba(52,242,127,0.08)' : 'rgba(255,255,255,0.03)',
                     borderColor: error

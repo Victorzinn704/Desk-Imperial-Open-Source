@@ -52,7 +52,9 @@ for (const [name, vulnerability] of vulnerabilities) {
 if (unexpected.length > 0) {
   console.error('Runtime security audit encontrou vulnerabilidades high/critical fora do allowlist temporario:')
   for (const vulnerability of unexpected) {
-    console.error(`- ${vulnerability.name} (${vulnerability.severity}) via ${vulnerability.via.join(', ') || 'desconhecido'}`)
+    console.error(
+      `- ${vulnerability.name} (${vulnerability.severity}) via ${vulnerability.via.join(', ') || 'desconhecido'}`,
+    )
   }
   console.error(
     'Revise docs/security/dependency-risk-acceptance-2026-04-01.md antes de aceitar ou expandir esse allowlist.',

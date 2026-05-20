@@ -1,6 +1,6 @@
 # Plano de Ataque — Gargalo de Vendas + Telemetria OSS
 
-Data: 2026-04-02  
+Data: 2026-04-02
 Objetivo: reduzir o custo dos fluxos de vendas sem “chutar” otimização, usando telemetria útil para decidir o que cortar e o que preservar.
 
 ---

@@ -13,6 +13,7 @@ Toda contribuição — código, documentação, bug report ou sugestão — é 
 2. Leia [docs/product/overview.md](./docs/product/overview.md) para entender para quem o produto é feito
 3. Leia [docs/architecture/modules.md](./docs/architecture/modules.md) para entender a estrutura
 4. Configure o ambiente local: [docs/architecture/local-development.md](./docs/architecture/local-development.md)
+5. Para mudanças maiores, leia [docs/architecture/collaboration-evidence-workflow.md](./docs/architecture/collaboration-evidence-workflow.md)
 
 ---
 
@@ -38,6 +39,17 @@ Abra uma issue descrevendo:
 
 Não abra PR com funcionalidade nova sem issue aprovada antes. Isso evita trabalho desperdiçado.
 
+### Tarefas técnicas
+
+Use o template `Tarefa técnica` quando a mudança envolver performance, realtime, segurança defensiva, infraestrutura, refatoração ou dívida técnica.
+
+Uma tarefa técnica boa precisa ter:
+
+- fluxo afetado
+- critério de aceite verificável
+- comandos de validação esperados
+- risco e rollback
+
 ### Correções de documentação
 
 PRs de documentação são bem-vindos sem issue prévia. Só garanta que:
@@ -51,6 +63,7 @@ PRs de documentação são bem-vindos sem issue prévia. Só garanta que:
 - Bugs confirmados: abra PR diretamente referenciando a issue
 - Refatorações: discuta na issue antes de implementar
 - Segurança: **não abra issue pública** — leia [SECURITY.md](./SECURITY.md)
+- Mudanças de auth, pagamento, realtime, dados ou deploy podem exigir uma RFC curta usando [docs/architecture/rfc-template.md](./docs/architecture/rfc-template.md)
 
 ---
 
@@ -115,6 +128,8 @@ Inclua no PR:
 - O que foi mudado
 - Como testar
 - Checklist preenchido
+- Code Health Budget quando tocar arquivo crítico
+- Risco residual claro quando depender de CI, Oracle, webhook externo, mobile real ou hardware local
 
 ---
 

@@ -1,9 +1,9 @@
 import {
-  toMesaRecord,
-  toComandaRecord,
-  toCashMovementRecord,
   buildEmployeeOperationsRecord,
+  toCashMovementRecord,
   toClosureRecord,
+  toComandaRecord,
+  toMesaRecord,
 } from '../src/modules/operations/operations.types'
 
 // ── Record builders ──────────────────────────────────────────────────────────
@@ -81,6 +81,16 @@ describe('toComandaRecord', () => {
       notes: null,
       openedAt: new Date('2026-03-26T00:00:00Z'),
       closedAt: null,
+      payments: [
+        {
+          id: 'pay-1',
+          method: 'PIX',
+          amount: { toNumber: () => 20 },
+          note: null,
+          status: 'CONFIRMED',
+          paidAt: new Date('2026-03-26T00:10:00Z'),
+        },
+      ],
       items: [
         {
           id: 'item-1',
@@ -99,9 +109,15 @@ describe('toComandaRecord', () => {
     expect(record.subtotalAmount).toBe(50)
     expect(record.discountAmount).toBe(5)
     expect(record.totalAmount).toBe(45)
+    expect(record.paidAmount).toBe(20)
+    expect(record.remainingAmount).toBe(25)
+    expect(record.paymentStatus).toBe('PARTIAL')
+    expect(record.payments).toHaveLength(1)
     expect(record.items).toHaveLength(1)
-    expect(record.items[0].productName).toBe('Cerveja')
-    expect(record.items[0].quantity).toBe(2)
+    const firstItem = record.items[0]
+    expect(firstItem).toBeDefined()
+    expect(firstItem?.productName).toBe('Cerveja')
+    expect(firstItem?.quantity).toBe(2)
   })
 
   it('handles null numeric values', () => {
@@ -182,7 +198,7 @@ describe('buildEmployeeOperationsRecord', () => {
 
     const record = buildEmployeeOperationsRecord({ employee, cashSession: null, comandas: comandas as any })
     expect(record.comandas.length).toBe(4)
-    expect(record.comandas.filter(c => c.status === 'OPEN').length).toBe(1)
+    expect(record.comandas.filter((c) => c.status === 'OPEN').length).toBe(1)
   })
 
   it('uses default name when no employee', () => {

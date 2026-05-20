@@ -122,11 +122,11 @@ describe('CashSessionService', () => {
     helpers.resolveEmployeeForStaff.mockResolvedValue(null)
 
     await expect(
-      service.openCashSession(
-        makeStaffAuthContext({ employeeId: null }),
-        { businessDate: '2026-04-01', openingCashAmount: 100 },
-        makeRequestContext(),
-      ),
+      service.openCashSession({
+        auth: makeStaffAuthContext({ employeeId: null }),
+        dto: { businessDate: '2026-04-01', openingCashAmount: 100 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(BadRequestException)
   })
 
@@ -135,11 +135,11 @@ describe('CashSessionService', () => {
     prisma.cashSession.findFirst.mockResolvedValue({ id: 'already-open' })
 
     await expect(
-      service.openCashSession(
-        makeOwnerAuthContext(),
-        { businessDate: '2026-04-01', openingCashAmount: 100 },
-        makeRequestContext(),
-      ),
+      service.openCashSession({
+        auth: makeOwnerAuthContext(),
+        dto: { businessDate: '2026-04-01', openingCashAmount: 100 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -162,12 +162,12 @@ describe('CashSessionService', () => {
     helpers.syncCashClosure.mockResolvedValue(closure)
     prisma.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
-    const result = await service.openCashSession(
-      makeOwnerAuthContext(),
-      { businessDate: '2026-04-01', openingCashAmount: 250, notes: 'Abertura do dia' },
-      makeRequestContext(),
-      { includeSnapshot: true },
-    )
+    const result = await service.openCashSession({
+      auth: makeOwnerAuthContext(),
+      dto: { businessDate: '2026-04-01', openingCashAmount: 250, notes: 'Abertura do dia' },
+      context: makeRequestContext(),
+      options: { includeSnapshot: true },
+    })
 
     expect(result.cashSession.id).toBe('cash-1')
     expect(result.snapshot).toEqual({ marker: 'live' })
@@ -178,12 +178,12 @@ describe('CashSessionService', () => {
 
   it('bloqueia movimentacao OPENING_FLOAT manual', async () => {
     await expect(
-      service.createCashMovement(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { type: CashMovementType.OPENING_FLOAT, amount: 10 },
-        makeRequestContext(),
-      ),
+      service.createCashMovement({
+        auth: makeOwnerAuthContext(),
+        cashSessionId: 'cash-1',
+        dto: { type: CashMovementType.OPENING_FLOAT, amount: 10 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(BadRequestException)
   })
 
@@ -192,12 +192,12 @@ describe('CashSessionService', () => {
     helpers.requireAuthorizedCashSession.mockResolvedValue(makeSession({ status: CashSessionStatus.CLOSED }))
 
     await expect(
-      service.createCashMovement(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { type: CashMovementType.SUPPLY, amount: 10 },
-        makeRequestContext(),
-      ),
+      service.createCashMovement({
+        auth: makeOwnerAuthContext(),
+        cashSessionId: 'cash-1',
+        dto: { type: CashMovementType.SUPPLY, amount: 10 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -226,13 +226,13 @@ describe('CashSessionService', () => {
     helpers.syncCashClosure.mockResolvedValue(closure)
     prisma.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
-    const result = await service.createCashMovement(
-      makeOwnerAuthContext(),
-      'cash-1',
-      { type: CashMovementType.SUPPLY, amount: 50, note: 'Reforco' },
-      makeRequestContext(),
-      { includeSnapshot: false },
-    )
+    const result = await service.createCashMovement({
+      auth: makeOwnerAuthContext(),
+      cashSessionId: 'cash-1',
+      dto: { type: CashMovementType.SUPPLY, amount: 50, note: 'Reforco' },
+      context: makeRequestContext(),
+      options: { includeSnapshot: false },
+    })
 
     expect(result.movement.id).toBe('mov-2')
     expect(result.cashSession.expectedCashAmount).toBe(250)
@@ -244,12 +244,12 @@ describe('CashSessionService', () => {
     helpers.requireAuthorizedCashSession.mockResolvedValue(makeSession({ status: CashSessionStatus.CLOSED }))
 
     await expect(
-      service.closeCashSession(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { countedCashAmount: 300 },
-        makeRequestContext(),
-      ),
+      service.closeCashSession({
+        auth: makeOwnerAuthContext(),
+        cashSessionId: 'cash-1',
+        dto: { countedCashAmount: 300 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -258,12 +258,12 @@ describe('CashSessionService', () => {
     prisma.comanda.count.mockResolvedValue(2)
 
     await expect(
-      service.closeCashSession(
-        makeOwnerAuthContext(),
-        'cash-1',
-        { countedCashAmount: 300 },
-        makeRequestContext(),
-      ),
+      service.closeCashSession({
+        auth: makeOwnerAuthContext(),
+        cashSessionId: 'cash-1',
+        dto: { countedCashAmount: 300 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ConflictException)
   })
 
@@ -297,12 +297,12 @@ describe('CashSessionService', () => {
     helpers.syncCashClosure.mockResolvedValue(closure)
     prisma.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
-    const result = await service.closeCashSession(
-      makeOwnerAuthContext(),
-      'cash-1',
-      { countedCashAmount: 250, notes: 'Fechamento ok' },
-      makeRequestContext(),
-    )
+    const result = await service.closeCashSession({
+      auth: makeOwnerAuthContext(),
+      cashSessionId: 'cash-1',
+      dto: { countedCashAmount: 250, notes: 'Fechamento ok' },
+      context: makeRequestContext(),
+    })
 
     expect(result.cashSession.status).toBe(CashSessionStatus.CLOSED)
     expect(result.cashSession.differenceAmount).toBe(10)
@@ -312,11 +312,11 @@ describe('CashSessionService', () => {
 
   it('bloqueia fechamento consolidado para STAFF', async () => {
     await expect(
-      service.closeCashClosure(
-        makeStaffAuthContext(),
-        { businessDate: '2026-04-01', countedCashAmount: 100 },
-        makeRequestContext(),
-      ),
+      service.closeCashClosure({
+        auth: makeStaffAuthContext(),
+        dto: { businessDate: '2026-04-01', countedCashAmount: 100 },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ForbiddenException)
   })
 
@@ -335,11 +335,11 @@ describe('CashSessionService', () => {
     })
 
     await expect(
-      service.closeCashClosure(
-        makeOwnerAuthContext(),
-        { businessDate: '2026-04-01', countedCashAmount: 300, forceClose: false },
-        makeRequestContext(),
-      ),
+      service.closeCashClosure({
+        auth: makeOwnerAuthContext(),
+        dto: { businessDate: '2026-04-01', countedCashAmount: 300, forceClose: false },
+        context: makeRequestContext(),
+      }),
     ).rejects.toThrow(ConflictException)
 
     expect(prisma.cashClosure.update).toHaveBeenCalledWith(
@@ -369,18 +369,16 @@ describe('CashSessionService', () => {
     prisma.$transaction.mockImplementation(async (callback: any) => callback({}))
     prisma.cashClosure.update.mockResolvedValue(closedClosure)
 
-    const result = await service.closeCashClosure(
-      makeOwnerAuthContext(),
-      { businessDate: '2026-04-01', countedCashAmount: 280, forceClose: true },
-      makeRequestContext(),
-      { includeSnapshot: false },
-    )
+    const result = await service.closeCashClosure({
+      auth: makeOwnerAuthContext(),
+      dto: { businessDate: '2026-04-01', countedCashAmount: 280, forceClose: true },
+      context: makeRequestContext(),
+      options: { includeSnapshot: false },
+    })
 
     expect(result.closure?.status).toBe(CashClosureStatus.FORCE_CLOSED)
     expect(result.closure?.differenceAmount).toBe(-20)
-    expect(auditLogService.record).toHaveBeenCalledWith(
-      expect.objectContaining({ severity: AuditSeverity.WARN }),
-    )
+    expect(auditLogService.record).toHaveBeenCalledWith(expect.objectContaining({ severity: AuditSeverity.WARN }))
     expect(operationsRealtimeService.publishCashClosureUpdated).toHaveBeenCalled()
   })
 })

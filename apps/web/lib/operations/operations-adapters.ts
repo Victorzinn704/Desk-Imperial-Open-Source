@@ -9,92 +9,155 @@ import type {
   OperationTimelineResource,
 } from './operations-types'
 
+type OperationGroup = OperationsLiveResponse['employees'][number]
+
 type OperationsViewModel = {
   rows: OperationGridRow[]
   resources: OperationTimelineResource[]
   timelineItems: OperationTimelineItem[]
 }
 
+const UNASSIGNED_EMPLOYEE_ID = 'unassigned'
+const OWNER_EMPLOYEE_CODE = 'OWNER'
+
 export function buildOperationsViewModel(snapshot: OperationsLiveResponse | null | undefined): OperationsViewModel {
   if (!snapshot) {
-    return {
-      rows: [],
-      resources: [],
-      timelineItems: [],
-    }
+    return emptyOperationsViewModel()
   }
 
+  const rows = collectOperationGroups(snapshot).map(buildOperationRow)
+
+  return {
+    rows,
+    resources: buildTimelineResources(rows),
+    timelineItems: buildTimelineItems(rows),
+  }
+}
+
+function emptyOperationsViewModel(): OperationsViewModel {
+  return {
+    rows: [],
+    resources: [],
+    timelineItems: [],
+  }
+}
+
+function collectOperationGroups(snapshot: OperationsLiveResponse): OperationGroup[] {
   const groups = [...snapshot.employees]
   if (snapshot.unassigned.cashSession || snapshot.unassigned.comandas.length > 0) {
     groups.push(snapshot.unassigned)
   }
 
-  const rows = groups.map((group) => {
-    const cashSessionStatus = mapCashSessionStatus(group.cashSession?.status)
-    const movements: OperationCashMovement[] = (group.cashSession?.movements ?? []).map((movement) => ({
-      id: movement.id,
-      employeeId: group.employeeId ?? 'unassigned',
-      type: mapCashMovementType(movement.type),
-      amount: movement.amount,
-      reason: movement.note ?? 'Movimentacao operacional',
-      createdAt: movement.createdAt,
-    }))
+  return groups
+}
 
-    const tables = group.comandas.map((comanda) => ({
-      tableLabel: comanda.tableLabel,
-      comandaId: comanda.id,
-      employeeId: group.employeeId ?? 'unassigned',
-      employeeName: group.displayName,
-      status: mapComandaStatus(comanda.status),
-      openedAt: comanda.openedAt,
-      updatedAt: comanda.closedAt ?? comanda.openedAt,
-      subtotal: comanda.subtotalAmount,
-      discountAmount: comanda.discountAmount,
-      totalAmount: comanda.totalAmount,
-      itemsCount: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
-      notes: comanda.notes,
-    }))
+function buildOperationRow(group: OperationGroup): OperationGridRow {
+  const cashSessionStatus = mapCashSessionStatus(group.cashSession?.status)
+  const activeTables = collectOpenTableLabels(group)
+  const closedTablesToday = collectClosedTableLabels(group)
 
-      const activeTables = group.comandas
-        .filter((comanda) => comanda.status !== 'CLOSED' && comanda.status !== 'CANCELLED')
-        .map((comanda) => comanda.tableLabel)
+  return {
+    employee: buildEmployeeSummary(group, activeTables, closedTablesToday, cashSessionStatus),
+    tables: buildOperationTables(group),
+    movements: buildCashMovements(group),
+  }
+}
 
-      const closedTablesToday = group.comandas
-        .filter((comanda) => comanda.status === 'CLOSED')
-        .map((comanda) => comanda.tableLabel)
+function buildEmployeeSummary(
+  group: OperationGroup,
+  activeTables: string[],
+  closedTablesToday: string[],
+  cashSessionStatus: OperationCashSessionStatus,
+): OperationGridRow['employee'] {
+  return {
+    ...buildEmployeeIdentity(group),
+    activeTables,
+    closedTablesToday,
+    openOrdersCount: activeTables.length,
+    closedOrdersCount: closedTablesToday.length,
+    cashSessionStatus,
+    ...buildCashSessionMetrics(group.cashSession),
+  }
+}
 
-      return {
-        employee: {
-          employeeId: group.employeeId ?? 'unassigned',
-          employeeCode: group.employeeCode ?? 'OWNER',
-          employeeName: group.displayName,
-          role: group.employeeId ? 'STAFF' : 'OWNER',
-          activeTables,
-          closedTablesToday,
-          openOrdersCount: activeTables.length,
-          closedOrdersCount: closedTablesToday.length,
-          cashSessionStatus,
-          cashOpeningAmount: group.cashSession?.openingCashAmount ?? 0,
-          cashCurrentAmount: group.cashSession?.expectedCashAmount ?? 0,
-          cashExpectedAmount: group.cashSession?.expectedCashAmount ?? 0,
-          cashCountedAmount: group.cashSession?.countedCashAmount ?? undefined,
-          cashDifferenceAmount: group.cashSession?.differenceAmount ?? undefined,
-          salesRevenue: group.cashSession?.grossRevenueAmount ?? 0,
-          salesProfit: group.cashSession?.realizedProfitAmount ?? 0,
-        },
-      tables,
-      movements,
-    } satisfies OperationGridRow
-  })
+function buildEmployeeIdentity(group: OperationGroup) {
+  return {
+    employeeId: resolveEmployeeId(group),
+    employeeCode: group.employeeCode ?? OWNER_EMPLOYEE_CODE,
+    employeeName: group.displayName,
+    role: group.employeeId ? 'STAFF' : 'OWNER',
+  } as const
+}
 
-  const resources = rows.map((row) => ({
+function buildCashSessionMetrics(cashSession: OperationGroup['cashSession']) {
+  const expectedCashAmount = cashSession?.expectedCashAmount ?? 0
+
+  return {
+    cashOpeningAmount: cashSession?.openingCashAmount ?? 0,
+    cashCurrentAmount: cashSession?.countedCashAmount ?? expectedCashAmount,
+    cashExpectedAmount: expectedCashAmount,
+    cashCountedAmount: cashSession?.countedCashAmount ?? undefined,
+    cashDifferenceAmount: cashSession?.differenceAmount ?? undefined,
+    salesRevenue: cashSession?.grossRevenueAmount ?? 0,
+    salesProfit: cashSession?.realizedProfitAmount ?? 0,
+  }
+}
+
+function buildCashMovements(group: OperationGroup): OperationCashMovement[] {
+  return (group.cashSession?.movements ?? []).map((movement) => ({
+    id: movement.id,
+    employeeId: resolveEmployeeId(group),
+    type: mapCashMovementType(movement.type),
+    amount: movement.amount,
+    reason: movement.note ?? 'Movimentacao operacional',
+    createdAt: movement.createdAt,
+  }))
+}
+
+function buildOperationTables(group: OperationGroup): OperationGridRow['tables'] {
+  return group.comandas.map((comanda) => ({
+    tableLabel: comanda.tableLabel,
+    comandaId: comanda.id,
+    employeeId: resolveEmployeeId(group),
+    employeeName: group.displayName,
+    status: mapComandaStatus(comanda.status),
+    openedAt: comanda.openedAt,
+    updatedAt: comanda.closedAt ?? comanda.openedAt,
+    subtotal: comanda.subtotalAmount,
+    discountAmount: comanda.discountAmount,
+    totalAmount: comanda.totalAmount,
+    itemsCount: comanda.items.reduce((sum, item) => sum + item.quantity, 0),
+    notes: comanda.notes,
+  }))
+}
+
+function collectOpenTableLabels(group: OperationGroup) {
+  return group.comandas.filter(isOpenComanda).map((comanda) => comanda.tableLabel)
+}
+
+function collectClosedTableLabels(group: OperationGroup) {
+  return group.comandas.filter(isClosedComanda).map((comanda) => comanda.tableLabel)
+}
+
+function isOpenComanda(comanda: OperationGroup['comandas'][number]) {
+  return comanda.status !== 'CLOSED' && comanda.status !== 'CANCELLED'
+}
+
+function isClosedComanda(comanda: OperationGroup['comandas'][number]) {
+  return comanda.status === 'CLOSED'
+}
+
+function buildTimelineResources(rows: OperationGridRow[]): OperationTimelineResource[] {
+  return rows.map((row) => ({
     id: row.employee.employeeId,
     title: row.employee.employeeName,
     subtitle: `${row.employee.employeeCode} · ${row.employee.role}`,
     status: row.employee.cashSessionStatus,
   }))
+}
 
-  const timelineItems = rows.flatMap((row) =>
+function buildTimelineItems(rows: OperationGridRow[]): OperationTimelineItem[] {
+  return rows.flatMap((row) =>
     row.tables.map(
       (table) =>
         ({
@@ -110,12 +173,10 @@ export function buildOperationsViewModel(snapshot: OperationsLiveResponse | null
         }) satisfies OperationTimelineItem,
     ),
   )
+}
 
-  return {
-    rows,
-    resources,
-    timelineItems,
-  }
+function resolveEmployeeId(group: OperationGroup) {
+  return group.employeeId ?? UNASSIGNED_EMPLOYEE_ID
 }
 
 function mapCashSessionStatus(
@@ -138,7 +199,6 @@ function mapCashMovementType(
       return 'supply'
     case 'WITHDRAWAL':
       return 'withdrawal'
-    case 'ADJUSTMENT':
     default:
       return 'adjustment'
   }
@@ -155,7 +215,6 @@ function mapComandaStatus(
     case 'CLOSED':
     case 'CANCELLED':
       return 'closed'
-    case 'OPEN':
     default:
       return 'open'
   }

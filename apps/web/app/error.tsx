@@ -27,14 +27,14 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       </div>
       <div className="flex gap-3">
         <button
-          onClick={reset}
           className="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[var(--accent-strong)]"
+          onClick={reset}
         >
           Tentar novamente
         </button>
         <Link
-          href="/"
           className="rounded-xl border border-[var(--border)] px-5 py-2.5 text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text-primary)]"
+          href="/"
         >
           Ir para o início
         </Link>

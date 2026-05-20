@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common'
+import { HttpException, HttpStatus, ServiceUnavailableException } from '@nestjs/common'
 import type { ConfigService } from '@nestjs/config'
 import type { CacheService } from '../src/common/services/cache.service'
 import { AuthRateLimitService } from '../src/modules/auth/auth-rate-limit.service'
@@ -10,6 +10,7 @@ describe('AuthRateLimitService', () => {
   }
 
   const cache = {
+    isReady: jest.fn(() => true),
     get: jest.fn(),
     set: jest.fn(async () => {}),
     del: jest.fn(async () => {}),
@@ -23,6 +24,7 @@ describe('AuthRateLimitService', () => {
     Object.keys(configValues).forEach((key) => {
       configValues[key] = undefined
     })
+    cache.isReady.mockReturnValue(true)
     service = new AuthRateLimitService(configService as unknown as ConfigService, cache as unknown as CacheService)
     jest.spyOn(Date, 'now').mockImplementation(() => now)
   })
@@ -74,6 +76,16 @@ describe('AuthRateLimitService', () => {
     expect(cache.del).toHaveBeenCalledWith('ratelimit:auth:k-3')
   })
 
+  it('falha com 503 quando cache estiver indisponivel', async () => {
+    cache.isReady.mockReturnValue(false)
+
+    await expect(service.assertLoginAllowed('down-1')).rejects.toBeInstanceOf(ServiceUnavailableException)
+    await expect(service.recordFailure('down-1')).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(cache.get).not.toHaveBeenCalled()
+    expect(cache.set).not.toHaveBeenCalled()
+  })
+
   it('cria entrada nova ao registrar falha sem historico', async () => {
     cache.get.mockResolvedValue(null)
 
@@ -98,11 +110,7 @@ describe('AuthRateLimitService', () => {
 
     expect(result.count).toBe(2)
     expect(result.lockedUntil).toBeNull()
-    expect(cache.set).toHaveBeenCalledWith(
-      'ratelimit:auth:k-5',
-      expect.objectContaining({ count: 2 }),
-      890,
-    )
+    expect(cache.set).toHaveBeenCalledWith('ratelimit:auth:k-5', expect.objectContaining({ count: 2 }), 890)
   })
 
   it('aplica lock quando ultrapassa limite de tentativas', async () => {
@@ -150,11 +158,7 @@ describe('AuthRateLimitService', () => {
     await service.recordFailure('k-8')
 
     expect(warnSpy).toHaveBeenCalledTimes(3)
-    expect(cache.set).toHaveBeenCalledWith(
-      'ratelimit:auth:k-8',
-      expect.objectContaining({ count: 1 }),
-      900,
-    )
+    expect(cache.set).toHaveBeenCalledWith('ratelimit:auth:k-8', expect.objectContaining({ count: 1 }), 900)
   })
 
   it('executa wrappers de assert e record para outros fluxos', async () => {
@@ -165,9 +169,7 @@ describe('AuthRateLimitService', () => {
     await expect(service.assertEmailVerificationAllowed('ev-1')).resolves.toBeUndefined()
     await expect(service.assertEmailVerificationCodeAllowed('evc-1')).resolves.toBeUndefined()
 
-    await expect(service.recordPasswordResetAttempt('rpw-1')).resolves.toEqual(
-      expect.objectContaining({ count: 1 }),
-    )
+    await expect(service.recordPasswordResetAttempt('rpw-1')).resolves.toEqual(expect.objectContaining({ count: 1 }))
     await expect(service.recordPasswordResetCodeAttempt('rpwc-1')).resolves.toEqual(
       expect.objectContaining({ count: 1 }),
     )

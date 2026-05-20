@@ -4,7 +4,7 @@ import type { RequestContext } from '../../common/utils/request-context.util'
 import { PrismaService } from '../../database/prisma.service'
 import { AuditLogService } from '../monitoring/audit-log.service'
 import { COOKIE_DOCUMENT_KEYS, DEFAULT_CONSENT_DOCUMENTS } from './consent.constants'
-import { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
+import type { UpdateCookiePreferencesDto } from './dto/update-cookie-preferences.dto'
 
 const CONSENT_DOCUMENTS_TTL_SECONDS = 60 * 60
 const CONSENT_OVERVIEW_TTL_SECONDS = 10 * 60
@@ -267,7 +267,7 @@ export class ConsentService {
       },
     })
 
-    if (!existingConsent && !params.enabled) {
+    if (!(existingConsent || params.enabled)) {
       return
     }
 

@@ -39,6 +39,7 @@ Refs: #issue ou contexto adicional
 ```
 
 Tipos:
+
 - `feat:` — nova capacidade
 - `fix:` — correção de bug
 - `refactor:` — reorganização sem mudança funcional

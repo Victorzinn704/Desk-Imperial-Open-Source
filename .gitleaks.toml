@@ -1,0 +1,73 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist para fixtures de teste, placeholders e exemplos de config"
+regexes = [
+  # Placeholders explícitos no código
+  '''EXAMPLE_[A-Z_]+''',
+  '''YOUR_[A-Z_]+''',
+  '''<<DEFINIR[^>]*>>''',
+  '''test[-_]?(secret|token|key|password)''',
+  '''fake[-_]?(token|key|jwt|secret)''',
+  '''dummy[-_]?(token|key|secret)''',
+  '''postgresql://desk_imperial_ci:desk_imperial_ci_password@''',
+  '''FARDO_[A-Z0-9_]+''',
+  # Hash de exemplo (bcrypt round 10 com string "password")
+  '''\$2[aby]\$10\$[A-Za-z0-9./]{53}''',
+]
+paths = [
+  '''(^|/)\.cache/''',
+  '''(^|/)\.local-tools/''',
+  '''(^|/)\.venv-aider/''',
+  '''(^|/)\.aider''',
+  '''(^|/)artifacts/''',
+  '''(^|/)logs/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)review_audit/''',
+  '''(^|/)test-results/''',
+  '''(^|/)tmp/''',
+  '''\.env\.example$''',
+  '''\.env\.container\.example$''',
+  '''docs/''',
+  '''\.md$''',
+  '''\.toml$''',
+  '''\.(docx|pdf|png|jpg|jpeg|zip)$''',
+  '''__fixtures__''',
+  '''__mocks__''',
+  '''/test/''',
+  '''\.test\.(ts|tsx|js)$''',
+  '''\.spec\.(ts|tsx|js)$''',
+  '''\.vitest\.(ts|tsx)$''',
+  '''prisma/migrations/''',
+  '''CHANGELOG''',
+]
+
+[[rules]]
+id = "desk-imperial-jwt-secret"
+description = "JWT secret exposto fora de variável de ambiente"
+regex = '''(jwt|token).*secret.*=.*["\'][A-Za-z0-9+/=]{20,}["\']'''
+severity = "error"
+tags = ["jwt", "secret"]
+[rules.allowlist]
+regexes = [
+  '''process\.env''',
+  '''<<DEFINIR''',
+  '''test''',
+  '''example''',
+]
+
+[[rules]]
+id = "desk-imperial-database-url"
+description = "DATABASE_URL com credenciais hardcoded"
+regex = '''postgresql://[^:]+:[^@]{4,}@'''
+severity = "error"
+tags = ["database", "credentials"]
+[rules.allowlist]
+regexes = [
+  '''localhost''',
+  '''127\.0\.0\.1''',
+  '''test:test''',
+  '''postgres:postgres''',
+  '''process\.env''',
+]
