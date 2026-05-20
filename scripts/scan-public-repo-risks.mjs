@@ -13,6 +13,7 @@ const trackedFiles = execFileSync('git', ['ls-files'], {
   .filter(Boolean)
 
 const findings = []
+const trackedFileSet = new Set(trackedFiles.map(normalizePath))
 
 const exactFindings = [
   {
@@ -82,6 +83,8 @@ for (const relativeFile of trackedFiles) {
   const lines = content.split(/\r?\n/)
 
   lines.forEach((line, index) => {
+    validateMarkdownImageReference(relativeFile, line, index + 1)
+
     const envEntry = line.match(/^\s*([A-Z0-9_]+)=(.+)\s*$/)
     if (envEntry) {
       const [, key, rawValue] = envEntry
@@ -135,6 +138,33 @@ if (findings.length > 0) {
 
 console.log(`Public repo safety scan OK — ${trackedFiles.length} arquivos versionados verificados.`)
 
+function validateMarkdownImageReference(relativeFile, line, lineNumber) {
+  if (!relativeFile.endsWith('.md')) {
+    return
+  }
+
+  for (const match of line.matchAll(/!\[[^\]]*]\(([^)]+)\)/g)) {
+    const target = match[1].trim()
+    if (!target || isExternalReference(target)) {
+      continue
+    }
+
+    const cleanTarget = target.split('#')[0].split('?')[0]
+    const resolved = normalizePath(path.normalize(path.join(path.dirname(relativeFile), cleanTarget)))
+    if (!trackedFileSet.has(resolved)) {
+      findings.push({
+        file: relativeFile,
+        line: lineNumber,
+        description: `imagem markdown nao versionada ou ausente: ${target}`,
+      })
+    }
+  }
+}
+
+function isExternalReference(target) {
+  return /^(?:https?:)?\/\//.test(target) || target.startsWith('mailto:')
+}
+
 function isAllowedLocalConnectionString(value) {
   if (value.includes('<') || value.includes('>') || value.includes('${')) {
     return true
@@ -150,4 +180,8 @@ function isAllowedLocalConnectionString(value) {
   } catch {
     return false
   }
+}
+
+function normalizePath(file) {
+  return file.replaceAll('\\', '/')
 }

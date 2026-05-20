@@ -312,7 +312,43 @@ function sanitizeKnipConfig(content) {
   return content.replace(/,\s*"\.venv-aider\/\*\*"/, '').replace(/"\.venv-aider\/\*\*",\s*/, '')
 }
 
+function sanitizeReadme(content) {
+  return content.replace(
+    `| Camada             | Tecnologia                                                      |
+| ------------------ | --------------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                          |
+| Frontend           | Next.js 16 + React 19                                           |
+| Banco de dados     | PostgreSQL 17 + Prisma ORM                                      |
+| Cache / Rate limit | Redis                                                           |
+| Tempo real         | Socket.IO                                                       |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                                   |
+| Monorepo           | Turborepo + npm workspaces                                      |
+| Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |
+| Testes backend     | Jest + 53+ arquivos de spec                                     |
+| Testes frontend    | Vitest + Playwright                                             |
+| Load tests         | K6                                                              |`,
+    `| Camada             | Tecnologia                                                |
+| ------------------ | --------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                    |
+| Frontend           | Next.js 16 + React 19                                     |
+| Banco de dados     | PostgreSQL 17 + Prisma ORM                                |
+| Cache / Rate limit | Redis                                                     |
+| Tempo real         | Socket.IO                                                 |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                             |
+| Monorepo           | Turborepo + npm workspaces                                |
+| Deploy             | Containers Linux + PostgreSQL + Redis em cloud gerenciada |
+| Testes backend     | Jest + 53+ arquivos de spec                               |
+| Testes frontend    | Vitest + Playwright                                       |
+| Load tests         | K6                                                        |`,
+  )
+}
+
 const transformRules = [
+  {
+    pattern: /^README\.md$/,
+    reason: 'README publico sem topologia real de deploy',
+    transform: sanitizeReadme,
+  },
   {
     pattern: /^\.env\.example$/,
     reason: 'env example sanitizado',
@@ -374,6 +410,10 @@ const excludeRules = [
   { pattern: /^infra\/scripts\/oracle-/, reason: 'automacao operacional de ambiente real' },
   { pattern: /^docs\/operations\/vm-inventory-current-\d{4}-\d{2}-\d{2}\.md$/, reason: 'inventario real de maquinas' },
   {
+    pattern: /^docs\/operations\/observability-oss-phase1\.md$/,
+    reason: 'topologia real de observabilidade',
+  },
+  {
     pattern: /^docs\/operations\/oracle-access-hardening-runbook-\d{4}-\d{2}-\d{2}\.md$/,
     reason: 'runbook de acesso real',
   },
@@ -382,6 +422,7 @@ const excludeRules = [
     reason: 'acesso remoto workstation',
   },
   { pattern: /^docs\/operations\/macbook-remote-workstation-setup\.md$/, reason: 'acesso remoto workstation' },
+  { pattern: /^docs\/operations\/macbook-pc-daily-workflow\.md$/, reason: 'acesso remoto workstation' },
   {
     pattern: /^docs\/operations\/vm-functional-separation-\d{4}-\d{2}-\d{2}\.md$/,
     reason: 'inventario real de maquinas',

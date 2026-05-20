@@ -6,13 +6,14 @@ Navegação central de toda a documentação do projeto.
 
 ## Para quem é esta documentação
 
-| Perfil                            | Por onde começar                                                                                                                                        |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Comerciante / usuário final**   | [O produto e para quem é](./product/overview.md) → [Como usar](../README.md#quick-start)                                                                |
-| **Desenvolvedor novo no projeto** | [README](../README.md) → [Estado atual](./current-state.md) → [Setup local](./architecture/local-development.md) → [Módulos](./architecture/modules.md) |
-| **Contribuidor**                  | [CONTRIBUTING.md](../CONTRIBUTING.md) → [Módulos](./architecture/modules.md) → [Banco de dados](./architecture/database.md)                             |
-| **Recrutador / tech lead**        | [README](../README.md) → [Requisitos](./product/requirements.md) → [Prontidão operacional](./operations/production-operational-readiness.md)            |
-| **Segurança**                     | [SECURITY.md](../SECURITY.md) → [Threat model](./security/threat-model-critical-flows.md) → [Baseline](./security/security-baseline.md)                 |
+| Perfil                            | Por onde começar                                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Comerciante / usuário final**   | [O produto e para quem é](./product/overview.md) → [Como usar](../README.md#quick-start)                                                                                       |
+| **Desenvolvedor novo no projeto** | [README](../README.md) → [Estado atual](./current-state.md) → [Setup local](./architecture/local-development.md) → [Módulos](./architecture/modules.md)                        |
+| **Contribuidor**                  | [CONTRIBUTING.md](../CONTRIBUTING.md) → [Módulos](./architecture/modules.md) → [Banco de dados](./architecture/database.md)                                                    |
+| **Recrutador / tech lead**        | [README](../README.md) → [Requisitos](./product/requirements.md) → [Prontidão operacional](./operations/production-operational-readiness.md)                                   |
+| **Segurança**                     | [SECURITY.md](../SECURITY.md) → [Threat model](./security/threat-model-critical-flows.md) → [Baseline](./security/security-baseline.md)                                        |
+| **Publicação open source**        | [Runbook de sync](./operations/open-source-sync-runbook.md) → [Governança](./operations/open-source-publication-governance.md) → [Screenshots](./assets/screenshots/README.md) |
 
 ---
 
@@ -34,6 +35,8 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 - [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)
 - [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)
 - [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)
+- [operations/open-source-publication-governance.md](./operations/open-source-publication-governance.md)
+- [assets/screenshots/README.md](./assets/screenshots/README.md)
 - [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)
 - [security/security-baseline.md](./security/security-baseline.md)
 - [security/threat-model-critical-flows.md](./security/threat-model-critical-flows.md)
@@ -99,20 +102,21 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 
 ## Operações
 
-| Documento                                                                                            | O que cobre                                       |
-| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| [operations/flows.md](./operations/flows.md)                                                         | Fluxos operacionais do sistema                    |
-| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)                           | Mapeamento de KPIs em tempo real                  |
-| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md)                   | Rollout inicial de OpenTelemetry OSS              |
-| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)                 | Runbook de rollout do Sentry em API e web         |
-| [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)   | Gates de CI, staging, rollback, backup e alerta   |
-| [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)                   | Sincronizacao segura entre repo privado e publico |
-| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)           | Runbook da malha realtime e sua instrumentação    |
-| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback     |
-| [operations/mercado-pago-point.md](./operations/mercado-pago-point.md)                               | Runbook Mercado Pago Point e webhook              |
-| [operations/thermal-printing.md](./operations/thermal-printing.md)                                   | Runbook de impressao termica e QZ Tray            |
-| [operations/product-image-quality-audit.md](./operations/product-image-quality-audit.md)             | Auditoria e regra de qualidade de imagens         |
-| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)                           | Runbook do bot Telegram oficial                   |
+| Documento                                                                                              | O que cobre                                                    |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| [operations/flows.md](./operations/flows.md)                                                           | Fluxos operacionais do sistema                                 |
+| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)                             | Mapeamento de KPIs em tempo real                               |
+| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md)                     | Rollout inicial de OpenTelemetry OSS                           |
+| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)                   | Runbook de rollout do Sentry em API e web                      |
+| [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)     | Gates de CI, staging, rollback, backup e alerta                |
+| [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)                     | Sincronizacao segura entre repo privado e publico              |
+| [operations/open-source-publication-governance.md](./operations/open-source-publication-governance.md) | Politica de publicacao, screenshots e protecao do produto real |
+| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)             | Runbook da malha realtime e sua instrumentação                 |
+| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md)   | Runbook base de staging, incidente e rollback                  |
+| [operations/mercado-pago-point.md](./operations/mercado-pago-point.md)                                 | Runbook Mercado Pago Point e webhook                           |
+| [operations/thermal-printing.md](./operations/thermal-printing.md)                                     | Runbook de impressao termica e QZ Tray                         |
+| [operations/product-image-quality-audit.md](./operations/product-image-quality-audit.md)               | Auditoria e regra de qualidade de imagens                      |
+| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)                             | Runbook do bot Telegram oficial                                |
 
 ---
 

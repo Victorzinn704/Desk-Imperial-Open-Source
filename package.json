@@ -33,6 +33,7 @@
     "repo:scan-public": "node ./scripts/scan-public-repo-risks.mjs",
     "repo:open-source:audit": "node ./scripts/prepare-open-source-snapshot.mjs --dry-run --report docs/operations/open-source-full-sync-audit.md",
     "repo:open-source:prepare": "node ./scripts/prepare-open-source-snapshot.mjs --target ../desk-imperial-open-source-snapshot --force --report docs/operations/open-source-full-sync-audit.md",
+    "repo:open-source:review": "npm run repo:open-source:audit && npm run repo:scan-public && npm run lint:secrets && npm run quality:contracts",
     "repo:drift": "node ./scripts/git-drift-report.mjs",
     "security:audit-runtime": "node ./scripts/check-runtime-audit-allowlist.mjs",
     "quality:scope": "node ./scripts/check-worktree-scope.mjs",
