@@ -44,38 +44,41 @@ Tudo no mesmo sistema. Sem planilha. Sem pagar mensalidade.
 
 ## Funcionalidades
 
-| Módulo                   | O que faz                                                                                |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| **PDV / Comandas**       | Kanban 4 colunas, arrastar e soltar, CPF/CNPJ, desconto e acréscimo por comanda          |
-| **Tempo real**           | Toda equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                      |
-| **Financeiro**           | Receita, custo, margem, top produtos e top vendedores por período                        |
-| **Folha de pagamento**   | Salário fixo + comissão sobre vendas calculada por funcionário                           |
-| **Mapa de vendas**       | Pedidos plotados por bairro e região com geocodificação real                             |
-| **Calendário comercial** | Planeje eventos e correlacione com as vendas do período                                  |
-| **Mobile — dono**        | Painel executivo otimizado para celular                                                  |
-| **Mobile — funcionário** | PDV e atendimento completo pelo celular                                                  |
-| **Admin PIN**            | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                    |
-| **Export CSV**           | Baixe pedidos para Excel ou Google Planilhas                                             |
-| **Insight IA**           | Resumo executivo gerado pelo Gemini com cache e controle de uso                          |
-| **LGPD**                 | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio |
+| Módulo                      | O que faz                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| **PDV / Comandas**          | Kanban 4 colunas, CPF/CNPJ, desconto e acréscimo por comanda                                  |
+| **Tempo real**              | Toda a equipe vê o mesmo estado ao vivo via Socket.IO, sem recarregar                         |
+| **Financeiro**              | Receita, custo, margem, top produtos e top vendedores por período                             |
+| **Folha de pagamento**      | Salário fixo + comissão sobre vendas calculada por funcionário                                |
+| **Mapa de vendas**          | Pedidos plotados por bairro e região com geocodificação real                                  |
+| **Calendário comercial**    | Planeje eventos e correlacione com as vendas do período                                       |
+| **Mobile — dono**           | Painel executivo otimizado para celular                                                       |
+| **Mobile — funcionário**    | PDV e atendimento completo pelo celular                                                       |
+| **Admin PIN**               | Senha de 4 dígitos com bloqueio anti-força-bruta para ações sensíveis                         |
+| **Cadastro inteligente**    | Barcode, Open Food Facts, Gemini e heurísticas de catálogo para acelerar cadastro de produtos |
+| **Telegram e notificações** | Vínculo do bot oficial, preferências por workspace e usuário, entregas operacionais filtradas |
+| **Observabilidade e erros** | OpenTelemetry, Grafana Faro e Sentry integrados ao ciclo de operação                          |
+| **Export CSV**              | Baixe pedidos para Excel ou Google Planilhas                                                  |
+| **Insight IA**              | Resumo executivo gerado pelo Gemini com cache e controle de uso                               |
+| **LGPD**                    | Consentimento de cookies, versionamento de documentos legais, dados isolados por negócio      |
 
 ---
 
 ## Stack
 
-| Camada             | Tecnologia                    |
-| ------------------ | ----------------------------- |
-| Backend            | NestJS 11 + TypeScript        |
-| Frontend           | Next.js 16 + React 19         |
-| Banco de dados     | PostgreSQL 16 + Prisma ORM    |
-| Cache / Rate limit | Redis                         |
-| Tempo real         | Socket.IO                     |
-| Autenticação       | Cookies HttpOnly + CSRF duplo |
-| Monorepo           | Turborepo + npm workspaces    |
-| Deploy             | Railway                       |
-| Testes backend     | Jest + 53+ arquivos de spec   |
-| Testes frontend    | Vitest + Playwright           |
-| Load tests         | K6                            |
+| Camada             | Tecnologia                                                      |
+| ------------------ | --------------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                          |
+| Frontend           | Next.js 16 + React 19                                           |
+| Banco de dados     | PostgreSQL 17 + Prisma ORM                                      |
+| Cache / Rate limit | Redis                                                           |
+| Tempo real         | Socket.IO                                                       |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                                   |
+| Monorepo           | Turborepo + npm workspaces                                      |
+| Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |
+| Testes backend     | Jest + 53+ arquivos de spec                                     |
+| Testes frontend    | Vitest + Playwright                                             |
+| Load tests         | K6                                                              |
 
 ---
 
@@ -146,12 +149,12 @@ npm --workspace @partner/api run dev
 npm --workspace @partner/web run dev
 ```
 
-| Serviço      | URL                              |
-| ------------ | -------------------------------- |
-| Frontend     | http://localhost:3000            |
-| API          | http://localhost:4000/api        |
-| Health check | http://localhost:4000/api/health |
-| Swagger      | http://localhost:4000/docs       |
+| Serviço      | URL                                 |
+| ------------ | ----------------------------------- |
+| Frontend     | http://localhost:3000               |
+| API          | http://localhost:4000/api/v1        |
+| Health check | http://localhost:4000/api/v1/health |
+| Swagger      | http://localhost:4000/api/v1/docs   |
 
 ---
 
@@ -173,6 +176,13 @@ npm --workspace @partner/api run test:e2e
 npm --workspace @partner/web run test
 npm --workspace @partner/web run test:e2e
 
+# Cobertura local padrão do frontend
+npm --workspace @partner/web run test:coverage
+
+# Cobertura local usada pelo SonarQube
+npm --workspace @partner/api run test -- --coverage --ci --forceExit --coverageReporters=json-summary --coverageReporters=lcov --coverageReporters=text-summary
+npm --workspace @partner/web run test:coverage:sonar
+
 # Fluxos críticos (E2E)
 npm run test:e2e:critical
 
@@ -187,10 +197,12 @@ npm run test:load:ci
 
 **O que está coberto:**
 
-- 53+ testes unitários e de integração no backend (todos os módulos críticos)
+- Testes unitários, de integração e E2E cobrindo auth, operations, orders, finance, notifications e segurança
 - Testes E2E com Playwright no frontend
 - Load tests com K6 (health, login web/API e cenário crítico com metas p95/p99)
-- CI com 6 estágios: `quality → backend → frontend unit → frontend e2e → security → build`
+- CI principal com gates de `quality`, `backend tests`, `backend e2e`, `frontend unit`, `frontend e2e`, `security`, `performance` e `build`
+- Workflow opcional de SonarQube pronto para auditoria estática contínua quando `SONAR_HOST_URL` e `SONAR_TOKEN` forem configurados
+- Scan local oficial já validado com Quality Gate verde e backlog por sprint em `docs/release/sonarqube-auditoria-e-sprints-2026-04-03.md`
 
 ---
 
@@ -199,20 +211,19 @@ npm run test:load:ci
 ```
 desk-imperial/
 ├── apps/
-│   ├── api/          # NestJS — 16 módulos de domínio
-│   └── web/          # Next.js — 10 domínios de componentes
+│   ├── api/          # NestJS — auth, operação, produtos, pedidos, finanças, notificações e realtime
+│   └── web/          # Next.js — dashboard, owner mobile, staff mobile e superfícies operacionais
 ├── packages/
-│   ├── types/        # Contratos compartilhados API ↔ frontend
-│   ├── config/       # ESLint e TypeScript compartilhados
-│   └── ui/           # Componentes reutilizáveis
-├── docs/             # 70+ arquivos de documentação técnica
+│   ├── api-contract/ # Contrato OpenAPI versionado
+│   └── types/        # Contratos compartilhados API ↔ frontend
+├── docs/             # documentação técnica, operacional e histórica do projeto
 ├── infra/            # Docker Compose + scripts de deploy
 └── tests/load/k6/    # Load tests
 ```
 
-**Módulos da API (16):**
+**Módulos principais da API:**
 
-`auth` · `admin-pin` · `operations` · `operations-realtime` · `orders` · `products` · `finance` · `employees` · `users` · `consent` · `currency` · `geocoding` · `mailer` · `market-intelligence` · `monitoring` · `cache`
+`auth` · `admin-pin` · `consent` · `currency` · `employees` · `finance` · `geocoding` · `health` · `intelligence-platform` · `market-intelligence` · `monitoring` · `notifications` · `operations` · `operations-realtime` · `orders` · `products`
 
 Veja [docs/architecture/modules.md](./docs/architecture/modules.md) para a responsabilidade de cada um.
 
@@ -232,27 +243,41 @@ Para reportar uma vulnerabilidade, leia [SECURITY.md](./SECURITY.md).
 
 ## Documentação
 
-| Área                                   | Link                                                                                         |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                             |
-| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                       |
-| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                               |
-| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                   |
-| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)             |
-| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                               |
-| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                             |
-| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                             |
-| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)           |
-| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                   |
-| Observabilidade OSS (fase 1)           | [docs/operations/observability-oss-phase1.md](./docs/operations/observability-oss-phase1.md) |
-| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                         |
-| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                         |
+| Área                                   | Link                                                                                                           |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Índice completo                        | [docs/INDEX.md](./docs/INDEX.md)                                                                               |
+| Estado atual do projeto                | [docs/current-state.md](./docs/current-state.md)                                                               |
+| O produto e para quem é                | [docs/product/overview.md](./docs/product/overview.md)                                                         |
+| Requisitos funcionais e não-funcionais | [docs/product/requirements.md](./docs/product/requirements.md)                                                 |
+| Fluxos principais do usuário           | [docs/product/user-flows.md](./docs/product/user-flows.md)                                                     |
+| Riscos e limitações                    | [docs/product/risks-and-limitations.md](./docs/product/risks-and-limitations.md)                               |
+| Arquitetura — visão geral              | [docs/architecture/overview.md](./docs/architecture/overview.md)                                               |
+| Arquitetura — módulos                  | [docs/architecture/modules.md](./docs/architecture/modules.md)                                                 |
+| Arquitetura — banco de dados           | [docs/architecture/database.md](./docs/architecture/database.md)                                               |
+| Arquitetura — tempo real               | [docs/architecture/realtime.md](./docs/architecture/realtime.md)                                               |
+| Colaboração e revisão                  | [docs/architecture/collaboration-evidence-workflow.md](./docs/architecture/collaboration-evidence-workflow.md) |
+| Code Health — workflow de criação      | [docs/architecture/code-health-creation-workflow.md](./docs/architecture/code-health-creation-workflow.md)     |
+| Code Health — guia de engenharia       | [docs/architecture/code-health-engineering-guide.md](./docs/architecture/code-health-engineering-guide.md)     |
+| Setup local                            | [docs/architecture/local-development.md](./docs/architecture/local-development.md)                             |
+| Segurança                              | [docs/security/security-baseline.md](./docs/security/security-baseline.md)                                     |
+| Threat model                           | [docs/security/threat-model-critical-flows.md](./docs/security/threat-model-critical-flows.md)                 |
+| Testes                                 | [docs/testing/testing-guide.md](./docs/testing/testing-guide.md)                                               |
+| Telegram                               | [docs/operations/telegram-bot-rollout.md](./docs/operations/telegram-bot-rollout.md)                           |
+| Mercado Pago Point                     | [docs/operations/mercado-pago-point.md](./docs/operations/mercado-pago-point.md)                               |
+| Impressão térmica / QZ Tray            | [docs/operations/thermal-printing.md](./docs/operations/thermal-printing.md)                                   |
+| Qualidade de imagens do catálogo       | [docs/operations/product-image-quality-audit.md](./docs/operations/product-image-quality-audit.md)             |
+| Prontidão operacional                  | [docs/operations/production-operational-readiness.md](./docs/operations/production-operational-readiness.md)   |
+| Sincronização open source              | [docs/operations/open-source-sync-runbook.md](./docs/operations/open-source-sync-runbook.md)                   |
+| Performance do realtime                | [docs/operations/realtime-performance-runbook.md](./docs/operations/realtime-performance-runbook.md)           |
+| Waves em andamento                     | [docs/waves/realtime-recovery-plan-2026-05-01.md](./docs/waves/realtime-recovery-plan-2026-05-01.md)           |
+| Diagnósticos históricos de release     | [docs/release/](./docs/release/)                                                                               |
+| Sobre o criador                        | [docs/CREATOR.md](./docs/CREATOR.md)                                                                           |
+| Dicas para novos devs                  | [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md)                                                           |
 
 ---
 
 ## Limitações conhecidas
 
-- Importação CSV de produtos está desativada (HTTP 410) — lógica existe, endpoint bloqueado
 - Cobertura de testes frontend ainda parcial em relação à superfície total
 - Observabilidade OSS em transição: OpenTelemetry (fase 1 no backend) e Faro (fase 2 no frontend) habilitáveis por env; stack completa de produção em implantação progressiva
 - Projeto em evolução — funcional e rodando em produção, mas não finalizado 100%

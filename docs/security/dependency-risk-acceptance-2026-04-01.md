@@ -14,7 +14,7 @@ Escopo da rodada:
 
 ## Resultado objetivo
 
-Estado atual de auditoria:
+Estado original da rodada 2026-04-01:
 
 - runtime (`npm audit --omit=dev`): 8 vulnerabilidades high
 - completo (`npm audit`): 15 vulnerabilidades (10 high, 5 moderate)
@@ -35,6 +35,29 @@ Comprovacao manual executada:
 - `npm ls lodash path-to-regexp --all`
 - `npm explain lodash`
 - `npm explain path-to-regexp`
+
+## Atualizacao - 2026-05-19
+
+A sincronizacao publica trouxe a remediacao non-breaking que ja estava aplicada no
+privado para o gate de seguranca do repositório open source.
+
+Mudancas aplicadas:
+
+- `@nestjs/*` atualizado para a familia `11.1.21`/`11.4.3`;
+- OpenTelemetry atualizado para a familia `0.218.x`/`2.7.x`;
+- Next atualizado para `16.2.6`;
+- overrides de lock para `postcss@8.5.10` e `protobufjs@7.6.0`.
+
+Resultado objetivo apos a atualizacao:
+
+- `npm run security:audit-runtime`: verde;
+- vulnerabilidades high/critical inesperadas removidas de `@nestjs/core`,
+  `@nestjs/platform-express`, `@nestjs/swagger`, `@opentelemetry/*`, `next`,
+  `path-to-regexp` e `protobufjs`;
+- residuo runtime high ainda aceito temporariamente: `@nestjs/config` via
+  `lodash`;
+- vulnerabilidades `moderate` restantes continuam fora do gate de bloqueio e
+  devem ser tratadas em trilha separada, sem `npm audit fix --force`.
 
 ## Mitigacoes aplicadas no runtime exposto
 

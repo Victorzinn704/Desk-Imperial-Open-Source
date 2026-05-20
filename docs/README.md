@@ -1,81 +1,109 @@
 # Documentacao do Projeto
 
-Este arquivo organiza a documentacao do Desk Imperial por prioridade de leitura e confiabilidade.
+Este arquivo organiza a documentacao do Desk Imperial por prioridade de leitura, confiabilidade e status editorial.
 
 ## 1. Ordem Recomendada de Leitura
 
 1. `../README.md`
-2. `../DOCS_DESK_IMPERIAL.md`
-3. `release/` (diagnosticos e plano de release)
-4. demais trilhas de `architecture/`, `operations/`, `security/`, `testing/`
+2. `./INDEX.md`
+3. `./current-state.md`
+4. trilhas canonicas de `product/`, `architecture/`, `operations/`, `security/` e `testing/`
+5. `waves/` ativas para trabalhos em andamento
+6. `release/` e `../DOCS_DESK_IMPERIAL.md` como material historico e de auditoria
 
 ## 2. Fontes Canonicas
 
 As fontes canonicas para entendimento tecnico atual sao:
 
 - `../README.md`
+- `./INDEX.md`
+- `./current-state.md`
+- `architecture/overview.md`
+- `architecture/modules.md`
+- `architecture/authentication-flow.md`
+- `architecture/local-development.md`
+- `architecture/collaboration-evidence-workflow.md`
+- `architecture/rfc-template.md`
+- `architecture/delivery-operating-workflow.md`
+- `architecture/code-health-creation-workflow.md`
+- `architecture/code-health-engineering-guide.md`
+- `learning/README.md`
+- `product/overview.md`
+- `product/requirements.md`
+- `product/catalog-intelligence.md`
+- `operations/telegram-bot-rollout.md`
+- `operations/mercado-pago-point.md`
+- `operations/thermal-printing.md`
+- `operations/product-image-quality-audit.md`
+- `operations/open-source-sync-runbook.md`
+- `operations/macbook-remote-workstation-setup.md`
+- `operations/sentry-rollout-2026-05-01.md`
+- `operations/realtime-performance-runbook.md`
+- `operations/performance-crisis-plan-2026-05-16.md`
+- `security/threat-model-critical-flows.md`
+- `security/security-baseline.md`
+- `security/security-testing-workflow-2026-04-30.md`
+- `testing/testing-guide.md`
+- `waves/realtime-recovery-plan-2026-05-01.md`
+
+## 3. Fontes Historicas ou Secundarias
+
+Estes grupos continuam uteis, mas nao sao a fonte primaria do estado atual:
+
+- `../DOCS_DESK_IMPERIAL.md` — snapshot consolidado historico de auditoria
+- `release/` — diagnosticos, pareceres e planos de momentos anteriores
+- `case-studies/` — estudos e analises de mudanca
+- `agents/`, `review_audit/` e `_meta/` — apoio interno de auditoria e governanca
+- `_meta/contribution.md` e `_meta/style-guide.md` — regras de manutencao e escrita
+
+## 4. Status da Documentacao
+
+### 4.1 Atual e confiavel
+
+- `../README.md`
+- `./INDEX.md`
+- `./current-state.md`
+- `architecture/overview.md`
+- `architecture/realtime.md`
+- `architecture/authentication-flow.md`
+- `architecture/local-development.md`
+- `architecture/collaboration-evidence-workflow.md`
+- `architecture/delivery-operating-workflow.md`
+- `architecture/code-health-creation-workflow.md`
+- `architecture/code-health-engineering-guide.md`
+- `learning/README.md`
+- `product/overview.md`
+- `product/requirements.md`
+- `product/catalog-intelligence.md`
+- `testing/testing-guide.md`
+- `operations/telegram-bot-rollout.md`
+- `operations/sentry-rollout-2026-05-01.md`
+- `operations/realtime-performance-runbook.md`
+- `operations/performance-crisis-plan-2026-05-16.md`
+- `operations/macbook-remote-workstation-setup.md`
+- `security/threat-model-critical-flows.md`
+- `security/security-baseline.md`
+- `security/security-testing-workflow-2026-04-30.md`
+- `waves/realtime-*`
+
+### 4.2 Parcialmente atual
+
+- `operations/kpi-realtime-mapping.md`
+- `DOC-PLAN.md`
+
+### 4.3 Historico, nao canonico
+
 - `../DOCS_DESK_IMPERIAL.md`
 - `release/`
 
-## 3. Status da Documentacao
-
-### 3.1 Atual e confiavel
-
-- `../README.md`
-- `../DOCS_DESK_IMPERIAL.md`
-- `release/` (especialmente mapa real, diagnostico e parecer)
-- `architecture/overview.md`
-- `architecture/authentication-flow.md`
-- `testing/testing-guide.md`
-- `troubleshooting.md`
-
-### 3.2 Parcialmente atual
-
-- `security/security-baseline.md`
-- `operations/kpi-realtime-mapping.md`
-
-## 4. Estrutura Recomendada de Longo Prazo
-
-```text
-docs/
-├── README.md
-├── architecture/
-│   ├── system-overview.md
-│   ├── api-boundaries.md
-│   ├── frontend-dataflow.md
-│   └── realtime-model.md
-├── operations/
-│   ├── salon-flow.md
-│   ├── cash-session-flow.md
-│   ├── comanda-kitchen-flow.md
-│   └── kpi-realtime-mapping.md
-├── security/
-│   ├── security-baseline.md
-│   ├── auth-and-session.md
-│   ├── csrf-cors-model.md
-│   └── hardening-backlog.md
-├── testing/
-│   ├── testing-strategy.md
-│   ├── backend-test-matrix.md
-│   ├── frontend-test-matrix.md
-│   └── e2e-critical-paths.md
-├── integrations/
-│   ├── email-brevo.md
-│   ├── gemini-insights.md
-│   ├── geocoding.md
-│   └── currency-rates.md
-└── release/
-    ├── mapa-real-sistema.md
-    ├── diagnostico-release-readiness.md
-    ├── plano-lapidacao-release.md
-    └── parecer-final-release-v3.md
-```
-
 ## 5. Regras de Manutencao
 
-- Toda mudanca de comportamento de API ou fluxo critico deve atualizar documento canonico no mesmo PR.
+- Toda mudanca de comportamento de API, auth, realtime, notificacao ou deploy deve atualizar documento canonico no mesmo commit.
+- Toda sincronizacao do privado para o open source deve seguir `operations/open-source-sync-runbook.md`; o publico recebe snapshot sanitizada por branch/PR, nunca push direto em `public/main`.
+- Todo PRD ou feature relevante deve declarar orçamento de Code Health antes de implementar.
 - Documento parcialmente atual deve explicitar limites de cobertura.
-- Evitar textos de marketing tecnico; documentar comportamento observavel e riscos residuais.
+- Documento historico nao pode ser promovido a fonte primaria sem revisao formal.
+- Evitar texto de marketing tecnico; documentar comportamento observavel, risco residual e tradeoff.
 - Para claims de seguranca, sempre ligar com implementacao real e limitacao conhecida.
 
 ## 6. Definicao de Pronto para Docs

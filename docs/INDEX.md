@@ -6,13 +6,43 @@ Navegação central de toda a documentação do projeto.
 
 ## Para quem é esta documentação
 
-| Perfil                            | Por onde começar                                                                                                                 |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **Comerciante / usuário final**   | [O produto e para quem é](./product/overview.md) → [Como usar](../README.md#quick-start)                                         |
-| **Desenvolvedor novo no projeto** | [README](../README.md) → [Setup local](./architecture/local-development.md) → [Módulos](./architecture/modules.md)               |
-| **Contribuidor**                  | [CONTRIBUTING.md](../CONTRIBUTING.md) → [Módulos](./architecture/modules.md) → [Banco de dados](./architecture/database.md)      |
-| **Recrutador / tech lead**        | [README](../README.md) → [Requisitos](./product/requirements.md) → [Módulos](./architecture/modules.md)                          |
-| **Segurança**                     | [SECURITY.md](../SECURITY.md) → [Baseline](./security/security-baseline.md) → [Deploy checklist](./security/deploy-checklist.md) |
+| Perfil                            | Por onde começar                                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Comerciante / usuário final**   | [O produto e para quem é](./product/overview.md) → [Como usar](../README.md#quick-start)                                                                |
+| **Desenvolvedor novo no projeto** | [README](../README.md) → [Estado atual](./current-state.md) → [Setup local](./architecture/local-development.md) → [Módulos](./architecture/modules.md) |
+| **Contribuidor**                  | [CONTRIBUTING.md](../CONTRIBUTING.md) → [Módulos](./architecture/modules.md) → [Banco de dados](./architecture/database.md)                             |
+| **Recrutador / tech lead**        | [README](../README.md) → [Requisitos](./product/requirements.md) → [Prontidão operacional](./operations/production-operational-readiness.md)            |
+| **Segurança**                     | [SECURITY.md](../SECURITY.md) → [Threat model](./security/threat-model-critical-flows.md) → [Baseline](./security/security-baseline.md)                 |
+
+---
+
+## Fontes canonicas agora
+
+Leia primeiro quando precisar entender o estado atual do projeto:
+
+- [README](../README.md)
+- [current-state.md](./current-state.md)
+- [architecture/overview.md](./architecture/overview.md)
+- [architecture/modules.md](./architecture/modules.md)
+- [architecture/authentication-flow.md](./architecture/authentication-flow.md)
+- [architecture/local-development.md](./architecture/local-development.md)
+- [architecture/code-health-creation-workflow.md](./architecture/code-health-creation-workflow.md)
+- [architecture/code-health-engineering-guide.md](./architecture/code-health-engineering-guide.md)
+- [product/overview.md](./product/overview.md)
+- [product/requirements.md](./product/requirements.md)
+- [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)
+- [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)
+- [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)
+- [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)
+- [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)
+- [security/security-baseline.md](./security/security-baseline.md)
+- [security/threat-model-critical-flows.md](./security/threat-model-critical-flows.md)
+- [security/backend-hardening-status-2026-05-04.md](./security/backend-hardening-status-2026-05-04.md)
+- [security/security-testing-workflow-2026-04-30.md](./security/security-testing-workflow-2026-04-30.md)
+- [testing/testing-guide.md](./testing/testing-guide.md)
+- [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md)
+
+`DOCS_DESK_IMPERIAL.md` e `release/` permanecem uteis, mas hoje entram como material historico.
 
 ---
 
@@ -20,80 +50,127 @@ Navegação central de toda a documentação do projeto.
 
 | Documento                                                              | O que cobre                                                  |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [current-state.md](./current-state.md)                                 | Estado operacional e tecnico atual para retomada segura      |
 | [product/overview.md](./product/overview.md)                           | O que é o Desk Imperial, para quem é, por que existe, missão |
 | [product/requirements.md](./product/requirements.md)                   | Requisitos funcionais (RF) e não-funcionais (RNF)            |
 | [product/user-flows.md](./product/user-flows.md)                       | Fluxos principais do dono e do funcionário                   |
+| [product/catalog-intelligence.md](./product/catalog-intelligence.md)   | Cadastro inteligente, barcode, catalogo e imagens            |
 | [product/risks-and-limitations.md](./product/risks-and-limitations.md) | Riscos conhecidos, limitações atuais, débito técnico         |
+| [product/owner-pwa-mvp.md](./product/owner-pwa-mvp.md)                 | Escopo oficial do Owner PWA e prioridade do cadastro rápido  |
+| [product/staff-pwa-mvp.md](./product/staff-pwa-mvp.md)                 | Escopo oficial do Staff PWA e boundary operacional           |
 
 ---
 
 ## Arquitetura
 
-| Documento                                                                    | O que cobre                                               |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| [architecture/overview.md](./architecture/overview.md)                       | Visão geral da arquitetura e decisões técnicas            |
-| [architecture/modules.md](./architecture/modules.md)                         | Responsabilidade de cada um dos 16 módulos de domínio     |
-| [architecture/database.md](./architecture/database.md)                       | Schema do banco documentado por entidade e relacionamento |
-| [architecture/realtime.md](./architecture/realtime.md)                       | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
-| [architecture/authentication-flow.md](./architecture/authentication-flow.md) | Fluxo completo de autenticação, sessão e CSRF             |
-| [architecture/local-development.md](./architecture/local-development.md)     | Guia de setup do ambiente de desenvolvimento local        |
-| [architecture/coding-standards.md](./architecture/coding-standards.md)       | Padrões de código do projeto                              |
+| Documento                                                                                              | O que cobre                                               |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [architecture/overview.md](./architecture/overview.md)                                                 | Visão geral da arquitetura e decisões técnicas            |
+| [architecture/system-map.md](./architecture/system-map.md)                                             | Mapa atual do monorepo com diagramas PlantUML             |
+| [architecture/modules.md](./architecture/modules.md)                                                   | Responsabilidade dos módulos de domínio ativos            |
+| [architecture/database.md](./architecture/database.md)                                                 | Schema do banco documentado por entidade e relacionamento |
+| [architecture/realtime.md](./architecture/realtime.md)                                                 | Fluxo Socket.IO — namespace, eventos, ciclo de vida       |
+| [architecture/authentication-flow.md](./architecture/authentication-flow.md)                           | Fluxo completo de autenticação, sessão e CSRF             |
+| [architecture/local-development.md](./architecture/local-development.md)                               | Guia de setup do ambiente de desenvolvimento local        |
+| [architecture/collaboration-evidence-workflow.md](./architecture/collaboration-evidence-workflow.md)   | PR, RFC, issue e evidencia revisavel de colaboracao       |
+| [architecture/rfc-template.md](./architecture/rfc-template.md)                                         | Template curto para decisoes tecnicas de alto impacto     |
+| [architecture/code-health-creation-workflow.md](./architecture/code-health-creation-workflow.md)       | Workflow obrigatório de criação com orçamento Code Health |
+| [architecture/code-health-engineering-guide.md](./architecture/code-health-engineering-guide.md)       | Scorecard interno de saúde do código e refatoração        |
+| [architecture/code-health-refactoring-standard.md](./architecture/code-health-refactoring-standard.md) | Padrão facade/controller/content/view para hotspots       |
+| [architecture/coding-standards.md](./architecture/coding-standards.md)                                 | Padrões de código do projeto                              |
+| [architecture/multi-surface-platform-strategy.md](./architecture/multi-surface-platform-strategy.md)   | Estratégia oficial para web, PWA, Kotlin e React Native   |
 
 ---
 
 ## Segurança
 
-| Documento                                                                  | O que cobre                                            |
-| -------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [SECURITY.md](../SECURITY.md)                                              | Política de segurança e como reportar vulnerabilidades |
-| [security/security-baseline.md](./security/security-baseline.md)           | Baseline de segurança do projeto                       |
-| [security/admin-pin-hardening.md](./security/admin-pin-hardening.md)       | Hardening do Admin PIN                                 |
-| [security/deploy-checklist.md](./security/deploy-checklist.md)             | Checklist de deploy seguro                             |
-| [security/observability-and-logs.md](./security/observability-and-logs.md) | Observabilidade, logs e rastreamento                   |
+| Documento                                                                                                | O que cobre                                                      |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [SECURITY.md](../SECURITY.md)                                                                            | Política de segurança e como reportar vulnerabilidades           |
+| [security/security-baseline.md](./security/security-baseline.md)                                         | Baseline de segurança do projeto                                 |
+| [security/threat-model-critical-flows.md](./security/threat-model-critical-flows.md)                     | Threat model e matriz de testes negativos dos fluxos criticos    |
+| [security/backend-hardening-status-2026-05-04.md](./security/backend-hardening-status-2026-05-04.md)     | Status do hardening backend e proximas frentes planejadas        |
+| [security/admin-pin-hardening.md](./security/admin-pin-hardening.md)                                     | Hardening do Admin PIN                                           |
+| [security/deploy-checklist.md](./security/deploy-checklist.md)                                           | Checklist de deploy seguro                                       |
+| [security/observability-and-logs.md](./security/observability-and-logs.md)                               | Observabilidade, logs e rastreamento                             |
 | [security/dependency-risk-acceptance-2026-04-01.md](./security/dependency-risk-acceptance-2026-04-01.md) | Aceite temporário de risco de dependências e plano de remediação |
 
 ---
 
 ## Operações
 
-| Documento                                                                  | O que cobre                      |
-| -------------------------------------------------------------------------- | -------------------------------- |
-| [operations/flows.md](./operations/flows.md)                               | Fluxos operacionais do sistema   |
-| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md) | Mapeamento de KPIs em tempo real |
-| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md) | Rollout inicial de OpenTelemetry OSS |
+| Documento                                                                                            | O que cobre                                       |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [operations/flows.md](./operations/flows.md)                                                         | Fluxos operacionais do sistema                    |
+| [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)                           | Mapeamento de KPIs em tempo real                  |
+| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md)                   | Rollout inicial de OpenTelemetry OSS              |
+| [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)                 | Runbook de rollout do Sentry em API e web         |
+| [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)   | Gates de CI, staging, rollback, backup e alerta   |
+| [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)                   | Sincronizacao segura entre repo privado e publico |
+| [operations/realtime-performance-runbook.md](./operations/realtime-performance-runbook.md)           | Runbook da malha realtime e sua instrumentação    |
+| [operations/staging-incident-rollback-runbook.md](./operations/staging-incident-rollback-runbook.md) | Runbook base de staging, incidente e rollback     |
+| [operations/mercado-pago-point.md](./operations/mercado-pago-point.md)                               | Runbook Mercado Pago Point e webhook              |
+| [operations/thermal-printing.md](./operations/thermal-printing.md)                                   | Runbook de impressao termica e QZ Tray            |
+| [operations/product-image-quality-audit.md](./operations/product-image-quality-audit.md)             | Auditoria e regra de qualidade de imagens         |
+| [operations/telegram-bot-rollout.md](./operations/telegram-bot-rollout.md)                           | Runbook do bot Telegram oficial                   |
 
 ---
 
 ## Testes
 
-| Documento                                                                      | O que cobre                               |
-| ------------------------------------------------------------------------------ | ----------------------------------------- |
-| [testing/testing-guide.md](./testing/testing-guide.md)                         | Guia completo de testes do projeto        |
-| [testing/load-testing.md](./testing/load-testing.md)                           | Estratégia e comandos de testes de carga  |
-| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md) | Auditoria completa da cobertura de testes |
+| Documento                                                                                                    | O que cobre                                               |
+| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [testing/testing-guide.md](./testing/testing-guide.md)                                                       | Guia completo de testes do projeto                        |
+| [testing/coverage-snapshot-2026-04-03.md](./testing/coverage-snapshot-2026-04-03.md)                         | Snapshot de cobertura atual por area e global             |
+| [testing/coverage-upgrade-session-2026-04-03.md](./testing/coverage-upgrade-session-2026-04-03.md)           | Relatorio detalhado da sessao de upgrade para metas 90/85 |
+| [testing/load-testing.md](./testing/load-testing.md)                                                         | Estratégia e comandos de testes de carga                  |
+| [testing/AUDITORIA_TESTES_COMPLETA.md](./testing/AUDITORIA_TESTES_COMPLETA.md)                               | Auditoria completa da cobertura de testes                 |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Plano de adoção do SonarQube e backlog por sprint         |
 
 ---
 
-## Release e diagnóstico
+## Waves ativas
 
-| Documento                                                                                        | O que cobre                             |
-| ------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                   | Gaps e riscos identificados pré-release |
-| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)               | Critérios de release                    |
-| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)     | Parecer técnico final                   |
-| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md) | Plano de lapidação para release         |
+| Documento                                                                                                | O que cobre                                          |
+| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| [waves/realtime-wave-0-inventory-2026-05-01.md](./waves/realtime-wave-0-inventory-2026-05-01.md)         | Inventário real da malha realtime antes das mudanças |
+| [waves/realtime-recovery-plan-2026-05-01.md](./waves/realtime-recovery-plan-2026-05-01.md)               | Plano executável de recuperação do realtime          |
+| [waves/realtime-validation-checklist-2026-05-01.md](./waves/realtime-validation-checklist-2026-05-01.md) | Checklist de validação por wave                      |
+| [waves/dead-code-verification-2026-05-01.md](./waves/dead-code-verification-2026-05-01.md)               | Verificação do backlog real de dead code             |
+
+---
+
+## Release e diagnóstico histórico
+
+Material importante para contexto, mas não é a fonte primária do estado atual.
+
+| Documento                                                                                                    | O que cobre                                                                         |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [release/gaps-and-risks-2026-03-28.md](./release/gaps-and-risks-2026-03-28.md)                               | Gaps e riscos identificados pré-release                                             |
+| [release/release-criteria-2026-03-28.md](./release/release-criteria-2026-03-28.md)                           | Critérios de release                                                                |
+| [release/multi-surface-delivery-workflow.md](./release/multi-surface-delivery-workflow.md)                   | Workflow oficial para entrega entre web, PWA e apps                                 |
+| [release/web-pwa-closure-workflow-2026-04-21.md](./release/web-pwa-closure-workflow-2026-04-21.md)           | Workflow executável da fase atual para fechar PWA, web, APIs, backend local e banco |
+| [release/route-closure-matrix-2026-04-21.md](./release/route-closure-matrix-2026-04-21.md)                   | Matriz oficial de rotas canônicas, aliases, congeladas e superfícies removidas      |
+| [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)                 | Parecer técnico final                                                               |
+| [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md)             | Plano de lapidação para release                                                     |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints                                                    |
+| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json)               | Resumo bruto do primeiro scan local                                                 |
+| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json)           | Export completo das issues do scan                                                  |
+| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json)       | Export completo dos security hotspots                                               |
 
 ---
 
 ## Comunidade e criador
 
-| Documento                                  | O que cobre                                |
-| ------------------------------------------ | ------------------------------------------ |
-| [CREATOR.md](./CREATOR.md)                 | História e motivação do criador do projeto |
-| [GETTING-STARTED.md](./GETTING-STARTED.md) | Dicas práticas para novos desenvolvedores  |
-| [DOC-PLAN.md](./DOC-PLAN.md)               | Plano mestre desta documentação            |
-| [ROADMAP.md](../ROADMAP.md)                | O que está feito, em andamento e planejado |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)      | Como contribuir com o projeto              |
+| Documento                                         | O que cobre                                |
+| ------------------------------------------------- | ------------------------------------------ |
+| [CREATOR.md](./CREATOR.md)                        | História e motivação do criador do projeto |
+| [GETTING-STARTED.md](./GETTING-STARTED.md)        | Dicas práticas para novos desenvolvedores  |
+| [DOC-PLAN.md](./DOC-PLAN.md)                      | Plano mestre desta documentação            |
+| [\_meta/contribution.md](./_meta/contribution.md) | Regras de manutencao e anti-drift das docs |
+| [\_meta/style-guide.md](./_meta/style-guide.md)   | Convenções editoriais e termos travados    |
+| [ROADMAP.md](../ROADMAP.md)                       | O que está feito, em andamento e planejado |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)             | Como contribuir com o projeto              |
 
 ---
 
@@ -109,17 +186,26 @@ docs/
 │   ├── overview.md           # O produto, para quem, por que
 │   ├── requirements.md       # RF e RNF
 │   ├── user-flows.md         # Fluxos do usuário
+│   ├── catalog-intelligence.md
+│   ├── owner-pwa-mvp.md      # Escopo do PWA do dono
+│   ├── staff-pwa-mvp.md      # Escopo do PWA do funcionário
 │   └── risks-and-limitations.md
 ├── architecture/
 │   ├── overview.md
-│   ├── modules.md            # 16 módulos de domínio
+│   ├── system-map.md
+│   ├── modules.md            # módulos de domínio ativos
 │   ├── database.md           # Schema documentado
 │   ├── realtime.md           # Socket.IO
 │   ├── authentication-flow.md
 │   ├── local-development.md
+│   ├── collaboration-evidence-workflow.md
+│   ├── rfc-template.md
+│   ├── multi-surface-platform-strategy.md
 │   └── coding-standards.md
 ├── security/
 │   ├── security-baseline.md
+│   ├── threat-model-critical-flows.md
+│   ├── backend-hardening-status-2026-05-04.md
 │   ├── admin-pin-hardening.md
 │   ├── deploy-checklist.md
 │   ├── observability-and-logs.md
@@ -127,10 +213,25 @@ docs/
 ├── operations/
 │   ├── flows.md
 │   ├── kpi-realtime-mapping.md
-│   └── observability-oss-phase1.md
+│   ├── observability-oss-phase1.md
+│   ├── sentry-rollout-2026-05-01.md
+│   ├── realtime-performance-runbook.md
+│   ├── telegram-bot-rollout.md
+│   └── staging-incident-rollback-runbook.md
+├── waves/
+│   ├── realtime-wave-0-inventory-2026-05-01.md
+│   ├── realtime-recovery-plan-2026-05-01.md
+│   └── realtime-validation-checklist-2026-05-01.md
 ├── testing/
 │   ├── testing-guide.md
 │   └── AUDITORIA_TESTES_COMPLETA.md
+├── _meta/
+│   ├── style-guide.md
+│   ├── contribution.md
+│   └── audit/
 └── release/
+    ├── multi-surface-delivery-workflow.md
+    ├── web-pwa-closure-workflow-2026-04-21.md
+    ├── route-closure-matrix-2026-04-21.md
     └── (arquivos de diagnóstico e release)
 ```
