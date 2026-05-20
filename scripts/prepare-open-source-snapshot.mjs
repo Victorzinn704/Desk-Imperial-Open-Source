@@ -302,11 +302,26 @@ function sanitizeEnvExample(content) {
     .replace(/^GRAFANA_ADMIN_PASSWORD=.*$/m, 'GRAFANA_ADMIN_PASSWORD=<CHANGE_ME_GRAFANA_PASSWORD>')
 }
 
+function sanitizeKnipConfig(content) {
+  const config = JSON.parse(content)
+  const rootWorkspace = config.workspaces?.['.']
+  if (!Array.isArray(rootWorkspace?.ignore) || !rootWorkspace.ignore.includes('.venv-aider/**')) {
+    return content
+  }
+
+  return content.replace(/,\s*"\.venv-aider\/\*\*"/, '').replace(/"\.venv-aider\/\*\*",\s*/, '')
+}
+
 const transformRules = [
   {
     pattern: /^\.env\.example$/,
     reason: 'env example sanitizado',
     transform: sanitizeEnvExample,
+  },
+  {
+    pattern: /^knip\.json$/,
+    reason: 'knip public config sanitizado',
+    transform: sanitizeKnipConfig,
   },
 ]
 

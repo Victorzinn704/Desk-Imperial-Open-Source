@@ -11,14 +11,14 @@
         "scripts/**/*.{mjs,js,ts}",
         "tests/load/k6/**/*.{js,ts}"
       ],
-      "ignore": [".github/**", ".venv-aider/**"],
+      "ignore": [".github/**"],
       "ignoreDependencies": ["k6", "dotenv", "@prisma/client"],
       "ignoreBinaries": ["k6", "powershell", "biome"]
     },
     "apps/api": {
       "entry": ["src/app.module.ts", "src/**/*.module.ts", "prisma/**/*.ts", "test/**/*.ts"],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["tsconfig-paths", "@sentry/profiling-node"]
+      "ignoreDependencies": ["@sentry/profiling-node"]
     },
     "apps/web": {
       "entry": [

@@ -1,18 +1,18 @@
 # Open Source Snapshot Audit
 
-Data: 2026-05-20T02:17:56.500Z
+Data: 2026-05-20T02:49:31.039Z
 
 ## Resultado
 
-- Arquivos privados analisados: 1773
-- Arquivos publicaveis: 1594
+- Arquivos privados analisados: 1774
+- Arquivos publicaveis: 1595
 - Arquivos excluidos/sanitizados por politica: 179
 - Achados bloqueantes no conjunto publicavel: 0
 
 ## Acoes no conjunto publicavel
 
 - copy: 1593
-- transform: 1
+- transform: 2
 
 ## Exclusoes por motivo
 

@@ -33,7 +33,3 @@ export function formatTelegramCurrency(value: number, currency: TelegramCurrency
 export function formatTelegramPercent(value: number) {
   return `${value.toFixed(1).replace('.', ',')}%`
 }
-
-export function joinTelegramLines(lines: Array<string | null | undefined | false>) {
-  return lines.filter(Boolean).join('\n')
-}
