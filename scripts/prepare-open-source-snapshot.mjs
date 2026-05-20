@@ -314,8 +314,32 @@ function sanitizeKnipConfig(content) {
 
 function sanitizeReadme(content) {
   return content.replace(
-    '| Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |',
-    '| Deploy             | Containers Linux + PostgreSQL + Redis em cloud gerenciada        |',
+    `| Camada             | Tecnologia                                                      |
+| ------------------ | --------------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                          |
+| Frontend           | Next.js 16 + React 19                                           |
+| Banco de dados     | PostgreSQL 17 + Prisma ORM                                      |
+| Cache / Rate limit | Redis                                                           |
+| Tempo real         | Socket.IO                                                       |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                                   |
+| Monorepo           | Turborepo + npm workspaces                                      |
+| Deploy             | Oracle Cloud (web/api/redis) + PostgreSQL self-hosted em Ampere |
+| Testes backend     | Jest + 53+ arquivos de spec                                     |
+| Testes frontend    | Vitest + Playwright                                             |
+| Load tests         | K6                                                              |`,
+    `| Camada             | Tecnologia                                                |
+| ------------------ | --------------------------------------------------------- |
+| Backend            | NestJS 11 + TypeScript                                    |
+| Frontend           | Next.js 16 + React 19                                     |
+| Banco de dados     | PostgreSQL 17 + Prisma ORM                                |
+| Cache / Rate limit | Redis                                                     |
+| Tempo real         | Socket.IO                                                 |
+| Autenticação       | Cookies HttpOnly + CSRF duplo                             |
+| Monorepo           | Turborepo + npm workspaces                                |
+| Deploy             | Containers Linux + PostgreSQL + Redis em cloud gerenciada |
+| Testes backend     | Jest + 53+ arquivos de spec                               |
+| Testes frontend    | Vitest + Playwright                                       |
+| Load tests         | K6                                                        |`,
   )
 }
 
