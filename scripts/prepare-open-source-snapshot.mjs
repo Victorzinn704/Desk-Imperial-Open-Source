@@ -248,7 +248,7 @@ function formatFindings(findings) {
     return ['- Nenhum achado bloqueante.']
   }
 
-  return findings.map((finding) => `- ${finding.file}:${finding.line} - ${finding.description}`)
+  return findings.map((finding) => `- \`${finding.file}:${finding.line}\` - ${finding.description}`)
 }
 
 function formatExcludedFiles(files) {
@@ -256,7 +256,7 @@ function formatExcludedFiles(files) {
     return ['- Nenhum arquivo excluido.']
   }
 
-  return files.map((decision) => `- ${decision.file} (${decision.reason})`)
+  return files.map((decision) => `- \`${decision.file}\` (${decision.reason})`)
 }
 
 function readTextFile(file) {

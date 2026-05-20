@@ -20,9 +20,14 @@ describe('operations realtime reconcile metrics', () => {
     resetOperationsPerformanceEvents()
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-07T12:00:10.000Z'))
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(performance.now())
+      return 1
+    })
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     vi.useRealTimers()
   })
 

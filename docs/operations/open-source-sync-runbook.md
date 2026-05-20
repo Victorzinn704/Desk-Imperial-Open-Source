@@ -138,7 +138,7 @@ Dentro do worktree publico, substitua a árvore pela snapshot do privado:
 
 ```powershell
 Set-Location $Worktree
-robocopy ..\desk-imperial-open-source-snapshot . /MIR /XD .git node_modules .next dist build coverage .turbo .cache
+robocopy ..\desk-imperial-open-source-snapshot . /MIR /XD .git node_modules .next dist build coverage .turbo .cache /XF .git
 ```
 
 Depois revise o diff. Se aparecer `infra/oracle/**`, `review_audit/**`, `.playwright-cli/**`, inventário real de VM, Tailscale/workstation ou arquivo com credencial, a snapshot deve ser corrigida antes do commit.
