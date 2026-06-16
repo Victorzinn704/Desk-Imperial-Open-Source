@@ -32,10 +32,12 @@ Hoje o projeto roda com:
 - builder, observabilidade, SonarQube e Metabase na Oracle `vm-free-02`
 - banco dedicado na Ampere
 
-Referencias:
+Referencias publicas:
 
-- [infra/oracle/README.md](../infra/oracle/README.md)
-- [infra/oracle/db/README.md](../infra/oracle/db/README.md)
+- [Runbook de sincronizacao open source](./operations/open-source-sync-runbook.md)
+- [Governanca de publicacao open source](./operations/open-source-publication-governance.md)
+
+Os runbooks reais de `infra/oracle/**` nao fazem parte do snapshot publico porque podem expor topologia, nomes de maquinas, caminhos remotos e pressupostos operacionais.
 
 ### Observabilidade — OpenTelemetry, Faro e Sentry
 
@@ -73,7 +75,7 @@ O valor deste projeto nao esta em uma stack "bonita". Esta em aprender a segurar
 Se voce estiver chegando agora, a sequencia que mais paga dividendo e:
 
 1. entender `README.md`
-2. entender `docs/README.md`
+2. entender `docs/INDEX.md`
 3. subir o backend local
 4. abrir `/app/owner` e `/app/staff`
 5. seguir os fluxos de produto e operacao
@@ -85,7 +87,7 @@ Se voce estiver chegando agora, a sequencia que mais paga dividendo e:
 Nao use este arquivo como fonte canonica de arquitetura ou deploy. Para isso, prefira:
 
 - [README.md](../README.md)
-- [docs/README.md](./README.md)
+- [docs/INDEX.md](./INDEX.md)
 - [docs/architecture/local-development.md](./architecture/local-development.md)
 - [docs/architecture/database.md](./architecture/database.md)
 - [docs/operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)

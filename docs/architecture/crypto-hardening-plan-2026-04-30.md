@@ -17,17 +17,17 @@ O alvo correto e este:
 ### Ja protegido
 
 - `web <-> api` em producao passa por `HTTPS` com certificado LetsEncrypt no Nginx da Oracle:
-  - [deskimperial.conf](C:/Users/Desktop/Documents/desk-imperial/infra/oracle/nginx/conf.d/deskimperial.conf:1)
+  - a configuracao real de Nginx fica fora do snapshot publico por governanca; ver [Governanca de Publicacao Open Source](../operations/open-source-publication-governance.md)
 - A API sobe com `helmet`, `HSTS`, `referrerPolicy=no-referrer` e `frameguard=deny`:
-  - [main.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/main.ts:82)
+  - [main.ts](../../apps/api/src/main.ts#L82)
 - Cookies de sessao e CSRF usam `HttpOnly`, `Secure` e `SameSite` controlado por ambiente:
-  - [auth-session.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/auth/auth-session.service.ts:324)
-  - [admin-pin.service.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/modules/admin-pin/admin-pin.service.ts:252)
+  - [auth-session.service.ts](../../apps/api/src/modules/auth/auth-session.service.ts#L324)
+  - [admin-pin.service.ts](../../apps/api/src/modules/admin-pin/admin-pin.service.ts#L252)
 - Segredos minimos de bootstrap ja sao validados em producao:
   - `COOKIE_SECRET`
   - `CSRF_SECRET`
   - `ENCRYPTION_KEY`
-  - [env.validation.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/config/env.validation.ts:41)
+  - [env.validation.ts](../../apps/api/src/config/env.validation.ts#L41)
 - Senhas de login nao ficam em claro; o projeto usa hash, nao criptografia reversivel.
 
 ### Gap real
@@ -77,14 +77,14 @@ Mesmo criterio:
 
 Criado o primitivo reutilizavel:
 
-- [field-encryption.util.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/src/common/utils/field-encryption.util.ts:1)
+- [field-encryption.util.ts](../../apps/api/src/common/utils/field-encryption.util.ts#L1)
 - algoritmo: `AES-256-GCM`
 - payload versionado: `enc.v1.*`
 - suporte a `AAD` para amarrar o payload ao contexto
 
 Teste:
 
-- [field-encryption.util.spec.ts](C:/Users/Desktop/Documents/desk-imperial/apps/api/test/field-encryption.util.spec.ts:1)
+- [field-encryption.util.spec.ts](../../apps/api/test/field-encryption.util.spec.ts#L1)
 
 ### 3. O que deve ser criptografado no banco
 

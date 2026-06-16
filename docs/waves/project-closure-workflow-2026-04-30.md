@@ -52,8 +52,8 @@ Reduzir exposicao de dados em repouso e melhorar o transporte interno.
 
 ### Entradas
 
-- [crypto-hardening-plan-2026-04-30.md](C:/Users/Desktop/Documents/desk-imperial/docs/architecture/crypto-hardening-plan-2026-04-30.md:1)
-- [data-protection-matrix-2026-04-30.md](C:/Users/Desktop/Documents/desk-imperial/docs/architecture/data-protection-matrix-2026-04-30.md:1)
+- [crypto-hardening-plan-2026-04-30.md](../architecture/crypto-hardening-plan-2026-04-30.md)
+- [data-protection-matrix-2026-04-30.md](../architecture/data-protection-matrix-2026-04-30.md)
 
 ### Ordem
 
@@ -114,8 +114,8 @@ Parar de depender so de analise de codigo e validar a superficie real publicada 
 
 ### Entradas
 
-- [security-testing-workflow-2026-04-30.md](C:/Users/Desktop/Documents/desk-imperial/docs/security/security-testing-workflow-2026-04-30.md:1)
-- [security.md](C:/Users/Desktop/Documents/desk-imperial/docs/architecture/security.md:1)
+- [security-testing-workflow-2026-04-30.md](../security/security-testing-workflow-2026-04-30.md)
+- [security.md](../architecture/security.md)
 
 ### Ordem
 

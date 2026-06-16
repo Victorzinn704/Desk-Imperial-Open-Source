@@ -21,7 +21,7 @@ Regra central:
 
 `TelegramLinkToken.token` hoje fica **em claro** no banco:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:330)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L330)
 
 Isso nao deveria continuar assim.
 Esse caso deve migrar para **hash-only**, como ja acontece com `PasswordResetToken.tokenHash` e `OneTimeCode.codeHash`.
@@ -32,7 +32,7 @@ Esse caso deve migrar para **hash-only**, como ja acontece com `PasswordResetTok
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:108)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L108)
 
 | Campo                                                                                                           | Recomendação                                                      | Motivo                                                                      |
 | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:173)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L173)
 
 | Campo                                                       | Recomendação                              | Motivo                                                         |
 | ----------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------- |
@@ -64,7 +64,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:195)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L195)
 
 | Campo                           | Recomendação          | Motivo                                            |
 | ------------------------------- | --------------------- | ------------------------------------------------- |
@@ -75,7 +75,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:215)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L215)
 
 | Campo       | Recomendação                              | Motivo                             |
 | ----------- | ----------------------------------------- | ---------------------------------- |
@@ -87,7 +87,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:226)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L226)
 
 | Campo       | Recomendação                              | Motivo                                                                                      |
 | ----------- | ----------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -100,7 +100,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:268)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L268)
 
 | Campo                                             | Recomendação                              | Motivo                                  |
 | ------------------------------------------------- | ----------------------------------------- | --------------------------------------- |
@@ -112,7 +112,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:292)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L292)
 
 | Campo                                                      | Recomendação                                                                               | Motivo                                                     |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -125,7 +125,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:309)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L309)
 
 | Campo                                | Recomendação                  | Motivo                                   |
 | ------------------------------------ | ----------------------------- | ---------------------------------------- |
@@ -137,7 +137,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:330)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L330)
 
 | Campo                                                   | Recomendação                              | Motivo                                           |
 | ------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------ |
@@ -149,7 +149,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:403)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L403)
 
 | Campo              | Recomendação                             | Motivo                                              |
 | ------------------ | ---------------------------------------- | --------------------------------------------------- |
@@ -163,7 +163,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:429)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L429)
 
 | Campo                                  | Recomendação            | Motivo                                                     |
 | -------------------------------------- | ----------------------- | ---------------------------------------------------------- |
@@ -174,7 +174,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:527)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L527)
 
 | Campo                                     | Recomendação                                            | Motivo                              |
 | ----------------------------------------- | ------------------------------------------------------- | ----------------------------------- |
@@ -187,7 +187,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:560)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L560)
 
 | Campo                                                                 | Recomendação            | Motivo                      |
 | --------------------------------------------------------------------- | ----------------------- | --------------------------- |
@@ -198,7 +198,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:599)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L599)
 
 | Campo                                       | Recomendação            | Motivo            |
 | ------------------------------------------- | ----------------------- | ----------------- |
@@ -209,7 +209,7 @@ Arquivo:
 
 Arquivo:
 
-- [schema.prisma](C:/Users/Desktop/Documents/desk-imperial/apps/api/prisma/schema.prisma:636)
+- [schema.prisma](../../apps/api/prisma/schema.prisma#L636)
 
 | Campo                                     | Recomendação                                         | Motivo                                             |
 | ----------------------------------------- | ---------------------------------------------------- | -------------------------------------------------- |

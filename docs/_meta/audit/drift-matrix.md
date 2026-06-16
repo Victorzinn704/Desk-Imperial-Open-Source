@@ -2,7 +2,7 @@
 
 - Data: 2026-05-01
 - Commit auditado: `d8b6457`
-- Base metodologica: `C:\Users\Desktop\Downloads\PROMPT_DOC_AUDIT_DESK_IMPERIAL.md`, adaptado de Express para NestJS.
+- Base metodologica: prompt local de auditoria documental, adaptado de Express para NestJS. O arquivo original nao faz parte do snapshot publico.
 
 ## Escopo e criterio
 
