@@ -18,8 +18,8 @@ Fechar o restante do backlog de `lint:dead` sem remover legado congelado, entryp
 
 ## Baseline usada
 
-- baseline `knip`: [artifacts/quality/tooling-baseline/knip.json](../../artifacts/quality/tooling-baseline/knip.json)
-- snapshot externo existente: `C:\Users\Desktop\Documents\Desk-Imperial-Antigo\dead-code-snapshot-2026-04-30`
+- baseline `knip`: artefato gerado localmente em `artifacts/quality/tooling-baseline/knip.json`, nao versionado no snapshot publico
+- snapshot externo existente: snapshot local privado `dead-code-snapshot-2026-04-30`, nao versionado no repositorio publico
 
 ## Resultado
 

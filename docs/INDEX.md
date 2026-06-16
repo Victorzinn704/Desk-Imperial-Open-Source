@@ -106,7 +106,7 @@ Leia primeiro quando precisar entender o estado atual do projeto:
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | [operations/flows.md](./operations/flows.md)                                                           | Fluxos operacionais do sistema                                 |
 | [operations/kpi-realtime-mapping.md](./operations/kpi-realtime-mapping.md)                             | Mapeamento de KPIs em tempo real                               |
-| [operations/observability-oss-phase1.md](./operations/observability-oss-phase1.md)                     | Rollout inicial de OpenTelemetry OSS                           |
+| [security/observability-and-logs.md](./security/observability-and-logs.md)                             | Observabilidade, logs e rastreamento                           |
 | [operations/sentry-rollout-2026-05-01.md](./operations/sentry-rollout-2026-05-01.md)                   | Runbook de rollout do Sentry em API e web                      |
 | [operations/production-operational-readiness.md](./operations/production-operational-readiness.md)     | Gates de CI, staging, rollback, backup e alerta                |
 | [operations/open-source-sync-runbook.md](./operations/open-source-sync-runbook.md)                     | Sincronizacao segura entre repo privado e publico              |
@@ -158,23 +158,22 @@ Material importante para contexto, mas não é a fonte primária do estado atual
 | [release/parecer-tecnico-final-2026-04-01.md](./release/parecer-tecnico-final-2026-04-01.md)                 | Parecer técnico final                                                               |
 | [release/plano-lapidacao-release-2026-04-01.md](./release/plano-lapidacao-release-2026-04-01.md)             | Plano de lapidação para release                                                     |
 | [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Backlog do SonarQube com sprints                                                    |
-| [release/sonarqube-local-scan-2026-04-03.json](./release/sonarqube-local-scan-2026-04-03.json)               | Resumo bruto do primeiro scan local                                                 |
-| [release/sonarqube-local-issues-2026-04-03.json](./release/sonarqube-local-issues-2026-04-03.json)           | Export completo das issues do scan                                                  |
-| [release/sonarqube-local-hotspots-2026-04-03.json](./release/sonarqube-local-hotspots-2026-04-03.json)       | Export completo dos security hotspots                                               |
+| [release/sonarqube-auditoria-e-sprints-2026-04-03.md](./release/sonarqube-auditoria-e-sprints-2026-04-03.md) | Auditoria SonarQube, leitura dos achados e backlog por sprint                       |
 
 ---
 
 ## Comunidade e criador
 
-| Documento                                         | O que cobre                                |
-| ------------------------------------------------- | ------------------------------------------ |
-| [CREATOR.md](./CREATOR.md)                        | História e motivação do criador do projeto |
-| [GETTING-STARTED.md](./GETTING-STARTED.md)        | Dicas práticas para novos desenvolvedores  |
-| [DOC-PLAN.md](./DOC-PLAN.md)                      | Plano mestre desta documentação            |
-| [\_meta/contribution.md](./_meta/contribution.md) | Regras de manutencao e anti-drift das docs |
-| [\_meta/style-guide.md](./_meta/style-guide.md)   | Convenções editoriais e termos travados    |
-| [ROADMAP.md](../ROADMAP.md)                       | O que está feito, em andamento e planejado |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)             | Como contribuir com o projeto              |
+| Documento                                                                                                 | O que cobre                                                      |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [CREATOR.md](./CREATOR.md)                                                                                | História e motivação do criador do projeto                       |
+| [GETTING-STARTED.md](./GETTING-STARTED.md)                                                                | Dicas práticas para novos desenvolvedores                        |
+| [DOC-PLAN.md](./DOC-PLAN.md)                                                                              | Plano mestre desta documentação                                  |
+| [\_meta/contribution.md](./_meta/contribution.md)                                                         | Regras de manutencao e anti-drift das docs                       |
+| [\_meta/style-guide.md](./_meta/style-guide.md)                                                           | Convenções editoriais e termos travados                          |
+| [\_meta/audit/public-doc-link-hygiene-2026-06-16.md](./_meta/audit/public-doc-link-hygiene-2026-06-16.md) | Auditoria de links públicos, caminhos locais e fronteira privada |
+| [ROADMAP.md](../ROADMAP.md)                                                                               | O que está feito, em andamento e planejado                       |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                                     | Como contribuir com o projeto                                    |
 
 ---
 
@@ -217,7 +216,7 @@ docs/
 ├── operations/
 │   ├── flows.md
 │   ├── kpi-realtime-mapping.md
-│   ├── observability-oss-phase1.md
+│   ├── production-operational-readiness.md
 │   ├── sentry-rollout-2026-05-01.md
 │   ├── realtime-performance-runbook.md
 │   ├── telegram-bot-rollout.md

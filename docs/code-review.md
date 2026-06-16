@@ -41,7 +41,7 @@ Nem toda verificacao de seguranca vem do monorepo. Para o Desk Imperial, o corte
 
 Documentacao operacional desta trilha:
 
-- [Security Testing Workflow — 2026-04-30](C:/Users/Desktop/Documents/desk-imperial/docs/security/security-testing-workflow-2026-04-30.md:1)
+- [Security Testing Workflow — 2026-04-30](./security/security-testing-workflow-2026-04-30.md)
 
 ---
 

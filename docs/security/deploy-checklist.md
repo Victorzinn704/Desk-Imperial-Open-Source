@@ -45,11 +45,12 @@ Antes de publicar:
 - confirmar que a malha WireGuard entre `vm-free-01`, `vm-free-02` e a Ampere esta ativa
 - confirmar que a API fala com o banco pelo endereco privado correto
 
-Referencias internas:
+Referencias publicas:
 
-- [infra/oracle/README.md](../../infra/oracle/README.md)
-- [infra/oracle/db/README.md](../../infra/oracle/db/README.md)
-- [infra/oracle/network/wireguard/README.md](../../infra/oracle/network/wireguard/README.md)
+- [Governanca de Publicacao Open Source](../operations/open-source-publication-governance.md)
+- [Runbook de Sincronizacao Open Source](../operations/open-source-sync-runbook.md)
+
+Os runbooks reais de `infra/oracle/**` nao fazem parte do snapshot publico.
 
 ---
 
@@ -100,7 +101,8 @@ Regras:
 
 - nao usar `NEXT_PUBLIC_*` para segredo
 - nao commitar `.env`, `apps/api/.env` ou `apps/web/.env.local`
-- manter `.env.example` e `infra/oracle/.env.example` como referencias de contrato, nunca como cofre
+- manter `.env.example` como referencia publica de contrato, nunca como cofre
+- manter qualquer `.env.example` operacional de `infra/oracle/**` fora do snapshot publico, salvo versao template sanitizada
 
 ---
 

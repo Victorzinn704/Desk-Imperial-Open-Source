@@ -21,10 +21,10 @@ O runtime versionado do projeto nao usa mais Neon como estado atual. O caminho c
 - PostgreSQL 17 + PgBouncer na Ampere da Lohana
 - trafego servidor-servidor pela malha WireGuard
 
-Referencias internas:
+Referencias publicas:
 
-- [infra/oracle/README.md](../../infra/oracle/README.md)
-- [infra/oracle/db/README.md](../../infra/oracle/db/README.md)
+- [Governanca de Publicacao Open Source](../operations/open-source-publication-governance.md)
+- [Runbook de Sincronizacao Open Source](../operations/open-source-sync-runbook.md)
 - [apps/api/prisma/schema.prisma](../../apps/api/prisma/schema.prisma)
 
 ---
@@ -264,7 +264,7 @@ Referencias:
 
 - [apps/api/prisma/migrations/20260422093000_add_bi_schema/migration.sql](../../apps/api/prisma/migrations/20260422093000_add_bi_schema/migration.sql)
 - [apps/api/prisma/sql/refresh-bi.sql](../../apps/api/prisma/sql/refresh-bi.sql)
-- [infra/oracle/db/systemd/bi-refresh.timer](../../infra/oracle/db/systemd/bi-refresh.timer)
+- timer real do host omitido do snapshot publico por governanca open source
 
 ### Refresh
 
@@ -276,8 +276,8 @@ npm --workspace @partner/api run prisma:refresh:bi
 
 Runtime Oracle/Ampere:
 
-- script operacional do host: `infra/oracle/db/scripts/refresh-bi.sh`
-- timer systemd: `infra/oracle/db/systemd/bi-refresh.timer`
+- script operacional do host e timer systemd ficam fora do snapshot publico;
+- a regra publica e validar o contrato via `prisma:refresh:bi` e revisar a governanca de publicacao antes de expor qualquer detalhe de runtime.
 
 ---
 
@@ -297,10 +297,10 @@ npm run seed
 - `DATABASE_URL` aponta para o PgBouncer privado
 - `DIRECT_URL` aponta para o PostgreSQL direto da Ampere
 
-Referencias:
+Referencias publicas:
 
-- [infra/oracle/docker/api.Dockerfile](../../infra/oracle/docker/api.Dockerfile)
-- [infra/oracle/compose.yaml](../../infra/oracle/compose.yaml)
+- [Governanca de Publicacao Open Source](../operations/open-source-publication-governance.md)
+- [Runbook de Sincronizacao Open Source](../operations/open-source-sync-runbook.md)
 
 ---
 
