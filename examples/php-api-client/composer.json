@@ -1,0 +1,15 @@
+{
+  "name": "desk-imperial/php-api-client-example",
+  "description": "Cliente PHP mínimo para demonstrar integração segura com a API do Desk Imperial.",
+  "type": "project",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "DeskImperial\\Support\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.1",
+    "ext-curl": "*"
+  }
+}

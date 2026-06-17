@@ -1,0 +1,269 @@
+{
+  "info": {
+    "_postman_id": "7b8f63f9-9c0d-4e36-9d44-desk-imperial-support",
+    "name": "Desk Imperial - Developer Support",
+    "description": "Coleção inicial para diagnóstico técnico da API do Desk Imperial. Use variáveis e nunca salve segredo real no arquivo versionado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "ownerEmail",
+      "value": "owner@example.com"
+    },
+    {
+      "key": "ownerPassword",
+      "value": "<set-in-postman-environment>"
+    },
+    {
+      "key": "staffCompanyEmail",
+      "value": "owner@example.com"
+    },
+    {
+      "key": "staffEmployeeCode",
+      "value": "VD-001"
+    },
+    {
+      "key": "staffPassword",
+      "value": "<set-in-postman-environment>"
+    },
+    {
+      "key": "supportTableLabel",
+      "value": "Mesa Support"
+    },
+    {
+      "key": "csrfToken",
+      "value": "<copy-from-csrf-cookie>"
+    },
+    {
+      "key": "comandaId",
+      "value": "<comanda-id>"
+    },
+    {
+      "key": "productId",
+      "value": "<product-id>"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "OpenAPI JSON",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/openapi.json",
+          "host": ["{{baseUrl}}"],
+          "path": ["openapi.json"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Login Owner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"loginMode\": \"OWNER\",\n  \"password\": \"{{ownerPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Me",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        }
+      }
+    },
+    {
+      "name": "Products - List",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"]
+        }
+      }
+    },
+    {
+      "name": "Operations - Live Snapshot",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/operations/live?includeCashMovements=false&compactMode=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["operations", "live"],
+          "query": [
+            {
+              "key": "includeCashMovements",
+              "value": "false"
+            },
+            {
+              "key": "compactMode",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Operations - Kitchen",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/operations/kitchen",
+          "host": ["{{baseUrl}}"],
+          "path": ["operations", "kitchen"]
+        }
+      }
+    },
+    {
+      "name": "Comanda - Open",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-CSRF-Token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tableLabel\": \"{{supportTableLabel}}\",\n  \"participantCount\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/operations/comandas",
+          "host": ["{{baseUrl}}"],
+          "path": ["operations", "comandas"]
+        }
+      }
+    },
+    {
+      "name": "Comanda - Add Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-CSRF-Token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/operations/comandas/{{comandaId}}/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["operations", "comandas", "{{comandaId}}", "items"]
+        }
+      }
+    },
+    {
+      "name": "Comanda - Point Payment Intent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-CSRF-Token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"DEBIT\",\n  \"amount\": 25.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/operations/comandas/{{comandaId}}/terminal-payment-intents",
+          "host": ["{{baseUrl}}"],
+          "path": ["operations", "comandas", "{{comandaId}}", "terminal-payment-intents"]
+        }
+      }
+    },
+    {
+      "name": "Permission Smoke - Employees As Staff",
+      "item": [
+        {
+          "name": "Auth - Login Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"loginMode\": \"STAFF\",\n  \"companyEmail\": \"{{staffCompanyEmail}}\",\n  \"employeeCode\": \"{{staffEmployeeCode}}\",\n  \"password\": \"{{staffPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Employees As Staff",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees"]
+            },
+            "description": "Com sessão staff, o esperado para rota exclusiva de owner é 403. Se retornar dados indevidos, investigar autorização/IDOR."
+          }
+        }
+      ]
+    }
+  ]
+}
