@@ -10,7 +10,7 @@ if (!fs.existsSync(nextPackagePath)) {
 const nextPackage = JSON.parse(fs.readFileSync(nextPackagePath, 'utf8'))
 const dependencies = nextPackage.dependencies ?? {}
 
-if (dependencies.postcss === '8.5.10') {
+if (dependencies.postcss === '8.5.29') {
   process.exit(0)
 }
 
@@ -21,7 +21,7 @@ if (dependencies.postcss !== '8.4.31') {
   process.exit(0)
 }
 
-dependencies.postcss = '8.5.10'
+dependencies.postcss = '8.5.29'
 nextPackage.dependencies = dependencies
 fs.writeFileSync(nextPackagePath, `${JSON.stringify(nextPackage, null, 2)}\n`)
-console.log('[patch-next-postcss] Patched Next postcss metadata to 8.5.10.')
+console.log('[patch-next-postcss] Patched Next postcss metadata to 8.5.29.')

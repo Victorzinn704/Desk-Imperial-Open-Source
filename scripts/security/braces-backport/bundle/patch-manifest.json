@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "braces",
+    "version": "3.0.3",
+    "resolved": "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz",
+    "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA=="
+  },
+  "upstream": {
+    "sha": "d44b9b1ee12e7804d4232d5a47a4a0c61d2fbefe",
+    "base": "e53730e6f935498326c72d768889ac194eedc0e0",
+    "url": "https://github.com/micromatch/braces/pull/87"
+  },
+  "files": {
+    "LICENSE": {
+      "baseSha256": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2",
+      "patchedSha256": "35bdd8a44339719441900fb50fbefc5e2dca1ca662cbaed7a687de842c8b70f2"
+    },
+    "README.md": {
+      "baseSha256": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866",
+      "patchedSha256": "947b0fc3cc12eaaa070207126213fbdf9ab2bf8cd13dcc6e4007b36b79309866"
+    },
+    "index.js": {
+      "baseSha256": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4",
+      "patchedSha256": "332ea07c7b006361aad12aa994ca75dc1db8e8382b884909e2f38f10b85c88a4"
+    },
+    "lib/compile.js": {
+      "baseSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+      "patchedSha256": "7b1ee4b35ea0890e7b6cba2e278dd324bed27bd75dc65d55e5e7fb625894d66e"
+    },
+    "lib/constants.js": {
+      "baseSha256": "c18ac5adb57308f1ce42a28552da3a31f5d83709743ebd9a636336813a744d4b",
+      "patchedSha256": "c32c88300d7dfa79ff85b7d739de3aa010b794a267f46b55f77b6f4819b75e4a"
+    },
+    "lib/expand.js": {
+      "baseSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+      "patchedSha256": "9c9b180e68f1208aa91b27987c20ad4833c8acd408b209c3c065ec8c0222c134"
+    },
+    "lib/parse.js": {
+      "baseSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+      "patchedSha256": "ebdd340fa6393e5ef19fc5fcf366c9e051ca0ba53d6cc60249e6084f9da4d521"
+    },
+    "lib/stringify.js": {
+      "baseSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+      "patchedSha256": "039e44358843423667bcaa355c776adf30c9d8de6ef9dd5712ef25ebb9475de4"
+    },
+    "lib/utils.js": {
+      "baseSha256": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+      "patchedSha256": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7"
+    },
+    "package.json": {
+      "baseSha256": "56f08b888a4f30dc7cf8a7dbb36ffe92b737912ba36abe9d069d32167c957ac7",
+      "patchedSha256": "56f08b888a4f30dc7cf8a7dbb36ffe92b737912ba36abe9d069d32167c957ac7"
+    }
+  },
+  "payload": {
+    "lib/compile.js": "payload/lib/compile.js.txt",
+    "lib/constants.js": "payload/lib/constants.js.txt",
+    "lib/expand.js": "payload/lib/expand.js.txt",
+    "lib/parse.js": "payload/lib/parse.js.txt",
+    "lib/stringify.js": "payload/lib/stringify.js.txt"
+  },
+  "patch": {
+    "path": "pr87-runtime.patch",
+    "sha256": "69f8d689123e050b742cd7e9c63ff7de17ef7cc458a36e21c81d55f03021fefc"
+  }
+}

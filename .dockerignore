@@ -25,6 +25,12 @@ credentials.json
 scripts/*
 !scripts/
 !scripts/patch-next-postcss.mjs
+!scripts/postinstall.mjs
+!scripts/prepare.mjs
+!scripts/security/
+!scripts/security/braces-backport/
+!scripts/security/braces-backport/**
+scripts/security/braces-backport/.test-tmp/
 tests/
 .sandbox-home
 .sandbox-cache

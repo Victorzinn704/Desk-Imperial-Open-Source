@@ -109,6 +109,7 @@ CON
 .scannerwork/
 .fallow/
 .local-tools/
+scripts/security/braces-backport/.test-tmp/
 
 # ─── WIP / design drafts ────────────────────────────────────────────────────
 apps/web/components/charts/

@@ -122,27 +122,21 @@ function createSetup(options: SetupOptions = {}) {
     assertPasswordResetCodeAllowed: jest.fn(async () => {}),
     assertEmailVerificationAllowed: jest.fn(async () => {}),
     assertEmailVerificationCodeAllowed: jest.fn(async () => {}),
-    recordPasswordResetAttempt: jest.fn(
-      async (): Promise<RateLimitStateMock> => ({
-        count: 1,
-        firstAttemptAt: Date.now(),
-        lockedUntil: null,
-      }),
-    ),
-    recordPasswordResetCodeAttempt: jest.fn(
-      async (): Promise<RateLimitStateMock> => ({
-        count: 1,
-        firstAttemptAt: Date.now(),
-        lockedUntil: null,
-      }),
-    ),
-    recordEmailVerificationAttempt: jest.fn(
-      async (): Promise<RateLimitStateMock> => ({
-        count: 1,
-        firstAttemptAt: Date.now(),
-        lockedUntil: null,
-      }),
-    ),
+    recordPasswordResetAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
+      count: 1,
+      firstAttemptAt: Date.now(),
+      lockedUntil: null,
+    })),
+    recordPasswordResetCodeAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
+      count: 1,
+      firstAttemptAt: Date.now(),
+      lockedUntil: null,
+    })),
+    recordEmailVerificationAttempt: jest.fn(async (): Promise<RateLimitStateMock> => ({
+      count: 1,
+      firstAttemptAt: Date.now(),
+      lockedUntil: null,
+    })),
     recordEmailVerificationCodeAttempt: jest.fn(async () => ({
       count: 1,
       firstAttemptAt: Date.now(),

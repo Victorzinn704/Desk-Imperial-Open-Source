@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "reviewedLockSha256": "1aeb5f247d8bb4fc1efebccecb7824b92c2629bb4a8e089393dac95a4bc7a3dc",
+  "manifestSha256": "9fae38b0c4d4598949abd57d18a1f26476ee74553c0b5ac3b8ef6820903e8c94",
+  "patchSha256": "69f8d689123e050b742cd7e9c63ff7de17ef7cc458a36e21c81d55f03021fefc",
+  "baseTreeSha256": "5c8c510001901c3df48d6f694200b95aba9d6c6330f3abba52510a0b954335e5",
+  "patchedTreeSha256": "9ecd6e810fba3088d57ae73871a46e990a30b04ff1ea6b7b6b2f3e299dc40d52",
+  "behaviorSuiteSha256": "9edc5c2977d07df6968c53b7c0e6322f0c73e0ccd85eb5377589573493bebf5b",
+  "advisoryRecordSha256": "fe513fadc18e971870140546323cb7410dc58d475ff0dbffc034fc89996120a3",
+  "decision": {
+    "id": "desk-open-source-braces-dev-backport-2026-10-11",
+    "owner": "repository maintenance workflow; implemented and technically reviewed by Codex",
+    "acceptedAt": "2026-10-11T17:15:16.012Z",
+    "expiresAt": "2026-11-11T03:00:00.000Z"
+  }
+}

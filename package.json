@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "description": "Sistema gratuito de gestão comercial para pequenos e médios comerciantes brasileiros.",
   "packageManager": "npm@11.8.0",
+  "engines": {
+    "node": "22.x"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -35,7 +38,8 @@
     "repo:open-source:prepare": "node ./scripts/prepare-open-source-snapshot.mjs --target ../desk-imperial-open-source-snapshot --force --report docs/operations/open-source-full-sync-audit.md",
     "repo:open-source:review": "npm run repo:open-source:audit && npm run repo:scan-public && npm run lint:secrets && npm run quality:contracts",
     "repo:drift": "node ./scripts/git-drift-report.mjs",
-    "security:audit-runtime": "node ./scripts/check-runtime-audit-allowlist.mjs",
+    "security:audit-runtime": "npm audit --omit=dev --audit-level=high",
+    "security:braces:test": "node --test ./scripts/security/braces-backport/integrity.test.mjs ./scripts/security/braces-backport/audit-guard.test.mjs ./scripts/security/braces-backport/runner.test.mjs",
     "quality:scope": "node ./scripts/check-worktree-scope.mjs",
     "quality:scope:strict": "node ./scripts/check-worktree-scope.mjs --strict",
     "quality:contracts": "node ./scripts/check-public-contracts.mjs",
@@ -74,7 +78,7 @@
     "lint:secrets": "node ./scripts/scan-repo-secrets.mjs",
     "lint:secrets:staged": "node ./scripts/run-gitleaks.mjs protect --staged --config .gitleaks.toml --redact",
     "lint:sast": "node ./scripts/run-semgrep.mjs scan --config .semgrep/desk-imperial.yml --config auto apps/api/src",
-    "audit:deps": "npm audit --audit-level=high",
+    "audit:deps": "node ./scripts/security/braces-backport/runner.mjs audit --root . --config ./scripts/security/braces-backport/reviewed-config.json --artifacts ./artifacts/security/braces-backport",
     "audit:lighthouse": "npx -y @lhci/cli@0.15.1 autorun --config=lighthouserc.json",
     "security:nmap": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run-nmap-scan.ps1",
     "quality:local": "npm run lint:biome && npm run format:check && npm run lint:repo && npm run lint && npm run lint:types && npm run lint:deps && npm run lint:cycles && npm run lint:dead && npm run lint:dup",
@@ -89,8 +93,9 @@
     "ops:readiness": "node ./scripts/operational-readiness-check.mjs",
     "sonar:up": "docker compose -f infra/docker/docker-compose.quality.yml up -d",
     "sonar:down": "docker compose -f infra/docker/docker-compose.quality.yml down",
-    "postinstall": "node ./scripts/patch-next-postcss.mjs",
-    "prepare": "husky"
+    "postinstall": "node ./scripts/postinstall.mjs",
+    "prepare": "node ./scripts/prepare.mjs",
+    "security:verify-backport": "node ./scripts/security/braces-backport/runner.mjs verify --root . --config ./scripts/security/braces-backport/reviewed-config.json"
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx,mts,cts,js,mjs,cjs}": [
@@ -124,7 +129,7 @@
     "lint-staged": "^16.4.0",
     "madge": "^8.0.0",
     "prettier": "^3.8.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "socket.io-client": "^4.8.3",
     "turbo": "^2.5.6",
     "typescript": "^5.9.3",
@@ -136,11 +141,17 @@
     "react-apexcharts": "^2.1.0"
   },
   "overrides": {
-    "next": {
-      "postcss": "8.5.10"
+    "@nestjs/swagger": {
+      "js-yaml": "5.4.3"
     },
-    "postcss": "8.5.10",
-    "protobufjs": "7.5.5",
-    "vite": "8.0.10"
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    },
+    "next": {
+      "postcss": "8.5.29"
+    },
+    "postcss": "8.5.29",
+    "protobufjs": "^7.6.4",
+    "vite": "8.3.4"
   }
 }

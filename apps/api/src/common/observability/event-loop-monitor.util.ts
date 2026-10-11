@@ -1,4 +1,4 @@
-import { type IntervalHistogram, monitorEventLoopDelay } from 'node:perf_hooks'
+import { monitorEventLoopDelay } from 'node:perf_hooks'
 import { metrics } from '@opentelemetry/api'
 
 const meter = metrics.getMeter('desk-imperial-api')
@@ -25,7 +25,7 @@ export function startEventLoopMonitor(options?: {
   const sampleIntervalMs = Math.max(1_000, options?.sampleIntervalMs ?? 15_000)
   const resolutionMs = Math.max(10, options?.resolutionMs ?? 20)
 
-  const histogram: IntervalHistogram = monitorEventLoopDelay({ resolution: resolutionMs })
+  const histogram = monitorEventLoopDelay({ resolution: resolutionMs })
   histogram.enable()
 
   // A primeira janela contém ruído de bootstrap (Nest module init, OTel SDK warm-up).

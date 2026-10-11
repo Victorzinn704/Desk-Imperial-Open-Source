@@ -3,8 +3,7 @@ import type { OutboundJob } from './telegram-runtime.types'
 const MAX_BACKOFF_MS = 60_000
 
 export type TelegramRetryDecision =
-  | { retry: true; delayMs: number; reason: 'rate_429' | 'server_error' }
-  | { retry: false }
+  { retry: true; delayMs: number; reason: 'rate_429' | 'server_error' } | { retry: false }
 
 export function resolveTelegramRetryDecision(job: OutboundJob, error: unknown): TelegramRetryDecision {
   const tooManyRequestsDelay = readTooManyRequestsDelay(error)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { type ReactNode, useMemo, useState, useSyncExternalStore } from 'react'
 import { usePathname } from 'next/navigation'
 import { Check, Cookie } from 'lucide-react'
 import { updateCookiePreferences } from '@/lib/api'
@@ -11,24 +11,21 @@ const DEFAULT_COOKIE_PREFERENCES: CookieConsentChoice = {
   marketing: false,
 }
 
+const subscribeToHydration = () => () => {}
+const hydratedSnapshot = () => true
+const serverSnapshot = () => false
+
 export function CookieConsentBanner() {
+  const isReady = useSyncExternalStore(subscribeToHydration, hydratedSnapshot, serverSnapshot)
+  return isReady ? <CookieConsentControls /> : null
+}
+
+function CookieConsentControls() {
   const pathname = usePathname()
-  const [isReady, setIsReady] = useState(false)
-  const [hasDecision, setHasDecision] = useState(true)
+  const [storedDecision] = useState(readCookieConsentChoice)
+  const [hasDecision, setHasDecision] = useState(Boolean(storedDecision))
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [preferences, setPreferences] = useState<CookieConsentChoice>(DEFAULT_COOKIE_PREFERENCES)
-
-  useEffect(() => {
-    const storedDecision = readCookieConsentChoice()
-    if (storedDecision) {
-      setPreferences(storedDecision)
-      setHasDecision(true)
-    } else {
-      setHasDecision(false)
-    }
-
-    setIsReady(true)
-  }, [])
+  const [preferences, setPreferences] = useState<CookieConsentChoice>(storedDecision ?? DEFAULT_COOKIE_PREFERENCES)
 
   const content = useMemo(
     () => ({
@@ -38,7 +35,7 @@ export function CookieConsentBanner() {
     [],
   )
 
-  if (!isReady || hasDecision) {
+  if (hasDecision) {
     return null
   }
 
