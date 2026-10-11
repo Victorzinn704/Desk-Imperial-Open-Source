@@ -76,8 +76,9 @@ fork → branch → commit → PR → revisão → merge
 ### 1. Fork e branch
 
 ```bash
-git fork https://github.com/Victorzinn704/Desk-Imperial-Open-Source
-git checkout -b tipo/descricao-curta
+gh repo fork Victorzinn704/Desk-Imperial-Open-Source --clone
+cd Desk-Imperial-Open-Source
+git switch -c tipo/descricao-curta
 ```
 
 Exemplos de nome de branch:
@@ -218,3 +219,7 @@ Tipos aceitos:
 Abra uma issue com a tag `question`. Toda pergunta é bem-vinda.
 
 Se você está começando no desenvolvimento e não sabe por onde ir, leia [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md).
+
+## Fluxo Git e revisão
+
+Siga também o [fluxo de issues, branches, commits e pull requests](CONTRIBUTING-GIT.md).

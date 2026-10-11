@@ -92,3 +92,9 @@
 ## Risco residual
 
 Liste o que ainda não foi possível validar, especialmente dependências externas, mobile real, Oracle, webhook real ou hardware local.
+
+## Rastreabilidade
+
+Closes #<!-- número da issue -->
+
+Informe os comandos executados e os resultados reais. Siga o [fluxo Git](../CONTRIBUTING-GIT.md).
