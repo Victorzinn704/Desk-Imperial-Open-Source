@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useMemo, useRef, useState } from 'react'
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { MesaRecord } from '@contracts/contracts'
 import { createMesa, fetchMesas, fetchOperationsLive, updateMesa } from '@/lib/api'
@@ -78,10 +78,12 @@ export function useSalaoEnvironmentController({
 
 function useSalaoView(initialView: View, onViewChange: SalaoEnvironmentProps['onViewChange']) {
   const [view, setView] = useState<View>(initialView)
+  const [previousInitialView, setPreviousInitialView] = useState(initialView)
 
-  useEffect(() => {
+  if (previousInitialView !== initialView) {
+    setPreviousInitialView(initialView)
     setView(initialView)
-  }, [initialView])
+  }
 
   const setSalaoView = useCallback(
     (nextView: View) => {

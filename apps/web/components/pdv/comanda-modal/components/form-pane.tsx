@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable max-lines */
 
-import { memo, useEffect, useState } from 'react'
+import { memo, useState } from 'react'
 import { X } from 'lucide-react'
 import { maskDocument } from '@/lib/document-validation'
 import { formatCurrency } from '@/lib/currency'
@@ -374,11 +374,13 @@ function PercentField({
   onChange: (value: number) => void
 }>) {
   const [draftValue, setDraftValue] = useState(String(value))
+  const [previousValue, setPreviousValue] = useState(value)
   const inputId = `comanda-percent-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
 
-  useEffect(() => {
+  if (!Object.is(previousValue, value)) {
+    setPreviousValue(value)
     setDraftValue(String(value))
-  }, [value])
+  }
 
   const commitValue = () => {
     const numericValue = Number(draftValue)
