@@ -7,7 +7,7 @@ inputs:
     required: false
     default: '22'
   install-native-bindings:
-    description: Instala bindings nativos do toolchain web no Linux
+    description: Verifica e carrega bindings nativos do toolchain web no Linux
     required: false
     default: 'false'
   generate-prisma:
@@ -50,7 +50,7 @@ runs:
         echo "npm ci falhou apos 3 tentativas."
         exit 1
 
-    - name: Install CI native bindings
+    - name: Verify CI native bindings
       if: ${{ inputs.install-native-bindings == 'true' }}
       shell: bash
       run: node ./scripts/install-ci-native-bindings.mjs
