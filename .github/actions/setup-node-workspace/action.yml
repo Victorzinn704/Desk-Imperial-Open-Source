@@ -55,6 +55,10 @@ runs:
       shell: bash
       run: node ./scripts/install-ci-native-bindings.mjs
 
+    - name: Verify braces backport after install and native bindings
+      shell: bash
+      run: npm run security:verify-backport -- --mode full
+
     - name: Generate Prisma client
       if: ${{ inputs.generate-prisma == 'true' }}
       shell: bash

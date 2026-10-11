@@ -1,5 +1,11 @@
 # Dependency Risk Acceptance - 2026-04-01
 
+> Registro histórico. Em 2026-10-11, o helper de allowlist de runtime foi removido:
+> `npm run security:audit-runtime` agora executa a auditoria npm estrita para
+> high/critical. As contagens e aceitações abaixo descrevem rodadas anteriores;
+> não autorizam exceções atuais. A decisão limitada do backport de desenvolvimento
+> está em [braces-backport-2026-10-11.md](./braces-backport-2026-10-11.md).
+
 ## Contexto
 
 Este documento registra o risco residual de vulnerabilidades de dependencias apos a rodada de hardening sem mudancas breaking.

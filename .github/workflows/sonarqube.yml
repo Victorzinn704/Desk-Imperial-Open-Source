@@ -81,6 +81,9 @@ jobs:
       - name: Install CI native bindings
         run: node ./scripts/install-ci-native-bindings.mjs
 
+      - name: Verify braces backport after native bindings
+        run: npm run security:verify-backport -- --mode full
+
       - name: Generate Prisma client
         run: npm --workspace @partner/api run prisma:generate
 

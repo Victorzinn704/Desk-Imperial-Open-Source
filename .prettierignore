@@ -16,3 +16,10 @@ apps/api/prisma/migrations/
 *.log
 CHANGELOG.md
 packages/api-contract/openapi.json
+
+# Cryptographically pinned upstream bytes and behavior suite.
+scripts/security/braces-backport/bundle/
+scripts/security/braces-backport/test-fixtures/
+scripts/security/braces-backport/fixtures/
+scripts/security/braces-backport/regression-child.cjs
+scripts/security/braces-backport/.test-tmp/

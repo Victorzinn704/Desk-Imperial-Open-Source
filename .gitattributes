@@ -1,2 +1,7 @@
 *.sh text eol=lf
 *.ps1 text eol=crlf
+package-lock.json text eol=lf
+scripts/security/braces-backport/** text eol=lf
+scripts/security/braces-backport/bundle/** -text -whitespace
+scripts/security/braces-backport/test-fixtures/** -text -whitespace
+scripts/security/braces-backport/fixtures/** -text -whitespace

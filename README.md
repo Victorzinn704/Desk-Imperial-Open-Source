@@ -310,9 +310,15 @@ npm run repo:scan-public
 # mostra a diferença entre sua branch local, a working tree e a base remota
 npm run repo:drift
 
-# roda o gate de segurança usado no CI público
+# audita full/runtime e exige as provas do backport temporário de desenvolvimento
+npm run audit:deps
+
+# auditoria de runtime estrita, sem allowlist
 npm run security:audit-runtime
 ```
+
+O setup exige Node 22 (`.nvmrc`). A mitigação temporária de braces mantém os achados
+brutos e o advisory visíveis; veja a [decisão com expiração em 2026-11-10](./docs/security/braces-backport-2026-10-11.md).
 
 `npm run repo:drift` separa duas coisas que costumam confundir:
 
