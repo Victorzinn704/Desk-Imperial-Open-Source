@@ -12,7 +12,7 @@ const mockTraceExporter = jest.fn((options) => ({ kind: 'trace-exporter', option
 const mockMetricExporter = jest.fn((options) => ({ kind: 'metric-exporter', options }))
 const mockLogExporter = jest.fn((options) => ({ kind: 'log-exporter', options }))
 
-const mockBatchLogRecordProcessor = jest.fn((exporter) => ({ exporter, type: 'batch-log-processor' }))
+const mockBatchLogRecordProcessor = jest.fn((options) => ({ ...options, type: 'batch-log-processor' }))
 const mockPeriodicExportingMetricReader = jest.fn((options) => ({ ...options, type: 'metric-reader' }))
 const mockBatchSpanProcessor = jest.fn((exporter) => ({ exporter, type: 'batch-span-processor' }))
 
