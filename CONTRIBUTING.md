@@ -219,3 +219,7 @@ Tipos aceitos:
 Abra uma issue com a tag `question`. Toda pergunta é bem-vinda.
 
 Se você está começando no desenvolvimento e não sabe por onde ir, leia [docs/GETTING-STARTED.md](./docs/GETTING-STARTED.md).
+
+## Fluxo Git e revisão
+
+Siga também o [fluxo de issues, branches, commits e pull requests](CONTRIBUTING-GIT.md).
