@@ -76,8 +76,9 @@ fork → branch → commit → PR → revisão → merge
 ### 1. Fork e branch
 
 ```bash
-git fork https://github.com/Victorzinn704/Desk-Imperial-Open-Source
-git checkout -b tipo/descricao-curta
+gh repo fork Victorzinn704/Desk-Imperial-Open-Source --clone
+cd Desk-Imperial-Open-Source
+git switch -c tipo/descricao-curta
 ```
 
 Exemplos de nome de branch:
