@@ -43,7 +43,7 @@ jobs:
           if (!titlePattern.test(title) || /[\x00-\x1f\x7f]/.test(title)) {
             errors.push('Título inválido. Exemplo: fix(api): corrige validação de entrada.');
           }
-          const branchPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|migration|hotfix|codex)\/\S+$/;
+          const branchPattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|migration|hotfix|codex|audit)\/\S+$/;
           if (!branchPattern.test(branch)) {
             errors.push('Branch inválida. Use um prefixo permitido, como fix/123-corrige-validacao ou migration/java-2.0.');
           }
