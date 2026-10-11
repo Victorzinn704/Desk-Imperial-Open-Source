@@ -222,7 +222,7 @@ function configureLogPipeline(
   }
 
   sdkConfiguration.logRecordProcessors = [
-    new BatchLogRecordProcessor(new OTLPLogExporter(buildOtlpExporterConfig(logsEndpoint, headers))),
+    new BatchLogRecordProcessor({ exporter: new OTLPLogExporter(buildOtlpExporterConfig(logsEndpoint, headers)) }),
   ]
 }
 

@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -9,24 +9,53 @@ if (process.platform !== 'linux' || process.arch !== 'x64') {
   process.exit(0)
 }
 
-const rolldownPackagePath = path.join(rootDir, 'node_modules', 'rolldown', 'package.json')
-const tailwindOxidePackagePath = path.join(rootDir, 'node_modules', '@tailwindcss', 'oxide', 'package.json')
+const realRoot = fs.realpathSync(rootDir)
+const lock = JSON.parse(fs.readFileSync(path.join(realRoot, 'package-lock.json'), 'utf8'))
 
-if (!fs.existsSync(rolldownPackagePath) || !fs.existsSync(tailwindOxidePackagePath)) {
-  console.log('Skipping CI native bindings because required parent packages are not installed yet.')
-  process.exit(0)
+function readLockedPackage(packagePath) {
+  const realPackagePath = fs.realpathSync(packagePath)
+  const relative = path.relative(realRoot, path.dirname(realPackagePath))
+  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`Resolved native package outside repository: ${packagePath}`)
+  }
+  const entry = lock.packages?.[relative.split(path.sep).join('/')]
+  const metadata = JSON.parse(fs.readFileSync(realPackagePath, 'utf8'))
+  if (!entry || entry.version !== metadata.version || (entry.name && entry.name !== metadata.name)) {
+    throw new Error(`Native package differs from lockfile: ${relative}`)
+  }
+  return metadata
 }
 
-const rolldownVersion = JSON.parse(fs.readFileSync(rolldownPackagePath, 'utf8')).version
-const tailwindOxideVersion = JSON.parse(fs.readFileSync(tailwindOxidePackagePath, 'utf8')).version
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+// npm ci already installs these lockfile entries. A second npm install can
+// hoist a different optional version and move packages outside the reviewed tree.
 const packages = [
-  `@rolldown/binding-linux-x64-gnu@${rolldownVersion}`,
-  `@tailwindcss/oxide-linux-x64-gnu@${tailwindOxideVersion}`,
+  { parent: 'rolldown', binding: '@rolldown/binding-linux-x64-gnu' },
+  { parent: '@tailwindcss/oxide', binding: '@tailwindcss/oxide-linux-x64-gnu' },
 ]
 
-console.log(`Installing Linux native bindings for CI: ${packages.join(', ')}`)
-execSync(`${npmCommand} install --no-save ${packages.join(' ')}`, {
-  cwd: rootDir,
-  stdio: 'inherit',
-})
+for (const { parent, binding } of packages) {
+  try {
+    const parentPath = path.join(rootDir, 'node_modules', parent, 'package.json')
+    const parentPackage = readLockedPackage(parentPath)
+    const expectedVersion = parentPackage.optionalDependencies?.[binding]
+    if (typeof expectedVersion !== 'string') throw new Error(`Missing declared optional binding for ${parent}`)
+    const fromParent = createRequire(parentPath)
+    const bindingPath = fromParent.resolve(`${binding}/package.json`)
+    const bindingPackage = readLockedPackage(bindingPath)
+    if (bindingPackage.name !== binding || bindingPackage.version !== expectedVersion) {
+      throw new Error(`Expected ${binding}@${expectedVersion}; resolved ${bindingPackage.version}`)
+    }
+    const bindingDirectory = path.dirname(fs.realpathSync(bindingPath))
+    const entry = path.relative(bindingDirectory, fs.realpathSync(fromParent.resolve(binding)))
+    if (entry === '..' || entry.startsWith(`..${path.sep}`) || path.isAbsolute(entry)) {
+      throw new Error(`Native binding entry escapes its locked package: ${binding}`)
+    }
+    fromParent(binding)
+    console.log(`Verified and loaded ${binding}@${expectedVersion} from ${parent}.`)
+  } catch (error) {
+    throw new Error(
+      `Native binding verification failed for ${parent}. Run npm ci --include=optional and review the lockfile if it still fails; this check does not modify the installation.`,
+      { cause: error },
+    )
+  }
+}

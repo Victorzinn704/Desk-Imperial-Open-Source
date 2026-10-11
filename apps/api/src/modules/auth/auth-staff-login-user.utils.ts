@@ -2,8 +2,7 @@ import { type CurrencyCode, type Prisma, UserRole, UserStatus } from '@prisma/cl
 import type { PrismaService } from '../../database/prisma.service'
 
 export type StaffLoginUserWriter =
-  | Pick<PrismaService, 'user' | 'employee'>
-  | Pick<Prisma.TransactionClient, 'user' | 'employee'>
+  Pick<PrismaService, 'user' | 'employee'> | Pick<Prisma.TransactionClient, 'user' | 'employee'>
 
 export type StaffLoginEmployeeRecord = {
   id: string

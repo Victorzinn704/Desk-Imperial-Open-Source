@@ -35,11 +35,12 @@ Estoque depois: 0  ← não bloqueia, não lança exceção
 Campo opcional por produto. O dono define o número mínimo de unidades antes de considerar o estoque baixo. Se nulo, nenhum alerta é gerado.
 
 **Exemplos de uso:**
-| Produto | Estoque normal | Threshold configurado | Alerta dispara em |
-|---|---|---|---|
-| Coca-Cola Lata | ~144 und | 20 | ≤ 20 und |
-| Hambúrguer artesanal | ~30 und | 5 | ≤ 5 und |
-| Produto sem threshold | qualquer | null | nunca |
+
+| Produto               | Estoque normal | Threshold configurado | Alerta dispara em |
+| --------------------- | -------------- | --------------------- | ----------------- |
+| Coca-Cola Lata        | ~144 und       | 20                    | ≤ 20 und          |
+| Hambúrguer artesanal  | ~30 und        | 5                     | ≤ 5 und           |
+| Produto sem threshold | qualquer       | null                  | nunca             |
 
 **Onde é calculado:** `apps/api/src/modules/products/products.types.ts` — `toProductRecord`
 
