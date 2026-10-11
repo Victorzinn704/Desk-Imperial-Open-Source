@@ -401,11 +401,9 @@ describe('useOperationsRealtime socket wiring', () => {
     render(<RealtimeHarness queryClient={queryClient} />)
 
     const disconnectHandler = mockSocket.on.mock.calls.find(([eventName]) => eventName === 'disconnect')?.[1] as
-      | (() => void)
-      | undefined
+      (() => void) | undefined
     const connectHandler = mockSocket.on.mock.calls.find(([eventName]) => eventName === 'connect')?.[1] as
-      | (() => void)
-      | undefined
+      (() => void) | undefined
 
     await act(async () => {
       disconnectHandler?.()
@@ -551,8 +549,7 @@ describe('useOperationsRealtime socket wiring', () => {
     render(<RealtimeHarness />)
 
     const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
+      ((env: unknown) => void) | undefined
 
     const envelope = {
       id: 'evt-dedup-c4',
@@ -604,12 +601,10 @@ describe('useOperationsRealtime socket wiring', () => {
     render(<RealtimeHarness queryClient={queryClient} />)
 
     const disconnectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'disconnect')?.[1] as
-      | (() => void)
-      | undefined
+      (() => void) | undefined
     const connectHandler = mockSocket.on.mock.calls.find(([e]) => e === 'connect')?.[1] as (() => void) | undefined
     const updatedHandler = mockSocket.on.mock.calls.find(([e]) => e === 'comanda.updated')?.[1] as
-      | ((env: unknown) => void)
-      | undefined
+      ((env: unknown) => void) | undefined
 
     await act(async () => {
       disconnectHandler?.()

@@ -8,8 +8,7 @@
  */
 
 export type PinRateStatus =
-  | { blocked: false; attemptsLeft: number }
-  | { blocked: true; blockedUntil: number; secondsLeft: number }
+  { blocked: false; attemptsLeft: number } | { blocked: true; blockedUntil: number; secondsLeft: number }
 
 /** @deprecated No-op — backend Redis gerencia o rate limiting de PIN. */
 export function getPinRateStatus(): PinRateStatus {

@@ -14,8 +14,7 @@ describe('CurrentAuth decorator', () => {
       Reflect.getMetadata(ROUTE_ARGS_METADATA, DemoController.prototype, 'handler')
 
     const metadataEntry = Object.values(routeArgsMetadata ?? {})[0] as
-      | { factory?: (data: unknown, context: any) => unknown }
-      | undefined
+      { factory?: (data: unknown, context: any) => unknown } | undefined
 
     expect(metadataEntry?.factory).toBeDefined()
 

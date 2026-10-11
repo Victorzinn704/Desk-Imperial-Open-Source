@@ -57,8 +57,7 @@ export type BarcodeLookupPayload = {
 }
 
 export type BarcodeLookupResult =
-  | { ok: true; payload: BarcodeLookupPayload }
-  | { message: string; ok: false; status: 404 | 503 }
+  { ok: true; payload: BarcodeLookupPayload } | { message: string; ok: false; status: 404 | 503 }
 
 export type DescriptionInput = {
   genericName: string | undefined
