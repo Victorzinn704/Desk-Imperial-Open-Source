@@ -114,3 +114,24 @@ scripts/security/braces-backport/.test-tmp/
 # ─── WIP / design drafts ────────────────────────────────────────────────────
 apps/web/components/charts/
 .dual-graph/
+
+# Public repository boundary (security review 2026-11-08)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+credentials*.json
+service-account*.json
+secrets/
+private/
+data/private/
+*.log
+*.bundle
